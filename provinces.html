@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Provinces &amp; municipalités — Gouvernement d'Étalie</title>
+<meta content="Répertoire officiel des provinces et municipalités d'Étalie." name="description"/>
+<link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body data-page="provinces">
+<div class="bandeau-utilitaire">
+<div class="conteneur">
+<span><span class="puce"></span><span data-i18n="t001">République d'Étalie — Site officiel du gouvernement</span></span>
+<div class="liens-util">
+<a data-i18n="t002" href="roie.html">Notre Roîe</a>
+<a data-no-i18n="1" href="javascript:void(0)" onclick="basculerLangue()">Bintuk</a>
+<a data-i18n="t003" href="portail-citoyen.html">Mon espace citoyen</a>
+<a data-i18n="t004" href="contact.html">Nous joindre</a>
+</div>
+</div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+<header class="entete">
+<div class="conteneur">
+<div class="identite">
+<img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
+<div class="texte-identite">
+<span class="surtitre" data-i18n="t005">République d'Étalie</span>
+<h1 data-i18n="t006">Gouvernement d'Étalie</h1>
+</div>
+</div>
+<nav aria-label="Navigation principale" class="principale">
+<ul>
+<li><a data-i18n="t007" href="index.html">Accueil</a></li>
+<li><a data-i18n="t008" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t009" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t010" href="documents.html">Documents</a></li>
+<li><a data-i18n="t011" href="histoire.html">Histoire</a></li>
+<li><a aria-current="page" data-i18n="t012" href="provinces.html">Provinces</a></li>
+<li><a data-i18n="t013" href="taxes.html">Taxes</a></li>
+<li><a data-i18n="t014" href="portail-citoyen.html">Portail citoyen</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="entete-page">
+<div class="conteneur">
+<span class="surtitre" data-i18n="t015">Administration territoriale</span>
+<h2 data-i18n="t016">Provinces &amp; municipalités d'Étalie</h2>
+</div>
+</div>
+<div class="conteneur">
+<p class="fil-ariane"><a data-i18n="t018" href="index.html">Accueil</a> <span data-i18n="t017">/ Provinces &amp; municipalités</span></p>
+</div>
+<section class="bande-chiffres" style="margin-top:0;">
+<div class="conteneur">
+<div class="chiffre">
+<div class="valeur" data-i18n="t019">53 138 439</div>
+<div class="etiquette" data-i18n="t020">Population totale</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t021">794 880</div>
+<div class="etiquette" data-i18n="t022">Kilomètres carrés, incluant la Glace Méridionale</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t023">42</div>
+<div class="etiquette" data-i18n="t024">Provinces (avec Glace Méridionale)</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t025">60</div>
+<div class="etiquette" data-i18n="t026">Municipalités</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t027">3</div>
+<div class="etiquette" data-i18n="t028">Postes Méridionaux</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t029">10</div>
+<div class="etiquette" data-i18n="t030">Ducs dans les colonies</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t031">40 652 871</div>
+<div class="etiquette" data-i18n="t032">Population rurale</div>
+</div>
+<div class="chiffre">
+<div class="valeur" data-i18n="t033">12 993 804</div>
+<div class="etiquette" data-i18n="t034">Population urbaine</div>
+</div>
+</div>
+</section>
+<section class="section">
+<div class="conteneur">
+<div class="entete-section">
+<div>
+<span class="num-section" data-i18n="t035">Administration territoriale</span>
+<h3 data-i18n="t036">Les 40 provinces d'Étalie</h3>
+<p><span data-i18n="t037">Nom complet officiel :</span> <strong data-i18n="t040">Premier Empire Étalien</strong><span data-i18n="t038">. Capitale du royaume :</span> <strong data-i18n="t041">Imperoma</strong><span data-i18n="t039">. Classées par population.</span></p>
+</div>
+</div>
+<div class="barre-filtre">
+<input aria-label="Rechercher une province" data-i18n-ph="t507" id="filtre-provinces" placeholder="Rechercher une province ou une capitale…" type="text"/>
+</div>
+<div class="table-wrap">
+<table class="table-donnees" id="table-provinces">
+<thead>
+<tr>
+<th data-i18n="t042">Province</th>
+<th data-i18n="t043">Capitale</th>
+<th class="num" data-i18n="t044">Population</th>
+<th class="num" data-i18n="t045">Superficie</th>
+<th class="num" data-i18n="t046">Municipalités</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td data-i18n="t047">Territoire-Du-Roy</td>
+<td data-i18n="t048">Estmontagne</td>
+<td class="num" data-i18n="t049">4 712 559</td>
+<td class="num" data-i18n="t050">48 512 km²</td>
+<td class="num" data-i18n="t051">6</td>
+</tr>
+<tr>
+<td data-i18n="t052">Territoire-Du-Sud</td>
+<td data-i18n="t053">Mer Saint-Louis</td>
+<td class="num" data-i18n="t054">4 628 529</td>
+<td class="num" data-i18n="t055">59 312 km²</td>
+<td class="num" data-i18n="t056">4</td>
+</tr>
+<tr>
+<td data-i18n="t057">Nouvelle-Étalie</td>
+<td data-i18n="t058">Nouvel-Étalo</td>
+<td class="num" data-i18n="t059">4 453 889</td>
+<td class="num" data-i18n="t060">27 344 km²</td>
+<td class="num" data-i18n="t061">1</td>
+</tr>
+<tr>
+<td data-i18n="t062">Grande-Capitale</td>
+<td data-i18n="t063">Lataylon</td>
+<td class="num" data-i18n="t064">3 993 620</td>
+<td class="num" data-i18n="t065">1 296 km²</td>
+<td class="num" data-i18n="t066">2</td>
+</tr>
+<tr>
+<td data-i18n="t067">Duchés-Saints</td>
+<td data-i18n="t068">Duc Dejolicour</td>
+<td class="num" data-i18n="t069">3 904 445</td>
+<td class="num" data-i18n="t070">69 184 km²</td>
+<td class="num" data-i18n="t071">10</td>
+</tr>
+<tr>
+<td data-i18n="t072">Territoire-D'Angé</td>
+<td data-i18n="t073">Nordvale</td>
+<td class="num" data-i18n="t074">3 863 935</td>
+<td class="num" data-i18n="t075">48 432 km²</td>
+<td class="num" data-i18n="t076">2</td>
+</tr>
+<tr>
+<td data-i18n="t077">Baxe</td>
+<td></td>
+<td class="num" data-i18n="t078">3 028 607</td>
+<td class="num" data-i18n="t079">45 968 km²</td>
+<td class="num" data-i18n="t080">0</td>
+</tr>
+<tr>
+<td data-i18n="t081">Territoire-Du-Nord</td>
+<td data-i18n="t082">Nordvale</td>
+<td class="num" data-i18n="t083">2 933 304</td>
+<td class="num" data-i18n="t084">47 344 km²</td>
+<td class="num" data-i18n="t085">6</td>
+</tr>
+<tr>
+<td data-i18n="t086">Fleury</td>
+<td data-i18n="t087">Port-Aux-Souverains</td>
+<td class="num" data-i18n="t088">2 670 359</td>
+<td class="num" data-i18n="t089">34 784 km²</td>
+<td class="num" data-i18n="t090">4</td>
+</tr>
+<tr>
+<td data-i18n="t091">Territoire-Des-Chrits</td>
+<td data-i18n="t092">Chritsburg</td>
+<td class="num" data-i18n="t093">2 329 705</td>
+<td class="num" data-i18n="t094">32 304 km²</td>
+<td class="num" data-i18n="t095">1</td>
+</tr>
+<tr>
+<td data-i18n="t096">Talon Andrien</td>
+<td data-i18n="t097">Yara-Notre-Sauveur</td>
+<td class="num" data-i18n="t098">2 290 470</td>
+<td class="num" data-i18n="t099">25 040 km²</td>
+<td class="num" data-i18n="t100">6</td>
+</tr>
+<tr>
+<td data-i18n="t101">Talon Étalien</td>
+<td data-i18n="t102">Maréchaux</td>
+<td class="num" data-i18n="t103">1 789 250</td>
+<td class="num" data-i18n="t104">35 968 km²</td>
+<td class="num" data-i18n="t105">2</td>
+</tr>
+<tr>
+<td data-i18n="t106">Marcio</td>
+<td data-i18n="t107">Lataylon</td>
+<td class="num" data-i18n="t108">1 633 841</td>
+<td class="num" data-i18n="t109">21 120 km²</td>
+<td class="num" data-i18n="t110">3</td>
+</tr>
+<tr>
+<td data-i18n="t111">Vénésie</td>
+<td></td>
+<td class="num" data-i18n="t112">1 535 572</td>
+<td class="num" data-i18n="t113">22 992 km²</td>
+<td class="num" data-i18n="t114">0</td>
+</tr>
+<tr>
+<td data-i18n="t115">Romagna</td>
+<td></td>
+<td class="num" data-i18n="t116">1 428 693</td>
+<td class="num" data-i18n="t117">22 464 km²</td>
+<td class="num" data-i18n="t118">0</td>
+</tr>
+<tr>
+<td data-i18n="t119">Bushard Bay</td>
+<td data-i18n="t120">New Roma</td>
+<td class="num" data-i18n="t121">1 150 987</td>
+<td class="num" data-i18n="t122">19 040 km²</td>
+<td class="num" data-i18n="t123">1</td>
+</tr>
+<tr>
+<td data-i18n="t124">Ombrie</td>
+<td></td>
+<td class="num" data-i18n="t125">826 006</td>
+<td class="num" data-i18n="t126">12 336 km²</td>
+<td class="num" data-i18n="t127">0</td>
+</tr>
+<tr>
+<td data-i18n="t128">Balques</td>
+<td></td>
+<td class="num" data-i18n="t129">776 060</td>
+<td class="num" data-i18n="t130">11 024 km²</td>
+<td class="num" data-i18n="t131">0</td>
+</tr>
+<tr>
+<td data-i18n="t132">Milela-Cale</td>
+<td></td>
+<td class="num" data-i18n="t133">691 579</td>
+<td class="num" data-i18n="t134">19 168 km²</td>
+<td class="num" data-i18n="t135">0</td>
+</tr>
+<tr>
+<td data-i18n="t136">Aloies</td>
+<td></td>
+<td class="num" data-i18n="t137">686 978</td>
+<td class="num" data-i18n="t138">11 984 km²</td>
+<td class="num" data-i18n="t139">0</td>
+</tr>
+<tr>
+<td data-i18n="t140">Brien</td>
+<td></td>
+<td class="num" data-i18n="t141">566 550</td>
+<td class="num" data-i18n="t142">8 112 km²</td>
+<td class="num" data-i18n="t143">0</td>
+</tr>
+<tr>
+<td data-i18n="t144">Hors-Grande-Vénésie</td>
+<td></td>
+<td class="num" data-i18n="t145">519 006</td>
+<td class="num" data-i18n="t146">8 096 km²</td>
+<td class="num" data-i18n="t147">0</td>
+</tr>
+<tr>
+<td data-i18n="t148">Alonse</td>
+<td></td>
+<td class="num" data-i18n="t149">444 270</td>
+<td class="num" data-i18n="t150">7 008 km²</td>
+<td class="num" data-i18n="t151">0</td>
+</tr>
+<tr>
+<td data-i18n="t152">Isulae</td>
+<td></td>
+<td class="num" data-i18n="t153">375 383</td>
+<td class="num" data-i18n="t154">5 280 km²</td>
+<td class="num" data-i18n="t155">0</td>
+</tr>
+<tr>
+<td data-i18n="t156">Grâdes</td>
+<td></td>
+<td class="num" data-i18n="t157">338 539</td>
+<td class="num" data-i18n="t158">9 808 km²</td>
+<td class="num" data-i18n="t159">0</td>
+</tr>
+<tr>
+<td data-i18n="t160">Côte-Anglaise</td>
+<td data-i18n="t161">Newhouse</td>
+<td class="num" data-i18n="t162">334 240</td>
+<td class="num" data-i18n="t163">3 536 km²</td>
+<td class="num" data-i18n="t164">3</td>
+</tr>
+<tr>
+<td data-i18n="t165">Jance</td>
+<td></td>
+<td class="num" data-i18n="t166">323 942</td>
+<td class="num" data-i18n="t167">5 008 km²</td>
+<td class="num" data-i18n="t168">0</td>
+</tr>
+<tr>
+<td data-i18n="t169">Tivainne</td>
+<td></td>
+<td class="num" data-i18n="t170">238 807</td>
+<td class="num" data-i18n="t171">7 568 km²</td>
+<td class="num" data-i18n="t172">0</td>
+</tr>
+<tr>
+<td data-i18n="t173">Vénéz</td>
+<td></td>
+<td class="num" data-i18n="t174">238 208</td>
+<td class="num" data-i18n="t175">3 776 km²</td>
+<td class="num" data-i18n="t176">0</td>
+</tr>
+<tr>
+<td data-i18n="t177">Alanbie</td>
+<td></td>
+<td class="num" data-i18n="t178">220 710</td>
+<td class="num" data-i18n="t179">4 048 km²</td>
+<td class="num" data-i18n="t180">0</td>
+</tr>
+<tr>
+<td data-i18n="t181">Tonawa</td>
+<td></td>
+<td class="num" data-i18n="t182">152 323</td>
+<td class="num" data-i18n="t183">5 232 km²</td>
+<td class="num" data-i18n="t184">0</td>
+</tr>
+<tr>
+<td data-i18n="t185">North Milela</td>
+<td data-i18n="t186">Commori</td>
+<td class="num" data-i18n="t187">121 834</td>
+<td class="num" data-i18n="t188">2 896 km²</td>
+<td class="num" data-i18n="t189">1</td>
+</tr>
+<tr>
+<td data-i18n="t190">Île Saint-Étienne</td>
+<td data-i18n="t191">Port Saint-Étienne</td>
+<td class="num" data-i18n="t192">97 943</td>
+<td class="num" data-i18n="t193">880 km²</td>
+<td class="num" data-i18n="t194">1</td>
+</tr>
+<tr>
+<td data-i18n="t195">Côte d'Avoigne</td>
+<td data-i18n="t196">Newhouse</td>
+<td class="num" data-i18n="t197">88 485</td>
+<td class="num" data-i18n="t198">2 112 km²</td>
+<td class="num" data-i18n="t199">0</td>
+</tr>
+<tr>
+<td data-i18n="t200">Prisoñia</td>
+<td data-i18n="t201">Ingresa</td>
+<td class="num" data-i18n="t202">83 840</td>
+<td class="num" data-i18n="t203">912 km²</td>
+<td class="num" data-i18n="t204">1</td>
+</tr>
+<tr>
+<td data-i18n="t205">Pruxe</td>
+<td data-i18n="t206">Angerce</td>
+<td class="num" data-i18n="t207">66 297</td>
+<td class="num" data-i18n="t208">416 km²</td>
+<td class="num" data-i18n="t209">1</td>
+</tr>
+<tr>
+<td data-i18n="t210">Pruxe-Slamique</td>
+<td data-i18n="t211">Angerce</td>
+<td class="num" data-i18n="t212">61 580</td>
+<td class="num" data-i18n="t213">1 136 km²</td>
+<td class="num" data-i18n="t214">2</td>
+</tr>
+<tr>
+<td data-i18n="t215">Quoueta-Et-Milenniar-Étalois</td>
+<td data-i18n="t216">Duc de Forquoueta</td>
+<td class="num" data-i18n="t217">24 002</td>
+<td class="num" data-i18n="t218">400 km²</td>
+<td class="num" data-i18n="t219">1</td>
+</tr>
+<tr>
+<td data-i18n="t220">Gibaltage</td>
+<td data-i18n="t221">Gibaltage</td>
+<td class="num" data-i18n="t222">22 279</td>
+<td class="num" data-i18n="t223">400 km²</td>
+<td class="num" data-i18n="t224">1</td>
+</tr>
+<tr>
+<td data-i18n="t225">Agort</td>
+<td data-i18n="t226">Korsk-Cadic</td>
+<td class="num" data-i18n="t227">50</td>
+<td class="num" data-i18n="t228">592 km²</td>
+<td class="num" data-i18n="t229">1</td>
+</tr>
+<tr>
+<td data-i18n="t230">Territoire Étalien Méridional</td>
+<td data-i18n="t231">Post New-England</td>
+<td class="num" data-i18n="t232">158</td>
+<td class="num" data-i18n="t233">99 056 km²</td>
+<td class="num" data-i18n="t234">3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section class="section" style="padding-top:0;">
+<div class="conteneur">
+<div class="entete-section">
+<div>
+<span class="num-section" data-i18n="t235">Répertoire</span>
+<h3 data-i18n="t236">Les 60 municipalités d'Étalie</h3>
+<p data-i18n="t237">Villes, villages et ports recensés sur le territoire national. (non tous à jour.)</p>
+</div>
+</div>
+<div class="barre-filtre">
+<input aria-label="Rechercher une municipalité" data-i18n-ph="t508" id="filtre-municipalites" placeholder="Rechercher une municipalité…" type="text"/>
+</div>
+<div class="table-wrap">
+<table class="table-donnees" id="table-municipalites">
+<thead>
+<tr>
+<th data-i18n="t238">Municipalité</th>
+<th data-i18n="t239">Province</th>
+<th class="num" data-i18n="t240">Population</th>
+<th data-i18n="t241">Particularités</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span data-i18n="t242">Imperoma</span> <span data-i18n="t243" style="color:var(--or-laiton); font-family:var(--police-util); font-size:.68rem;">★ capitale</span></td>
+<td data-i18n="t244">Grande-Capitale</td>
+<td class="num" data-i18n="t245">3 729 391</td>
+<td data-i18n="t246">Port, Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t247">Nouvel-Étalo</td>
+<td data-i18n="t248">Nouvelle-Étalie</td>
+<td class="num" data-i18n="t249">2 980 000</td>
+<td data-i18n="t250">—</td>
+</tr>
+<tr>
+<td data-i18n="t251">Port-Aux-Souverains</td>
+<td data-i18n="t252">Fleury</td>
+<td class="num" data-i18n="t253">892 000</td>
+<td data-i18n="t254">Port, Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t255">Port-DuRoy</td>
+<td data-i18n="t256">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t257">720 000</td>
+<td data-i18n="t258">—</td>
+</tr>
+<tr>
+<td data-i18n="t259">Mer Saint-Louis</td>
+<td data-i18n="t260">Territoire-Du-Sud</td>
+<td class="num" data-i18n="t261">580 000</td>
+<td data-i18n="t262">—</td>
+</tr>
+<tr>
+<td data-i18n="t263">Imperiola</td>
+<td data-i18n="t264">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t265">390 000</td>
+<td data-i18n="t266">—</td>
+</tr>
+<tr>
+<td data-i18n="t267">Roymont</td>
+<td data-i18n="t268">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t269">310 000</td>
+<td data-i18n="t270">Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t271">Boréalise</td>
+<td data-i18n="t272">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t273">245 000</td>
+<td data-i18n="t274">—</td>
+</tr>
+<tr>
+<td data-i18n="t275">Newhouse</td>
+<td data-i18n="t276">Côte-Anglaise</td>
+<td class="num" data-i18n="t277">210 000</td>
+<td data-i18n="t278">—</td>
+</tr>
+<tr>
+<td data-i18n="t279">San Bautista-Colón-de-Dios</td>
+<td data-i18n="t280">Duchés-Saints</td>
+<td class="num" data-i18n="t281">210 000</td>
+<td data-i18n="t282">Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t283">Arc-Étalien</td>
+<td data-i18n="t284">Talon Andrien</td>
+<td class="num" data-i18n="t285">180 000</td>
+<td data-i18n="t286">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t287">Lataylon</td>
+<td data-i18n="t288">Grande-Capitale</td>
+<td class="num" data-i18n="t289">148 000</td>
+<td data-i18n="t290">—</td>
+</tr>
+<tr>
+<td data-i18n="t291">Chritsburg</td>
+<td data-i18n="t292">Territoire-Des-Chrits</td>
+<td class="num" data-i18n="t293">148 000</td>
+<td data-i18n="t294">—</td>
+</tr>
+<tr>
+<td data-i18n="t295">Foncet</td>
+<td data-i18n="t296">Talon Andrien</td>
+<td class="num" data-i18n="t297">145 000</td>
+<td data-i18n="t298">—</td>
+</tr>
+<tr>
+<td data-i18n="t299">Sudmark</td>
+<td data-i18n="t300">Territoire-Du-Sud</td>
+<td class="num" data-i18n="t301">132 000</td>
+<td data-i18n="t302">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t303">San Pele</td>
+<td data-i18n="t304">Duchés-Saints</td>
+<td class="num" data-i18n="t305">120 000</td>
+<td data-i18n="t306">—</td>
+</tr>
+<tr>
+<td data-i18n="t307">Lacétal</td>
+<td data-i18n="t308">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t309">118 000</td>
+<td data-i18n="t310">—</td>
+</tr>
+<tr>
+<td data-i18n="t311">Nopol</td>
+<td data-i18n="t312">Talon Andrien</td>
+<td class="num" data-i18n="t313">112 000</td>
+<td data-i18n="t314">—</td>
+</tr>
+<tr>
+<td data-i18n="t315">Port-Méridien</td>
+<td data-i18n="t316">Territoire-Du-Sud</td>
+<td class="num" data-i18n="t317">105 000</td>
+<td data-i18n="t318">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t319">Abajou</td>
+<td data-i18n="t320">Marcio</td>
+<td class="num" data-i18n="t321">97 000</td>
+<td data-i18n="t322">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t323">Duc Dalma</td>
+<td data-i18n="t324">Duchés-Saints</td>
+<td class="num" data-i18n="t325">95 000</td>
+<td data-i18n="t326">—</td>
+</tr>
+<tr>
+<td data-i18n="t327">Sintro-Cueva</td>
+<td data-i18n="t328">Duchés-Saints</td>
+<td class="num" data-i18n="t329">85 000</td>
+<td data-i18n="t330">Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t331">Lionnes</td>
+<td data-i18n="t332">Talon Andrien</td>
+<td class="num" data-i18n="t333">83 000</td>
+<td data-i18n="t334">Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t335">Centreval</td>
+<td data-i18n="t336">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t337">82 000</td>
+<td data-i18n="t338">—</td>
+</tr>
+<tr>
+<td data-i18n="t339">Caracuaus</td>
+<td data-i18n="t340">Duchés-Saints</td>
+<td class="num" data-i18n="t341">78 000</td>
+<td data-i18n="t342">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t343">Rive-DesRoys</td>
+<td data-i18n="t344">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t345">68 000</td>
+<td data-i18n="t346">—</td>
+</tr>
+<tr>
+<td data-i18n="t347">Beaumont</td>
+<td data-i18n="t348">Marcio</td>
+<td class="num" data-i18n="t349">67 000</td>
+<td data-i18n="t350">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t351">Port-Élizabeth</td>
+<td data-i18n="t352">Fleury</td>
+<td class="num" data-i18n="t353">67 000</td>
+<td data-i18n="t354">—</td>
+</tr>
+<tr>
+<td data-i18n="t355">Sudvilla</td>
+<td data-i18n="t356">Territoire-Du-Sud</td>
+<td class="num" data-i18n="t357">55 000</td>
+<td data-i18n="t358">—</td>
+</tr>
+<tr>
+<td data-i18n="t359">Maréchaux</td>
+<td data-i18n="t360">Talon Étalien</td>
+<td class="num" data-i18n="t361">54 000</td>
+<td data-i18n="t362">—</td>
+</tr>
+<tr>
+<td data-i18n="t363">Angerce</td>
+<td data-i18n="t364">Pruxe</td>
+<td class="num" data-i18n="t365">52 000</td>
+<td data-i18n="t366">—</td>
+</tr>
+<tr>
+<td data-i18n="t367">Oursinville</td>
+<td data-i18n="t368">Fleury</td>
+<td class="num" data-i18n="t369">48 000</td>
+<td data-i18n="t370">—</td>
+</tr>
+<tr>
+<td data-i18n="t371">Lacosud</td>
+<td data-i18n="t372">Territoire-Du-Roy</td>
+<td class="num" data-i18n="t373">48 000</td>
+<td data-i18n="t374">Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t375">Duc de Fordunc</td>
+<td data-i18n="t376">Duchés-Saints</td>
+<td class="num" data-i18n="t377">45 000</td>
+<td data-i18n="t378">—</td>
+</tr>
+<tr>
+<td data-i18n="t379">Nouvelles-Tangé</td>
+<td data-i18n="t380">Talon Andrien</td>
+<td class="num" data-i18n="t381">45 000</td>
+<td data-i18n="t382">—</td>
+</tr>
+<tr>
+<td data-i18n="t383">Estmontagne</td>
+<td data-i18n="t384">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t385">42 000</td>
+<td data-i18n="t386">—</td>
+</tr>
+<tr>
+<td data-i18n="t387">Anshenfield</td>
+<td data-i18n="t388">Côte-Anglaise</td>
+<td class="num" data-i18n="t389">41 000</td>
+<td data-i18n="t390">Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t391">Duc Demarche</td>
+<td data-i18n="t392">Duchés-Saints</td>
+<td class="num" data-i18n="t393">38 000</td>
+<td data-i18n="t394">—</td>
+</tr>
+<tr>
+<td data-i18n="t395">Nouvel Hamlet</td>
+<td data-i18n="t396">Talon Étalien</td>
+<td class="num" data-i18n="t397">38 000</td>
+<td data-i18n="t398">—</td>
+</tr>
+<tr>
+<td data-i18n="t399">Valcourt</td>
+<td data-i18n="t400">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t401">35 000</td>
+<td data-i18n="t402">—</td>
+</tr>
+<tr>
+<td data-i18n="t403">Victoriaville</td>
+<td data-i18n="t404">Fleury</td>
+<td class="num" data-i18n="t405">34 000</td>
+<td data-i18n="t406">—</td>
+</tr>
+<tr>
+<td data-i18n="t407">Ribone</td>
+<td data-i18n="t408">Marcio</td>
+<td class="num" data-i18n="t409">31 000</td>
+<td data-i18n="t410">—</td>
+</tr>
+<tr>
+<td data-i18n="t411">Port Saint-Étienne</td>
+<td data-i18n="t412">Île Saint-Étienne</td>
+<td class="num" data-i18n="t413">28 000</td>
+<td data-i18n="t414">Port, Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t415">Harland</td>
+<td data-i18n="t416">Côte-Anglaise</td>
+<td class="num" data-i18n="t417">28 000</td>
+<td data-i18n="t418">—</td>
+</tr>
+<tr>
+<td data-i18n="t419">Frontburg</td>
+<td data-i18n="t420">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t421">28 000</td>
+<td data-i18n="t422">—</td>
+</tr>
+<tr>
+<td data-i18n="t423">Ingresa</td>
+<td data-i18n="t424">Prisoñia</td>
+<td class="num" data-i18n="t425">24 000</td>
+<td data-i18n="t426">—</td>
+</tr>
+<tr>
+<td data-i18n="t427">Commori</td>
+<td data-i18n="t428">North Milela</td>
+<td class="num" data-i18n="t429">23 951</td>
+<td data-i18n="t430">Citadelle, Fortifiée</td>
+</tr>
+<tr>
+<td data-i18n="t431">Nordvale</td>
+<td data-i18n="t432">Territoire-Du-Nord</td>
+<td class="num" data-i18n="t433">16 200</td>
+<td data-i18n="t434">—</td>
+</tr>
+<tr>
+<td data-i18n="t435">Gibaltage</td>
+<td data-i18n="t436">Gibaltage</td>
+<td class="num" data-i18n="t437">14 000</td>
+<td data-i18n="t438">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t439">Dineroy</td>
+<td data-i18n="t440">Duchés-Saints</td>
+<td class="num" data-i18n="t441">11 000</td>
+<td data-i18n="t442">—</td>
+</tr>
+<tr>
+<td data-i18n="t443">Angé</td>
+<td data-i18n="t444">Territoire-D'Angé</td>
+<td class="num" data-i18n="t445">5 410</td>
+<td data-i18n="t446">—</td>
+</tr>
+<tr>
+<td data-i18n="t447">Duc de Laungay</td>
+<td data-i18n="t448">Duchés-Saints</td>
+<td class="num" data-i18n="t449">5 212</td>
+<td data-i18n="t450">—</td>
+</tr>
+<tr>
+<td data-i18n="t451">Belles</td>
+<td data-i18n="t452">Pruxe-Slamique</td>
+<td class="num" data-i18n="t453">2 046</td>
+<td data-i18n="t454">—</td>
+</tr>
+<tr>
+<td data-i18n="t455">Duc de Forquoueta</td>
+<td data-i18n="t456">Quoueta-Et-Milenniar-Étalois</td>
+<td class="num" data-i18n="t457">1 506</td>
+<td data-i18n="t458">—</td>
+</tr>
+<tr>
+<td data-i18n="t459">New Roma</td>
+<td data-i18n="t460">Bushard Bay</td>
+<td class="num" data-i18n="t461">1 344</td>
+<td data-i18n="t462">—</td>
+</tr>
+<tr>
+<td data-i18n="t463">Duc Dejolicour</td>
+<td data-i18n="t464">Duchés-Saints</td>
+<td class="num" data-i18n="t465">1 205</td>
+<td data-i18n="t466">—</td>
+</tr>
+<tr>
+<td data-i18n="t467">Roydé</td>
+<td data-i18n="t468">Territoire-D'Angé</td>
+<td class="num" data-i18n="t469">763</td>
+<td data-i18n="t470">—</td>
+</tr>
+<tr>
+<td data-i18n="t471">Yara-Notre-Sauveur</td>
+<td data-i18n="t472">Talon Andrien</td>
+<td class="num" data-i18n="t473">482</td>
+<td data-i18n="t474">—</td>
+</tr>
+<tr>
+<td data-i18n="t475">Breaux</td>
+<td data-i18n="t476">Pruxe-Slamique</td>
+<td class="num" data-i18n="t477">244</td>
+<td data-i18n="t478">Citadelle</td>
+</tr>
+<tr>
+<td data-i18n="t479">Korsk</td>
+<td data-i18n="t480">Agort</td>
+<td class="num" data-i18n="t481">50</td>
+<td data-i18n="t482">—</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<script>
+function filtreTable(inputId, tableId) {
+  const input = document.getElementById(inputId);
+  const table = document.getElementById(tableId);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    table.querySelectorAll('tbody tr').forEach(tr => {
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+}
+filtreTable('filtre-provinces', 'table-provinces');
+filtreTable('filtre-municipalites', 'table-municipalites');
+</script>
+<footer>
+<div class="conteneur">
+<div class="pied-grille" style="grid-template-columns:1.1fr repeat(4,1fr);">
+<div>
+<h5 data-i18n="t483">Gouvernement d'Étalie</h5>
+<p data-i18n="t484" style="max-width:30ch; font-size:.88rem;">Site officiel de la République d'Étalie. Toute reproduction des symboles de l'État est soumise à autorisation.</p>
+<li><a data-i18n="t485" href="z-conditions.html">Conditions et traitement des données</a></li>
+</div>
+<div>
+<h5 data-i18n="t486">Institutions</h5>
+<ul>
+<li><a data-i18n="t487" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t488" href="provinces.html">Provinces &amp; municipalités</a></li>
+<li><a data-i18n="t489" href="protectorats.html">Protectorats</a></li>
+<li><a data-i18n="t490" href="histoire.html">Histoire d'Étalie</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t491">Services</h5>
+<ul>
+<li><a data-i18n="t492" href="portail-citoyen.html">Portail citoyen</a></li>
+<li><a data-i18n="t493" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t494" href="taxes.html">Fiscalité</a></li>
+<li><a data-i18n="t495" href="vote.html">Élections</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t496">Ressources</h5>
+<ul>
+<li><a data-i18n="t497" href="documents.html">Documents officiels</a></li>
+<li><a data-i18n="t498" href="calendrier.html">Calendrier toutouïen</a></li>
+<li><a data-i18n="t499" href="inspeq.html">Sécurité (INSPEQ)</a></li>
+<li><a data-i18n="t500" href="telechargements.html">Téléchargements</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t501">Contact</h5>
+<ul>
+<li><a data-i18n="t502" href="contact.html">Nous joindre</a></li>
+<li><a data-i18n="t503" href="voyage.html">Avis aux voyageurs</a></li>
+<li><a data-i18n="t504" href="connexion.html">Connexion officielle</a></li>
+</ul>
+</div>
+</div>
+<div class="pied-bas">
+<span data-i18n="t505">© 2023 – 2026 République d'Étalie — Tous droits réservés</span>
+<span data-i18n="t506">Site fictif à des fins narratives</span>
+</div>
+</div>
+</footer>
+<script defer src="assets/i18n.js"></script></body>
+</html>

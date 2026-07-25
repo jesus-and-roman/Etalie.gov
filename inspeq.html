@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Outil d'évaluation INSPEQ — Gouvernement d'Étalie</title>
+<meta content="Évaluez la sécurité d'un pays selon la méthode officielle INSPEQ v2." name="description"/>
+<link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
+</head>
+<body data-page="inspeq">
+<div class="bandeau-utilitaire">
+<div class="conteneur">
+<span><span class="puce"></span><span data-i18n="t001">République d'Étalie — Site officiel du gouvernement</span></span>
+<div class="liens-util">
+<a data-i18n="t002" href="roie.html">Notre Roîe</a>
+<a data-no-i18n="1" href="javascript:void(0)" onclick="basculerLangue()">Bintuk</a>
+<a data-i18n="t003" href="portail-citoyen.html">Mon espace citoyen</a>
+<a data-i18n="t004" href="contact.html">Nous joindre</a>
+</div>
+</div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+<header class="entete">
+<div class="conteneur">
+<div class="identite">
+<img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
+<div class="texte-identite">
+<span class="surtitre" data-i18n="t005">République d'Étalie</span>
+<h1 data-i18n="t006">Gouvernement d'Étalie</h1>
+</div>
+</div>
+<nav aria-label="Navigation principale" class="principale">
+<ul>
+<li><a aria-current="page" data-i18n="t007" href="index.html">Accueil</a></li>
+<li><a data-i18n="t008" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t009" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t010" href="documents.html">Documents</a></li>
+<li><a data-i18n="t011" href="histoire.html">Histoire</a></li>
+<li><a data-i18n="t012" href="provinces.html">Provinces</a></li>
+<li><a data-i18n="t013" href="taxes.html">Taxes</a></li>
+<li><a data-i18n="t014" href="portail-citoyen.html">Portail citoyen</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="entete-page">
+<div class="conteneur">
+<span class="surtitre" data-i18n="t015">Sécurité internationale</span>
+<h2 data-i18n="t016">Outil d'évaluation INSPEQ</h2>
+</div>
+</div>
+<div class="conteneur">
+<p class="fil-ariane"><a data-i18n="t018" href="index.html">Accueil</a> <span data-i18n="t017">/ INSPEQ</span></p>
+</div>
+<section class="section" style="padding-top:12px;">
+<div class="conteneur prose" style="max-width:none;">
+<p><span data-i18n="t019">Ceci est l'outil officiel de l'</span><strong data-i18n="t023">Indicateur National de la Sécurité des Pays Entourant Étalie (INSPEQ v2)</strong><span data-i18n="t020">, tel que publié par l'Orastre National des Affaires Étrangères. Cochez les critères observés dans le pays évalué : la cote et le niveau de sécurité (représentés par</span> <strong data-i18n="t024">Colori</strong><span data-i18n="t021">) se calculent automatiquement. Consultez les</span> <a data-i18n="t025" href="documents.html" style="color:var(--vert-institut); text-decoration:underline;">documents officiels</a> <span data-i18n="t022">pour le texte complet.</span></p>
+</div>
+<div class="conteneur colonnes-inspeq" style="display:grid; grid-template-columns:2fr 1fr; gap:32px; align-items:start; margin-top:26px;">
+<div>
+<div class="niveau-inspeq">
+<div class="colori" data-i18n="t026" style="background:#1D4ED8;">1</div>
+<div style="flex:1;">
+<h4 data-i18n="t027">Niveau 1 — Infractions mineures (faible gravité)</h4>
+<div class="plage" data-i18n="t028">Côte INSPEQ de 0 à 12 — chaque case cochée ajoute 1 point</div>
+<label><input class="case-inspeq" data-niveau="1" type="checkbox"/> <span data-i18n="t029">Délinquance mineure répandue (vols simples, vandalisme)</span></label>
+<label><input class="case-inspeq" data-niveau="1" type="checkbox"/> <span data-i18n="t030">Hausse faible mais mesurable des plaintes criminelles</span></label>
+<label><input class="case-inspeq" data-niveau="1" type="checkbox"/> <span data-i18n="t031">Incidents violents rares mais existants</span></label>
+<label><input class="case-inspeq" data-niveau="1" type="checkbox"/> <span data-i18n="t032">Sentiment d'insécurité modéré dans la population</span></label>
+<label><input class="case-inspeq" data-niveau="1" type="checkbox"/> <span data-i18n="t033">Infrastructures de sécurité limitées dans certaines zones</span></label>
+</div>
+</div>
+<div class="niveau-inspeq">
+<div class="colori" data-i18n="t034" style="background:#16A34A;">2</div>
+<div style="flex:1;">
+<h4 data-i18n="t035">Niveau 2 — Criminalité visible et récurrente</h4>
+<div class="plage" data-i18n="t036">Côte INSPEQ de 13 à 24 — chaque case cochée ajoute 2 points</div>
+<label><input class="case-inspeq" data-niveau="2" type="checkbox"/> <span data-i18n="t037">Agressions physiques non mortelles fréquentes</span></label>
+<label><input class="case-inspeq" data-niveau="2" type="checkbox"/> <span data-i18n="t038">Vols aggravés / cambriolages organisés</span></label>
+<label><input class="case-inspeq" data-niveau="2" type="checkbox"/> <span data-i18n="t039">Délinquance juvénile structurée</span></label>
+<label><input class="case-inspeq" data-niveau="2" type="checkbox"/> <span data-i18n="t040">Zones urbaines à forte concentration criminelle</span></label>
+<label><input class="case-inspeq" data-niveau="2" type="checkbox"/> <span data-i18n="t041">Défaillances locales des services de sécurité</span></label>
+</div>
+</div>
+<div class="niveau-inspeq">
+<div class="colori" data-i18n="t042" style="background:#84A80C;">3</div>
+<div style="flex:1;">
+<h4 data-i18n="t043">Niveau 3 — Criminalité sérieuse / gangs présents</h4>
+<div class="plage" data-i18n="t044">Côte INSPEQ de 25 à 36 — chaque case cochée ajoute 3 points</div>
+<label><input class="case-inspeq" data-niveau="3" type="checkbox"/> <span data-i18n="t045">Agressions physiques non mortelles fréquentes (intensifiées)</span></label>
+<label><input class="case-inspeq" data-niveau="3" type="checkbox"/> <span data-i18n="t046">Vols aggravés / cambriolages organisés (récurrents)</span></label>
+<label><input class="case-inspeq" data-niveau="3" type="checkbox"/> <span data-i18n="t047">Délinquance juvénile structurée en réseaux</span></label>
+<label><input class="case-inspeq" data-niveau="3" type="checkbox"/> <span data-i18n="t048">Zones urbaines à forte concentration criminelle étendues</span></label>
+<label><input class="case-inspeq" data-niveau="3" type="checkbox"/> <span data-i18n="t049">Défaillances locales des services de sécurité répétées</span></label>
+</div>
+</div>
+<div class="niveau-inspeq">
+<div class="colori" data-i18n="t050" style="background:#B5651D;">4</div>
+<div style="flex:1;">
+<h4 data-i18n="t051">Niveau 4 — Violence organisée et instabilité</h4>
+<div class="plage" data-i18n="t052">Côte INSPEQ de 37 à 48 — chaque case cochée ajoute 4 points</div>
+<label><input class="case-inspeq" data-niveau="4" type="checkbox"/> <span data-i18n="t053">Plusieurs homicides annuels non accidentels</span></label>
+<label><input class="case-inspeq" data-niveau="4" type="checkbox"/> <span data-i18n="t054">Conflits violents entre groupes / gangs</span></label>
+<label><input class="case-inspeq" data-niveau="4" type="checkbox"/> <span data-i18n="t055">Manifestations violentes ou tensions politiques graves</span></label>
+<label><input class="case-inspeq" data-niveau="4" type="checkbox"/> <span data-i18n="t056">Crime organisé dominant certaines zones</span></label>
+<label><input class="case-inspeq" data-niveau="4" type="checkbox"/> <span data-i18n="t057">Corruption institutionnelle régionale</span></label>
+</div>
+</div>
+<div class="niveau-inspeq">
+<div class="colori" data-i18n="t058" style="background:#B33A1E;">5</div>
+<div style="flex:1;">
+<h4 data-i18n="t059">Niveau 5 — Danger élevé / atteintes graves</h4>
+<div class="plage" data-i18n="t060">Côte INSPEQ de 49 à 60 — chaque case cochée ajoute 5 points</div>
+<label><input class="case-inspeq" data-niveau="5" type="checkbox"/> <span data-i18n="t061">Réseaux criminels nationaux / transfrontaliers</span></label>
+<label><input class="case-inspeq" data-niveau="5" type="checkbox"/> <span data-i18n="t062">Violences graves répétées</span></label>
+<label><input class="case-inspeq" data-niveau="5" type="checkbox"/> <span data-i18n="t063">Atteintes documentées aux droits humains</span></label>
+<label><input class="case-inspeq" data-niveau="5" type="checkbox"/> <span data-i18n="t064">Forces de sécurité dépassées</span></label>
+<label><input class="case-inspeq" data-niveau="5" type="checkbox"/> <span data-i18n="t065">Population exposée à un risque permanent</span></label>
+</div>
+</div>
+<div class="niveau-inspeq" style="border:2px solid var(--rouge-etalie);">
+<div class="colori" data-i18n="t066" style="background:var(--rouge-etalie);">6</div>
+<div style="flex:1;">
+<h4 data-i18n="t067">Niveau 6 — Crise sécuritaire majeure (entrée directe)</h4>
+<div class="plage" data-i18n="t068">Côte INSPEQ de 61 à 71,25 — si au moins une condition est cochée, le pays passe directement au niveau 6</div>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t069">Guerre civile / conflit armé</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t070">Révolution active</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t071">Guerre de gangs généralisée</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t072">Terrorisme récurrent organisé</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t073">Dictature autoritaire répressive</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t074">Effondrement des institutions</span></label>
+<label><input class="case-niveau6" type="checkbox"/> <span data-i18n="t075">Violation massive et systémique des droits humains</span></label>
+</div>
+</div>
+</div>
+<div class="resultat-inspeq">
+<div data-i18n="t076" style="font-family:var(--police-util); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--or-clair);">Côte INSPEQ</div>
+<div class="cote" data-i18n="t077" id="cote-valeur">0,00</div>
+<div data-i18n="t078" style="font-size:.72rem; color:#C6D2E7;">sur 71,25</div>
+<div class="jauge"><div class="jauge-remplissage" id="jauge"></div></div>
+<div class="colori" data-i18n="t079" id="colori-face" style="margin:0 auto 10px; background:#1D4ED8;">1</div>
+<div class="niveau-nom" data-i18n="t080" id="niveau-nom">Niveau 1 — Infractions mineures</div>
+</div>
+</div>
+</section>
+<section class="section" style="padding-top:0;">
+<div class="conteneur prose">
+<h3 data-i18n="t081">Comment la côte est calculée</h3>
+<p><span data-i18n="t082">(Cases cochées niveau 1 × 1) + (niveau 2 × 2) + (niveau 3 × 3) + (niveau 4 × 4) + (niveau 5 × 5) = côte non pafinée, multipliée ensuite par</span> <strong data-i18n="t084">0,95</strong> <span data-i18n="t083">pour obtenir la côte INSPEQ finale (maximum 71,25). Si une seule condition du niveau 6 est cochée, le pays est classé directement au niveau 6, peu importe le score par points.</span></p>
+</div>
+</section>
+<script>
+const niveauxInfo = {
+  1: {couleur:'#1D4ED8', nom:'Infractions mineures'},
+  2: {couleur:'#16A34A', nom:'Criminalité visible et récurrente'},
+  3: {couleur:'#84A80C', nom:'Criminalité sérieuse / gangs présents'},
+  4: {couleur:'#B5651D', nom:'Violence organisée et instabilité'},
+  5: {couleur:'#B33A1E', nom:'Danger élevé / atteintes graves'},
+  6: {couleur:'#7A1F2B', nom:'Crise sécuritaire majeure'},
+};
+
+function recalculer() {
+  const niveau6coche = document.querySelectorAll('.case-niveau6:checked').length > 0;
+  let cote, niveau;
+  if (niveau6coche) {
+    cote = 65;
+    niveau = 6;
+  } else {
+    let brut = 0;
+    document.querySelectorAll('.case-inspeq:checked').forEach(c => {
+      brut += parseInt(c.dataset.niveau, 10);
+    });
+    cote = brut * 0.95;
+    if (cote <= 12) niveau = 1;
+    else if (cote <= 24) niveau = 2;
+    else if (cote <= 36) niveau = 3;
+    else if (cote <= 48) niveau = 4;
+    else if (cote <= 60) niveau = 5;
+    else niveau = 6;
+  }
+  document.getElementById('cote-valeur').textContent = cote.toFixed(2).replace('.', ',');
+  document.getElementById('jauge').style.width = Math.min(100, (cote/71.25)*100) + '%';
+  const info = niveauxInfo[niveau];
+  document.getElementById('colori-face').style.background = info.couleur;
+  document.getElementById('colori-face').textContent = niveau;
+  document.getElementById('niveau-nom').textContent = `Niveau ${niveau} — ${info.nom}`;
+}
+
+document.querySelectorAll('.case-inspeq, .case-niveau6').forEach(c => c.addEventListener('change', recalculer));
+recalculer();
+</script>
+<footer>
+<div class="conteneur">
+<div class="pied-grille" style="grid-template-columns:1.1fr repeat(4,1fr);">
+<div>
+<h5 data-i18n="t085">Gouvernement d'Étalie</h5>
+<p data-i18n="t086" style="max-width:30ch; font-size:.88rem;">Site officiel de la République d'Étalie. Toute reproduction des symboles de l'État est soumise à autorisation.</p>
+<li><a data-i18n="t087" href="z-conditions.html">Conditions et traitement des données</a></li>
+</div>
+<div>
+<h5 data-i18n="t088">Institutions</h5>
+<ul>
+<li><a data-i18n="t089" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t090" href="provinces.html">Provinces &amp; municipalités</a></li>
+<li><a data-i18n="t091" href="protectorats.html">Protectorats</a></li>
+<li><a data-i18n="t092" href="histoire.html">Histoire d'Étalie</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t093">Services</h5>
+<ul>
+<li><a data-i18n="t094" href="portail-citoyen.html">Portail citoyen</a></li>
+<li><a data-i18n="t095" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t096" href="taxes.html">Fiscalité</a></li>
+<li><a data-i18n="t097" href="vote.html">Élections</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t098">Ressources</h5>
+<ul>
+<li><a data-i18n="t099" href="documents.html">Documents officiels</a></li>
+<li><a data-i18n="t100" href="calendrier.html">Calendrier toutouïen</a></li>
+<li><a data-i18n="t101" href="inspeq.html">Sécurité (INSPEQ)</a></li>
+<li><a data-i18n="t102" href="telechargements.html">Téléchargements</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t103">Contact</h5>
+<ul>
+<li><a data-i18n="t104" href="contact.html">Nous joindre</a></li>
+<li><a data-i18n="t105" href="voyage.html">Avis aux voyageurs</a></li>
+<li><a data-i18n="t106" href="connexion.html">Connexion officielle</a></li>
+</ul>
+</div>
+</div>
+<div class="pied-bas">
+<span data-i18n="t107">© 2023 – 2026 République d'Étalie — Tous droits réservés</span>
+<span data-i18n="t108">Site fictif à des fins narratives</span>
+</div>
+</div>
+</footer>
+<script defer src="assets/i18n.js"></script></body>
+</html>

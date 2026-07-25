@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Portail citoyen — Gouvernement d'Étalie</title>
+<meta content="Espace personnel des citoyens d'Étalie : identification, trésorerie, prêts et messages." name="description"/>
+<link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
+<style>
+  /* Styles propres au portail (en plus de css/styles.css) */
+  .pc-carte{ background:var(--blanc); border:1px solid var(--gris-ligne); padding:28px; margin-bottom:22px; }
+  .pc-carte h3{ font-family:var(--police-titre); font-size:1.15rem; color:var(--vert-nuit); margin-bottom:14px; }
+  .pc-champ{ margin-bottom:16px; }
+  .pc-champ label{ display:block; font-family:var(--police-util); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--or-laiton); margin-bottom:6px; }
+  .pc-champ input, .pc-champ textarea, .pc-champ select{
+    width:100%; padding:11px 13px; border:1px solid var(--gris-ligne); border-radius:2px;
+    font-size:.92rem; font-family:var(--police-texte); background:var(--blanc);
+  }
+  .pc-champ textarea{ resize:vertical; min-height:80px; }
+  .pc-erreur{ color:var(--rouge-etalie); font-size:.85rem; margin:10px 0; }
+  .pc-succes{ color:var(--vert-institut); font-size:.85rem; margin:10px 0; }
+  .pc-lien{ color:var(--vert-institut); cursor:pointer; text-decoration:underline; font-size:.85rem; background:none; border:none; padding:0; }
+  .pc-grille-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--gris-ligne); border:1px solid var(--gris-ligne); margin-bottom:22px; }
+  .pc-stat{ background:var(--vert-nuit); color:#fff; padding:22px; text-align:center; }
+  .pc-stat .valeur{ font-family:var(--police-titre); font-size:1.7rem; color:var(--or-clair); }
+  .pc-stat .etiquette{ font-size:.72rem; color:#C6D2E7; margin-top:4px; }
+  .pc-message{ border:1px solid var(--gris-ligne); padding:16px 18px; margin-bottom:12px; background:var(--blanc); }
+  .pc-message.avertissement{ border-color:var(--rouge-etalie); }
+  .pc-message .entete-msg{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .pc-message .expediteur{ font-size:.78rem; color:var(--gris-ardoise); }
+  .pc-message .expediteur .u{ font-family:var(--police-util); font-size:.7rem; color:var(--or-laiton); }
+  .pc-message .titre-msg{ font-family:var(--police-titre); font-size:1.02rem; color:var(--vert-nuit); }
+  .pc-message .corps-msg{ font-size:.9rem; color:var(--gris-ardoise); white-space:pre-line; }
+  .pc-message.avertissement .corps-msg{ color:var(--rouge-etalie); }
+  .pc-tag-avert{ display:inline-block; background:var(--or-clair); color:#5a4a00; font-family:var(--police-util); font-size:.68rem; padding:2px 8px; border-radius:2px; margin-bottom:6px; }
+  .pc-actions-msg{ display:flex; gap:12px; margin-top:10px; }
+  .pc-actions-msg button{ background:none; border:none; cursor:pointer; font-size:.78rem; color:var(--gris-ardoise); text-decoration:underline; padding:0; }
+  .pc-actions-msg button.danger{ color:var(--rouge-etalie); }
+  .pc-onglets{ display:flex; gap:0; border-bottom:2px solid var(--gris-ligne); margin-bottom:20px; }
+  .pc-onglets button{ background:none; border:none; padding:10px 18px; font-family:var(--police-util); font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; color:var(--gris-ardoise); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; }
+  .pc-onglets button.actif{ color:var(--vert-nuit); border-bottom-color:var(--or-laiton); font-weight:600; }
+  .pc-masque{ display:none; }
+  .pc-badge-admin{ background:var(--rouge-etalie); color:#fff; font-family:var(--police-util); font-size:.65rem; padding:2px 8px; border-radius:2px; margin-left:8px; }
+</style>
+</head>
+<body data-page="portail-citoyen">
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const SUPABASE_URL = "https://voomgxyfozebpztmiavv.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function loadCitoyens() {
+    const { data, error } = await supabase
+      .from("citoyens")
+      .select("*");
+
+    const el = document.getElementById("result");
+    if (error) {
+      el.textContent = "Erreur: " + error.message;
+      console.log(error);
+      return;
+    }
+    el.textContent = JSON.stringify(data, null, 2);
+  }
+
+  loadCitoyens();
+</script>
+<div class="bandeau-utilitaire">
+<div class="conteneur">
+<span><span class="puce"></span><span data-i18n="t001">République d'Étalie — Site officiel du gouvernement</span></span>
+<div class="liens-util">
+<a data-i18n="t002" href="roie.html">Notre Roîe</a>
+<a data-no-i18n="1" href="javascript:void(0)" onclick="basculerLangue()">Bintuk</a>
+<a data-i18n="t003" href="portail-citoyen.html">Mon espace citoyen</a>
+<a data-i18n="t004" href="contact.html">Nous joindre</a>
+</div>
+</div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+<header class="entete">
+<div class="conteneur">
+<div class="identite">
+<img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
+<div class="texte-identite">
+<span class="surtitre" data-i18n="t005">République d'Étalie</span>
+<h1 data-i18n="t006">Gouvernement d'Étalie</h1>
+</div>
+</div>
+<nav aria-label="Navigation principale" class="principale">
+<ul>
+<li><a data-i18n="t007" href="index.html">Accueil</a></li>
+<li><a data-i18n="t008" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t009" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t010" href="documents.html">Documents</a></li>
+<li><a data-i18n="t011" href="histoire.html">Histoire</a></li>
+<li><a data-i18n="t012" href="provinces.html">Provinces</a></li>
+<li><a data-i18n="t013" href="taxes.html">Taxes</a></li>
+<li><a aria-current="page" data-i18n="t014" href="portail-citoyen.html">Portail citoyen</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="entete-page">
+<div class="conteneur">
+<span class="surtitre" data-i18n="t015">Services aux citoyens</span>
+<h2 data-i18n="t016">Portail citoyen</h2>
+</div>
+</div>
+<div class="conteneur">
+<p class="fil-ariane"><a data-i18n="t018" href="index.html">Accueil</a> <span data-i18n="t017">/ Portail citoyen</span></p>
+</div>
+<section class="section" style="padding-top:12px;">
+<div class="conteneur" id="app" style="max-width:760px;">
+<p data-i18n="t019" style="color:var(--gris-ardoise);">Chargement…</p>
+</div>
+</section>
+<footer>
+<div class="conteneur">
+<div class="pied-grille" style="grid-template-columns:1.1fr repeat(4,1fr);">
+<div>
+<h5 data-i18n="t020">Gouvernement d'Étalie</h5>
+<p data-i18n="t021" style="max-width:30ch; font-size:.88rem;">Site officiel de la République d'Étalie. Toute reproduction des symboles de l'État est soumise à autorisation.</p>
+<li><a data-i18n="t022" href="z-conditions.html">Conditions et traitement des données</a></li>
+</div>
+<div>
+<h5 data-i18n="t023">Institutions</h5>
+<ul>
+<li><a data-i18n="t024" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t025" href="provinces.html">Provinces &amp; municipalités</a></li>
+<li><a data-i18n="t026" href="protectorats.html">Protectorats</a></li>
+<li><a data-i18n="t027" href="histoire.html">Histoire d'Étalie</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t028">Services</h5>
+<ul>
+<li><a data-i18n="t029" href="portail-citoyen.html">Portail citoyen</a></li>
+<li><a data-i18n="t030" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t031" href="taxes.html">Fiscalité</a></li>
+<li><a data-i18n="t032" href="vote.html">Élections</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t033">Ressources</h5>
+<ul>
+<li><a data-i18n="t034" href="documents.html">Documents officiels</a></li>
+<li><a data-i18n="t035" href="calendrier.html">Calendrier toutouïen</a></li>
+<li><a data-i18n="t036" href="inspeq.html">Sécurité (INSPEQ)</a></li>
+<li><a data-i18n="t037" href="telechargements.html">Téléchargements</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t038">Contact</h5>
+<ul>
+<li><a data-i18n="t039" href="contact.html">Nous joindre</a></li>
+<li><a data-i18n="t040" href="voyage.html">Avis aux voyageurs</a></li>
+<li><a data-i18n="t041" href="connexion.html">Connexion officielle</a></li>
+</ul>
+</div>
+</div>
+<div class="pied-bas">
+<span data-i18n="t042">© 2023 – 2026 République d'Étalie — Tous droits réservés</span>
+<span data-i18n="t043">Site fictif à des fins narratives</span>
+</div>
+</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =====================================================================
+   CONFIGURATION — à remplir avant mise en ligne
+   Project Settings > API dans le tableau de bord Supabase :
+   - SUPABASE_URL       = "Project URL"
+   - SUPABASE_ANON_KEY  = clé "anon public"
+   (Les clés S3/Storage ne servent PAS ici — ne pas les utiliser.)
+   ===================================================================== */
+const SUPABASE_URL = "https://voomgxyfozebpztmiavv.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
+
+/* ---------------------------------------------------------------------
+   Stockage de session : localStorage si "rester connecté", sinon
+   sessionStorage (effacé à la fermeture de l'onglet/navigateur).
+   --------------------------------------------------------------------- */
+const CLE_SOUVENIR = 'etalie_rester_connecte';
+function seSouvenir() { return localStorage.getItem(CLE_SOUVENIR) === '1'; }
+const stockageSession = {
+  getItem: (k) => (seSouvenir() ? localStorage : sessionStorage).getItem(k),
+  setItem: (k, v) => (seSouvenir() ? localStorage : sessionStorage).setItem(k, v),
+  removeItem: (k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); },
+};
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { storage: stockageSession, persistSession: true, autoRefreshToken: true }
+});
+
+/* ---------------------------------------------------------------------
+   Cipher CAS (identique à encrypt.html) — nécessaire pour comparer le
+   CAS entré par l'utilisateur à la version encryptée stockée.
+   --------------------------------------------------------------------- */
+const TABLE_CAS = { '1':'Q','2':'E','3':'Z','4':'V','5':'X','6':'T','7':'H','8':'N','9':'B','0':'K' };
+function encrypterCode(str) {
+  let out = '', dernierEtaitLettre = false;
+  for (const ch of str) {
+    if (TABLE_CAS[ch]) {
+      if (dernierEtaitLettre) out += '-';
+      out += TABLE_CAS[ch];
+      dernierEtaitLettre = true;
+    } else if (ch === ' ') {
+      out += '/'; dernierEtaitLettre = false;
+    } else if (ch === '-') {
+      // le "-" tapé par l'utilisateur entre groupes de 3 chiffres = un espace logique
+      out += '/'; dernierEtaitLettre = false;
+    } else {
+      dernierEtaitLettre = false;
+    }
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------------------
+   REGISTRE DES CAS — lu directement depuis assets/donnees/CAS/num_CAS.txt
+   C'est la SEULE source de vérité pour les CAS : Supabase ne stocke
+   rien à leur sujet (ni liste, ni "utilisé", ni date d'expiration).
+   Format d'une ligne :
+   [CAS encrypté]$$$[NOM]###[PRÉNOM]@@@[chiffre]&&&[jour]*[mois]?[année]=[O/N]
+   --------------------------------------------------------------------- */
+const CHEMIN_FICHIER_CAS = 'assets/donnees/CAS/num_CAS.txt';
+let _registreCasCache = null;
+
+function parserLigneCAS(ligne) {
+  const l = ligne.trim();
+  if (!l) return null;
+  const m = l.match(/^(.*?)\$\$\$(.*?)###(.*?)@@@(\d+)&&&(\d{1,2})\*(\d{1,2})\?(\d{4})=(O|N)$/);
+  if (!m) return null;
+  const [, codeEncrypte, nom, prenom, chiffre, jour, mois, annee, gouv] = m;
+  return {
+    code_encrypte: codeEncrypte.trim(),
+    nom: nom.trim().toUpperCase(),
+    prenom: prenom.trim().toUpperCase(),
+    chiffre: parseInt(chiffre, 10),
+    date_expiration: `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`,
+    protege_gouvernement: gouv === 'O',
+  };
+}
+
+async function chargerRegistreCAS(forcerRechargement) {
+  if (_registreCasCache && !forcerRechargement) return _registreCasCache;
+  const reponse = await fetch(CHEMIN_FICHIER_CAS, { cache: 'no-store' });
+  if (!reponse.ok) throw new Error(`Impossible de charger ${CHEMIN_FICHIER_CAS} (${reponse.status}).`);
+  const texte = await reponse.text();
+  _registreCasCache = texte.split('\n').map(parserLigneCAS).filter(Boolean);
+  return _registreCasCache;
+}
+
+async function trouverDansRegistreCAS(codeEncrypte, forcerRechargement) {
+  const registre = await chargerRegistreCAS(forcerRechargement);
+  return registre.find(r => r.code_encrypte === codeEncrypte) || null;
+}
+
+
+const CIBLES_CONTACT = [
+  "Gouvernement (général)", "Association",
+  "Ministère des Relations intérieures", "Ministère des Relations extérieures",
+  "Ministère des Finances et revenus", "Ministère du Travail, emplois et services sociaux",
+  "Ministère de la Justice et transparence", "Ministère de la Défense", "Ministère de l'Armée",
+  "Ministère des Colonies des Sauvages et relations",
+  "Ministère de la Citoyenneté, naturalisation et immigration",
+  "Ministère de l'Assimilation et acculturation des anciens peuples",
+  "Ministère de la Santé", "Ministère de l'Éducation",
+  "Ministère de l'Environnement et agriculture", "Ministère de l'Identité nationale",
+  "Ministère de l'Énergie et transports", "Ministère des Protectorats d'Outre-pays",
+];
+
+const LISTES_GOUV = {
+  royale: { motDePasse: 'ETALIE321?', noms: ["Roumanou Ier","Eva Ière","Arthur II","Arthur Ier","Alycia Ière","Giulia Ière","Sofia Ière","Giorgia Ière","Maria Ière"] },
+  gouvernementale: { motDePasse: 'couronne', noms: ["Emanuele Bruno (Relations intérieures)","Ryan-Skott Harris (Relations extérieures)","Noé Richard (Finances et revenus)","Alice Bengerton (Travail, emplois et services sociaux)","Zoe Bianchi (Justice et transparence)","Olivier Vincent (Défense)","Lorenzo Léono (Armée)","Antonio Belli (Colonies des Sauvages et relations)","Adrianna Conti (Citoyenneté, naturalisation et immigration)","Sara Santiago (Assimilation et acculturation des anciens peuples)","Noemi Greco (Santé)","Grégoire Guy (Éducation)","Daniela Ferrari (Environnement et agriculture)","Rosa Russo (Identité nationale)","Elisa Russo (Énergie et transports)","Oscar Salvatore (Protectorats d'Outre-pays)"] },
+  congressionnelle: { motDePasse: 'ROI-ROMAN', noms: ["Congrès Dessous","Congrès Intermédiaires","Congrès Supérieurs","Congrès Suprême","Congrès Royal","Congrès Couronné","Congrès fédéral"] },
+  anonyme: { motDePasse: null, noms: ["Edward Johnson","John Doe","Jane Doe","John Smith","Jane Smith","Monsieur X","Madame X","Monsieur Untel","Madame Untel","Monsieur Tout-Le-Monde","Madame Tout-Le-Monde","Jean Dupont","Jeanne Dupont","Marc Tartempion","Jade Tartempion","Louis Lambda","Louise Lambda","Max Mustermann","Erika Mustermann","Juan de los Palotes","Fulano de Tal","Perico de los Palotes","Pedro Mengano","Mario Rossi","Sofia Tizio","Leonardo Caio","Beatrice Sempronio"] },
+};
+
+const app = document.getElementById('app');
+let minuteur = null, minuteurSync = null, compteurLocal = 0;
+let canalRealtime = null;
+
+/* =====================================================================
+   ROUTAGE PRINCIPAL
+   ===================================================================== */
+async function demarrer() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await chargerTableauDeBord(session.user);
+  } else {
+    afficherConnexion();
+  }
+}
+
+/* =====================================================================
+   ÉCRAN CONNEXION / INSCRIPTION
+   ===================================================================== */
+function afficherConnexion(messageErreur) {
+  app.innerHTML = `
+    <div class="pc-onglets">
+      <button id="onglet-connexion" class="actif">Connexion</button>
+      <button id="onglet-inscription">Inscription</button>
+      <button id="onglet-demande-cas">Demander l'Assurance Sociale</button>
+    </div>
+
+    <div id="bloc-connexion">
+      <div class="pc-carte">
+        <h3>Se connecter</h3>
+        <div class="pc-champ">
+          <label for="c-identifiant">Nom d'utilisateur ou courriel</label>
+          <input type="text" id="c-identifiant" autocomplete="username">
+        </div>
+        <div class="pc-champ">
+          <label for="c-mdp">Mot de passe</label>
+          <input type="password" id="c-mdp" autocomplete="current-password">
+        </div>
+        <div class="pc-champ" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="c-souvenir" style="width:auto;">
+          <label for="c-souvenir" style="margin:0; text-transform:none; letter-spacing:0; font-family:var(--police-texte); font-size:.88rem; color:var(--gris-ardoise);">Rester connecté sur cet appareil</label>
+        </div>
+        <div id="c-message"></div>
+        <button class="bouton bouton-or" style="width:100%; border:none; cursor:pointer;" id="c-valider">Se connecter</button>
+      </div>
+    </div>
+
+    <div id="bloc-inscription" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Créer mon dossier citoyen</h3>
+        <div class="pc-champ">
+          <label for="i-cas">Code d'Assurance Social (CAS)</label>
+          <input type="text" id="i-cas" placeholder="982-391-743">
+        </div>
+        <div class="pc-champ">
+          <label for="i-nom">Nom de famille (légal)</label>
+          <input type="text" id="i-nom">
+        </div>
+        <div class="pc-champ">
+          <label for="i-prenom">Prénom (légal)</label>
+          <input type="text" id="i-prenom">
+        </div>
+        <div class="pc-champ">
+          <label for="i-username">Nom d'utilisateur</label>
+          <input type="text" id="i-username" autocomplete="username">
+        </div>
+        <div class="pc-champ">
+          <label for="i-email">Adresse courriel (recommandé — récupération de mot de passe)</label>
+          <input type="email" id="i-email" autocomplete="email">
+        </div>
+        <div class="pc-champ">
+          <label for="i-naissance">Date de naissance réelle</label>
+          <input type="date" id="i-naissance">
+        </div>
+        <div class="pc-champ">
+          <label for="i-mdp">Mot de passe</label>
+          <input type="password" id="i-mdp" autocomplete="new-password">
+        </div>
+        <div id="i-message"></div>
+        <button class="bouton bouton-or" style="width:100%; border:none; cursor:pointer;" id="i-valider">Créer mon dossier</button>
+      </div>
+    </div>
+
+    <div id="bloc-demande-cas" class="pc-masque">
+      ${formulaireDemandeCasHTML()}
+    </div>
+  `;
+
+  document.getElementById('onglet-connexion').onclick = () => basculerOnglet('connexion');
+  document.getElementById('onglet-inscription').onclick = () => basculerOnglet('inscription');
+  document.getElementById('onglet-demande-cas').onclick = () => basculerOnglet('demande-cas');
+  document.getElementById('c-valider').onclick = tenterConnexion;
+  document.getElementById('i-valider').onclick = tenterInscription;
+  initialiserFormulaireDemandeCas();
+
+  if (messageErreur) {
+    document.getElementById('c-message').innerHTML = `<p class="pc-erreur">${messageErreur}</p>`;
+  }
+}
+
+function basculerOnglet(nom) {
+  document.getElementById('onglet-connexion').classList.toggle('actif', nom === 'connexion');
+  document.getElementById('onglet-inscription').classList.toggle('actif', nom === 'inscription');
+  document.getElementById('onglet-demande-cas').classList.toggle('actif', nom === 'demande-cas');
+  document.getElementById('bloc-connexion').classList.toggle('pc-masque', nom !== 'connexion');
+  document.getElementById('bloc-inscription').classList.toggle('pc-masque', nom !== 'inscription');
+  document.getElementById('bloc-demande-cas').classList.toggle('pc-masque', nom !== 'demande-cas');
+}
+
+/* =====================================================================
+   FORMULAIRE — DEMANDE D'ASSURANCE SOCIALE
+   ===================================================================== */
+const PAYS_DEMANDE_CAS = ["Dimensionworld","Étalie","Nouveau-Dimen","Duché Nordique","Coulle",
+  "Zitiareatxia-Ungry","Arabie Nordique","Duché de Winvlor","Duché Élidien","Montcurie",
+  "Confédération des 8 tribus","Izirel","Chagne","Rolican","Degia","Delîle","Zagasoroz",
+  "Ginessemanne","Cheauvilleresia","Éton"];
+
+function champOuiNonAvecTexte(idBase, question, labelTexte, minimum) {
+  return `
+    <div class="pc-champ">
+      <label>${question}</label>
+      <select id="${idBase}-on">
+        <option value="non">Non</option>
+        <option value="oui">Oui</option>
+      </select>
+    </div>
+    <div class="pc-champ pc-masque" id="${idBase}-bloc-texte">
+      <label for="${idBase}-texte">${labelTexte} (minimum ${minimum} caractères)</label>
+      <textarea id="${idBase}-texte"></textarea>
+    </div>
+  `;
+}
+
+function formulaireDemandeCasHTML() {
+  return `
+    <div class="pc-carte">
+      <h3>Demande d'Assurance Sociale</h3>
+      <p style="font-size:.85rem; color:var(--gris-ardoise); margin-bottom:18px;">
+        Ce formulaire transmet votre demande à l'administration pour étude. L'obtention effective
+        d'un CAS et sa remise (en personne, à l'ambassade) restent à la discrétion du gouvernement
+        d'Étalie.
+      </p>
+
+      <div class="pc-champ">
+        <label for="d-pays">Pays d'origine</label>
+        <select id="d-pays">${PAYS_DEMANDE_CAS.map(p => `<option>${p}</option>`).join('')}</select>
+      </div>
+      <div class="pc-champ"><label for="d-passeport">Numéro de passeport</label><input type="text" id="d-passeport"></div>
+      <div class="pc-champ"><label for="d-prenom">Prénom</label><input type="text" id="d-prenom"></div>
+      <div class="pc-champ"><label for="d-nom">Nom</label><input type="text" id="d-nom"></div>
+      <div class="pc-champ"><label for="d-naissance">Date de naissance</label><input type="date" id="d-naissance"></div>
+      <div class="pc-champ"><label for="d-email">Adresse courriel de contact</label><input type="email" id="d-email"></div>
+      <div class="pc-champ"><label for="d-adresse-origine">Adresse de résidence dans votre pays d'origine</label><input type="text" id="d-adresse-origine"></div>
+      <div class="pc-champ"><label for="d-adresse-etalie">Adresse de résidence en Étalie (preuve d'habitation)</label><input type="text" id="d-adresse-etalie"></div>
+      <div class="pc-champ"><label for="d-duree">Durée passée sur le territoire</label><input type="text" id="d-duree" placeholder="ex: 6 mois"></div>
+
+      <div class="pc-champ">
+        <label for="d-travaille-territoire">Avez-vous travaillé sur le territoire ?</label>
+        <select id="d-travaille-territoire"><option value="non">Non</option><option value="oui">Oui</option></select>
+      </div>
+      <div class="pc-champ">
+        <label for="d-travaille-gouv">Avez-vous travaillé pour le gouvernement ?</label>
+        <select id="d-travaille-gouv"><option value="non">Non</option><option value="oui">Oui</option></select>
+      </div>
+
+      ${champOuiNonAvecTexte('d-francais', 'Parlez-vous français ?', 'Décrivez votre niveau', 50)}
+      ${champOuiNonAvecTexte('d-anglais', 'Parlez-vous anglais ?', 'Décrivez votre niveau', 50)}
+      ${champOuiNonAvecTexte('d-italien', 'Parlez-vous italien ?', 'Décrivez votre niveau', 50)}
+      ${champOuiNonAvecTexte('d-connaissance', 'Avez-vous une connaissance du pays ?', 'Décrivez cette connaissance', 50)}
+
+      <div class="pc-champ">
+        <label for="d-casier-on">Avez-vous un casier judiciaire ?</label>
+        <select id="d-casier-on"><option value="non">Non</option><option value="oui">Oui</option></select>
+      </div>
+      <div class="pc-champ pc-masque" id="d-casier-bloc-texte">
+        <label for="d-casier-numero">Numéro de casier judiciaire</label>
+        <input type="text" id="d-casier-numero">
+      </div>
+
+      <div class="pc-champ"><label for="d-emploi">Emploi actuel</label><input type="text" id="d-emploi"></div>
+      <div class="pc-champ"><label for="d-revenus">Revenus</label><input type="text" id="d-revenus"></div>
+
+      <div class="pc-champ">
+        <label for="d-pourquoi">Pourquoi voulez-vous l'Assurance Sociale ? (minimum 100 caractères)</label>
+        <textarea id="d-pourquoi"></textarea>
+      </div>
+
+      <div class="pc-champ">
+        <label for="d-famille-on">Avez-vous une famille ou un(e) époux(se) dans le pays ?</label>
+        <select id="d-famille-on"><option value="non">Non</option><option value="oui">Oui</option></select>
+      </div>
+      <div class="pc-champ pc-masque" id="d-famille-bloc-texte">
+        <label for="d-famille-texte">Pourquoi voulez-vous la rejoindre ? (minimum 3 caractères)</label>
+        <textarea id="d-famille-texte"></textarea>
+      </div>
+
+      <div class="pc-champ">
+        <label for="d-contribution">Comment contribuez-vous à la société Étalienne ? (minimum 100 caractères)</label>
+        <textarea id="d-contribution"></textarea>
+      </div>
+
+      <div class="pc-champ">
+        <label for="d-autorite">Respecterez-vous solennellement l'autorité éternelle de la famille royale délivrée par les Dieux du Capisme, des Congrès, de vos supérieurs et de la Constitution, en plus de ses lois ? (minimum 30 caractères)</label>
+        <textarea id="d-autorite"></textarea>
+      </div>
+
+      <div class="pc-champ">
+        <label for="d-fidelite">Porterez-vous fidélité au pays et promettez de le défendre peu importe les pertes possibles ? Répondez par « Oui, je le ferai de ma vie, jusqu'à ma mort, et après la mort je continuerai de le défendre dans l'au-delà. » (minimum 89 caractères)</label>
+        <textarea id="d-fidelite"></textarea>
+      </div>
+
+      <div id="d-message"></div>
+      <button class="bouton bouton-or" style="width:100%; border:none; cursor:pointer;" id="d-valider">Soumettre ma demande</button>
+    </div>
+  `;
+}
+
+function initialiserFormulaireDemandeCas() {
+  const bascules = [
+    ['d-francais-on', 'd-francais-bloc-texte'],
+    ['d-anglais-on', 'd-anglais-bloc-texte'],
+    ['d-italien-on', 'd-italien-bloc-texte'],
+    ['d-connaissance-on', 'd-connaissance-bloc-texte'],
+    ['d-casier-on', 'd-casier-bloc-texte'],
+    ['d-famille-on', 'd-famille-bloc-texte'],
+  ];
+  bascules.forEach(([idSelect, idBloc]) => {
+    const select = document.getElementById(idSelect);
+    const bloc = document.getElementById(idBloc);
+    if (!select || !bloc) return;
+    select.onchange = () => bloc.classList.toggle('pc-masque', select.value !== 'oui');
+  });
+
+  document.getElementById('d-valider').onclick = soumettreDemandeCas;
+}
+
+async function soumettreDemandeCas() {
+  const msg = document.getElementById('d-message');
+  const val = (id) => document.getElementById(id).value.trim();
+  const estOui = (id) => document.getElementById(id).value === 'oui';
+
+  const payload = {
+    pays_origine: val('d-pays'),
+    numero_passeport: val('d-passeport'),
+    date_naissance: val('d-naissance'),
+    prenom: val('d-prenom'),
+    nom: val('d-nom'),
+    email_contact: val('d-email'),
+    adresse_residence_origine: val('d-adresse-origine'),
+    adresse_residence_etalie: val('d-adresse-etalie'),
+    duree_sur_territoire: val('d-duree'),
+    a_travaille_sur_territoire: estOui('d-travaille-territoire'),
+    a_travaille_gouvernement: estOui('d-travaille-gouv'),
+    parle_francais: estOui('d-francais-on'), texte_francais: val('d-francais-texte') || null,
+    parle_anglais: estOui('d-anglais-on'), texte_anglais: val('d-anglais-texte') || null,
+    parle_italien: estOui('d-italien-on'), texte_italien: val('d-italien-texte') || null,
+    connaissance_pays: estOui('d-connaissance-on'), texte_connaissance: val('d-connaissance-texte') || null,
+    casier_judiciaire: estOui('d-casier-on'), numero_casier: val('d-casier-numero') || null,
+    emploi_actuel: val('d-emploi'),
+    revenus: val('d-revenus'),
+    pourquoi_assurance_sociale: val('d-pourquoi'),
+    a_famille_ou_epoux: estOui('d-famille-on'), pourquoi_rejoindre: val('d-famille-texte') || null,
+    contribution_societe: val('d-contribution'),
+    serment_autorite: val('d-autorite'),
+    serment_fidelite: val('d-fidelite'),
+  };
+
+  // Validations de longueur minimale côté client (la base les impose aussi)
+  const erreurs = [];
+  if (payload.parle_francais && payload.texte_francais.length < 50) erreurs.push('Description du français : 50 caractères minimum.');
+  if (payload.parle_anglais && payload.texte_anglais.length < 50) erreurs.push('Description de l\'anglais : 50 caractères minimum.');
+  if (payload.parle_italien && payload.texte_italien.length < 50) erreurs.push('Description de l\'italien : 50 caractères minimum.');
+  if (payload.connaissance_pays && payload.texte_connaissance.length < 50) erreurs.push('Connaissance du pays : 50 caractères minimum.');
+  if (payload.casier_judiciaire && !payload.numero_casier) erreurs.push('Numéro de casier judiciaire requis.');
+  if (payload.pourquoi_assurance_sociale.length < 100) erreurs.push('« Pourquoi l\'Assurance Sociale » : 100 caractères minimum.');
+  if (payload.a_famille_ou_epoux && payload.pourquoi_rejoindre.length < 3) erreurs.push('« Pourquoi la rejoindre » : 3 caractères minimum.');
+  if (payload.contribution_societe.length < 100) erreurs.push('« Contribution à la société » : 100 caractères minimum.');
+  if (payload.serment_autorite.length < 30) erreurs.push('Serment d\'autorité : 30 caractères minimum.');
+  if (payload.serment_fidelite.length < 89) erreurs.push('Serment de fidélité : 89 caractères minimum.');
+
+  if (erreurs.length) {
+    msg.innerHTML = '<p class="pc-erreur">' + erreurs.join('<br>') + '</p>';
+    return;
+  }
+
+  const { error } = await sb.from('demandes_assurance_sociale').insert(payload);
+  msg.innerHTML = error
+    ? `<p class="pc-erreur">${error.message}</p>`
+    : '<p class="pc-succes">Votre demande a été transmise à l\'administration. Vous serez contacté à l\'adresse courriel fournie.</p>';
+}
+
+async function tenterConnexion() {
+  const identifiant = document.getElementById('c-identifiant').value.trim();
+  const mdp = document.getElementById('c-mdp').value;
+  const souvenir = document.getElementById('c-souvenir').checked;
+  const msg = document.getElementById('c-message');
+  msg.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Connexion…</p>';
+
+  localStorage.setItem(CLE_SOUVENIR, souvenir ? '1' : '0');
+
+  try {
+    let email = identifiant;
+    if (!identifiant.includes('@')) {
+      const { data, error } = await sb.rpc('email_pour_identifiant', { p_identifiant: identifiant });
+      if (error || !data) throw new Error("Nom d'utilisateur introuvable.");
+      email = data;
+    }
+    const { data: connexion, error } = await sb.auth.signInWithPassword({ email, password: mdp });
+    if (error) throw error;
+    await chargerTableauDeBord(connexion.user);
+  } catch (e) {
+    msg.innerHTML = `<p class="pc-erreur">Identifiants incorrects ou compte introuvable.</p>`;
+  }
+}
+
+async function tenterInscription() {
+  const casEntre = document.getElementById('i-cas').value.trim();
+  const nom = document.getElementById('i-nom').value.trim();
+  const prenom = document.getElementById('i-prenom').value.trim();
+  const username = document.getElementById('i-username').value.trim();
+  const email = document.getElementById('i-email').value.trim();
+  const naissance = document.getElementById('i-naissance').value;
+  const mdp = document.getElementById('i-mdp').value;
+  const msg = document.getElementById('i-message');
+
+  if (!casEntre || !nom || !prenom || !username || !email || !naissance || !mdp) {
+    msg.innerHTML = '<p class="pc-erreur">Tous les champs sont obligatoires.</p>';
+    return;
+  }
+  msg.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Vérification en cours…</p>';
+
+  const codeEncrypte = encrypterCode(casEntre);
+
+  try {
+    // 1) On lit et décode assets/donnees/CAS/num_CAS.txt pour vérifier
+    //    que le CAS existe, correspond au nom fourni, et n'est pas expiré
+    //    (sauf protection gouvernementale) — AVANT de créer le compte.
+    let enregistrement;
+    try {
+      enregistrement = await trouverDansRegistreCAS(codeEncrypte, true);
+    } catch (e) {
+      msg.innerHTML = `<p class="pc-erreur">${e.message}</p>`;
+      return;
+    }
+    if (!enregistrement) {
+      msg.innerHTML = '<p class="pc-erreur">Code d\'assurance social invalide.</p>';
+      return;
+    }
+    if (enregistrement.nom !== nom.trim().toUpperCase() || enregistrement.prenom !== prenom.trim().toUpperCase()) {
+      msg.innerHTML = '<p class="pc-erreur">Le nom légal ne correspond pas au code d\'assurance social.</p>';
+      return;
+    }
+    const aujourdHui = new Date().toISOString().slice(0, 10);
+    if (!enregistrement.protege_gouvernement && enregistrement.date_expiration < aujourdHui) {
+      msg.innerHTML = '<p class="pc-erreur">Ce code d\'assurance social est expiré. Faites-le renouveler avant de vous inscrire.</p>';
+      return;
+    }
+    // Empêche la réutilisation d'un CAS déjà réclamé par un autre compte
+    const { data: dejaReclame, error: erreurReclame } = await sb.rpc('cas_deja_reclame', { p_code: codeEncrypte });
+    if (erreurReclame) throw erreurReclame;
+    if (dejaReclame) {
+      msg.innerHTML = '<p class="pc-erreur">Ce code d\'assurance social est déjà associé à un compte.</p>';
+      return;
+    }
+
+    // 2) Le CAS est valide : on peut créer le compte.
+    //    On stocke les infos d'inscription dans les metadata du compte Auth :
+    //    si la confirmation par courriel est activée, on pourra terminer
+    //    l'inscription automatiquement à la première connexion confirmée,
+    //    même si la page a été fermée entre-temps.
+    const { data: inscription, error: erreurAuth } = await sb.auth.signUp({
+      email, password: mdp,
+      options: { data: { username, prenom, nom, code_social_encrypte: codeEncrypte, date_naissance: naissance, protege_gouvernement: enregistrement.protege_gouvernement } }
+    });
+    if (erreurAuth) throw erreurAuth;
+    if (!inscription.session) {
+      // Pas de session immédiate = confirmation par courriel requise.
+      // L'inscription sera terminée automatiquement à la première connexion (voir chargerTableauDeBord).
+      msg.innerHTML = '<p class="pc-succes">Compte créé. Un courriel de confirmation a été envoyé — confirmez votre adresse, puis connectez-vous : votre dossier citoyen sera finalisé automatiquement.</p>';
+      return;
+    }
+
+    const { error: erreurRpc } = await sb.rpc('inscrire_citoyen', {
+      p_username: username, p_email: email, p_prenom: prenom, p_nom: nom,
+      p_code_social_encrypte: codeEncrypte, p_date_naissance: naissance,
+      p_protege_gouvernement: enregistrement.protege_gouvernement
+    });
+    if (erreurRpc) throw erreurRpc;
+
+    await chargerTableauDeBord(inscription.user);
+  } catch (e) {
+    msg.innerHTML = `<p class="pc-erreur">${e.message || 'Erreur lors de l\'inscription.'}</p>`;
+  }
+}
+
+/* =====================================================================
+   ÉCRAN "CAS EXPIRÉ"
+   ===================================================================== */
+function afficherCasExpire(uuid, prenom, chiffre) {
+  app.innerHTML = `
+    <div class="pc-carte">
+      <h3>Connexion impossible</h3>
+      <p style="font-size:.92rem; color:var(--gris-ardoise); line-height:1.7;">
+        Bonjour ${prenom}, votre code d'assurance social (CAS) est expiré et demande un renouvellement.
+        Allez à l'ambassade la plus proche pour vous la refaire mettre à jour, et emmenez une photo,
+        ou plus simplement un papier étant écrit ce code <strong>${uuid}</strong>, avec votre prénom
+        et nom légal, suivi de ce chiffre <strong>${chiffre}</strong> et avec votre code d'assurance
+        social écrit dessus. N'oubliez pas d'apporter aussi une pièce d'identité pour prouver votre
+        identité, merci.
+      </p>
+      <p style="font-size:.85rem; color:var(--gris-ardoise); margin-top:14px; border-top:1px solid var(--gris-ligne); padding-top:14px;">
+        Si vous avez travaillé pour le gouvernement et vous voyez ce message, veuillez voir l'ambassade
+        la plus proche de chez vous avec le même écrit qu'en haut, avec une preuve de travail pour le
+        gouvernement, car vous seriez admissible pour un CAS permanent pour votre service au gouvernement.
+      </p>
+      <button class="pc-lien" style="margin-top:18px;" id="retour-connexion">← Retour à la connexion</button>
+    </div>
+  `;
+  document.getElementById('retour-connexion').onclick = async () => { await sb.auth.signOut(); afficherConnexion(); };
+}
+
+/* =====================================================================
+   TABLEAU DE BORD
+   ===================================================================== */
+async function chargerTableauDeBord(utilisateur) {
+  app.innerHTML = '<p style="color:var(--gris-ardoise);">Chargement de votre dossier…</p>';
+
+  let { data: citoyen, error: erreurCitoyen } = await sb.from('citoyens').select('*').eq('id', utilisateur.id).single();
+  if (erreurCitoyen || !citoyen) {
+    // Compte Auth confirmé mais profil citoyen pas encore créé (inscription
+    // laissée en suspens par la confirmation de courriel) : on la termine
+    // maintenant avec les infos stockées dans les metadata du compte.
+    const meta = utilisateur.user_metadata || {};
+    if (meta.code_social_encrypte) {
+      const { error: erreurRpc } = await sb.rpc('inscrire_citoyen', {
+        p_username: meta.username, p_email: utilisateur.email, p_prenom: meta.prenom, p_nom: meta.nom,
+        p_code_social_encrypte: meta.code_social_encrypte, p_date_naissance: meta.date_naissance,
+        p_protege_gouvernement: meta.protege_gouvernement || false
+      });
+      if (erreurRpc) {
+        await sb.auth.signOut();
+        afficherConnexion(`Impossible de finaliser votre inscription : ${erreurRpc.message}`);
+        return;
+      }
+      ({ data: citoyen, error: erreurCitoyen } = await sb.from('citoyens').select('*').eq('id', utilisateur.id).single());
+    }
+    if (erreurCitoyen || !citoyen) {
+      await sb.auth.signOut();
+      afficherConnexion("Votre inscription n'a pas pu être retrouvée. Merci de recommencer.");
+      return;
+    }
+  }
+
+  let monStatut = null;
+  try {
+    monStatut = await trouverDansRegistreCAS(citoyen.code_social_encrypte, true);
+  } catch (e) {
+    app.innerHTML = `<div class="pc-carte"><p class="pc-erreur">${e.message}</p></div>`;
+    return;
+  }
+  const aujourdHui = new Date().toISOString().slice(0, 10);
+  if (monStatut && !monStatut.protege_gouvernement && monStatut.date_expiration < aujourdHui) {
+    afficherCasExpire(utilisateur.id, monStatut.prenom, monStatut.chiffre);
+    return;
+  }
+
+  compteurLocal = Number(citoyen.tresorerie);
+
+  app.innerHTML = `
+    <div class="pc-carte" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <span style="font-family:var(--police-util); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--or-laiton);">Connecté en tant que</span>
+        <h3 style="margin-top:4px;">${citoyen.prenom} ${citoyen.nom} <span style="color:var(--gris-ardoise); font-weight:400;">(@${citoyen.username})</span>${citoyen.est_admin ? '<span class="pc-badge-admin">ADMIN</span>' : ''}</h3>
+      </div>
+      <button class="pc-lien" id="deconnexion">Se déconnecter</button>
+    </div>
+
+    <div class="pc-grille-stats">
+      <div class="pc-stat"><div class="valeur" id="stat-tresorerie">—</div><div class="etiquette">Trésorerie (R$)</div></div>
+      <div class="pc-stat"><div class="valeur" id="stat-dettes">${Number(citoyen.dettes).toFixed(2)}</div><div class="etiquette">Dettes (R$)</div></div>
+      <div class="pc-stat"><div class="valeur" id="stat-prets">${Number(citoyen.prets).toFixed(2)}</div><div class="etiquette">Prêts (R$)</div></div>
+      <div class="pc-stat"><div class="valeur" id="stat-attendu">${Number(citoyen.argent_attendu).toFixed(2)}</div><div class="etiquette">Argent attendu (R$)</div></div>
+    </div>
+
+    <div class="pc-onglets">
+      <button class="actif" data-onglet="profil">Identification</button>
+      <button data-onglet="paiements">Paiements</button>
+      <button data-onglet="constats">Constats</button>
+      <button data-onglet="messages">Messages</button>
+      <button data-onglet="signatures">Signatures</button>
+      <button data-onglet="documents">Documents</button>
+      <button data-onglet="contacter">Contacter</button>
+      ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
+      ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
+    </div>
+
+    <div id="onglet-profil">
+      <div class="pc-carte">
+        <h3>Carte de citoyenneté</h3>
+        <table class="table-donnees">
+          <tbody>
+            <tr><td>Nom d'utilisateur</td><td>${citoyen.username}</td></tr>
+            <tr><td>Nom légal</td><td>${citoyen.prenom} ${citoyen.nom}</td></tr>
+            <tr><td>Courriel</td><td>${citoyen.email}</td></tr>
+            <tr><td>Date de naissance</td><td>${citoyen.date_naissance}</td></tr>
+            <tr><td>Âge toutouïen à l'inscription</td><td>${Number(citoyen.age_toutouien_inscription).toFixed(2)} ans</td></tr>
+            <tr><td>Dossier créé le</td><td>${new Date(citoyen.cree_le).toLocaleDateString('fr-FR')}</td></tr>
+            <tr><td>Expiration du CAS</td><td>${monStatut ? monStatut.date_expiration : '—'}</td></tr>
+            <tr><td>CAS à renouvellement protégé (service gouvernemental)</td><td>${monStatut && monStatut.protege_gouvernement ? 'Oui' : 'Non'}</td></tr>
+            <tr><td>Agent de la paix</td><td>${citoyen.est_agent_paix ? 'Oui' : 'Non'}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="onglet-paiements" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Rembourser mes dettes / prêts</h3>
+        <div class="pc-champ"><label for="p-dette-montant">Montant à appliquer sur mes dettes (${Number(citoyen.dettes).toFixed(2)} R$ dues)</label><input type="number" id="p-dette-montant" min="0" step="0.01"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); margin-bottom:20px;" id="p-payer-dette">Payer mes dettes</button>
+        <div class="pc-champ"><label for="p-pret-montant">Montant à appliquer sur mes prêts (${Number(citoyen.prets).toFixed(2)} R$ dus)</label><input type="number" id="p-pret-montant" min="0" step="0.01"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit);" id="p-payer-pret">Rembourser mon prêt</button>
+        <div id="p-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Virement familial</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Un seul destinataire, maximum 2 000 R$. Taxe de 1,25 % versée au gouvernement. Non remboursable.</p>
+        <div class="pc-champ"><label for="vf-dest">Nom d'utilisateur du destinataire</label><input type="text" id="vf-dest"></div>
+        <div class="pc-champ"><label for="vf-montant">Montant à envoyer (avant taxe, max 2 000 R$)</label><input type="number" id="vf-montant" min="0" max="2000" step="0.01"></div>
+        <div id="vf-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="vf-envoyer">Envoyer</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Virement business</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Envoie le même montant à un ou plusieurs destinataires, total maximum 6 000 R$. Taxe de 1,65 % sur le total, remboursable par l'administration en cas de litige gagné.</p>
+        <div class="pc-champ"><label for="vb-dest">Noms d'utilisateur (séparés par des virgules)</label><input type="text" id="vb-dest" placeholder="ex: fcong, jdupont"></div>
+        <div class="pc-champ"><label for="vb-montant">Montant par personne (avant taxe)</label><input type="number" id="vb-montant" min="0" step="0.01"></div>
+        <div id="vb-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="vb-envoyer">Envoyer</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Virement économe</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Pour les gros montants : de 6 000 R$ à 500 000 R$, un seul destinataire. Taxe de 0,35 % seulement, mais aucun litige possible (non remboursable).</p>
+        <div class="pc-champ"><label for="ve-dest">Nom d'utilisateur du destinataire</label><input type="text" id="ve-dest"></div>
+        <div class="pc-champ"><label for="ve-montant">Montant à envoyer (avant taxe, entre 6 000 et 500 000 R$)</label><input type="number" id="ve-montant" min="6000" max="500000" step="0.01"></div>
+        <div id="ve-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ve-envoyer">Envoyer</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Historique</h3>
+        <div id="liste-historique"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+    </div>
+
+    <div id="onglet-constats" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mes constats d'infraction</h3>
+        <div id="liste-constats"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+    </div>
+
+    <div id="onglet-messages" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Écrire un message</h3>
+        <div class="pc-champ"><label for="m-dest">Destinataire (nom d'utilisateur)</label><input type="text" id="m-dest"></div>
+        <div class="pc-champ"><label for="m-titre">Titre</label><input type="text" id="m-titre" maxlength="120"></div>
+        <div class="pc-champ"><label for="m-corps">Message (500 caractères maximum, sans émojis)</label><textarea id="m-corps" maxlength="500"></textarea></div>
+        <div id="m-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="m-envoyer">Envoyer</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Envoyer un document</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Un document contractuel envoyé à une seule personne. Signé automatiquement par les deux parties dès l'envoi — retrouvez-le dans l'onglet Documents.</p>
+        <div class="pc-champ"><label for="doc-dest">Destinataire (nom d'utilisateur)</label><input type="text" id="doc-dest"></div>
+        <div class="pc-champ"><label for="doc-titre">Titre</label><input type="text" id="doc-titre"></div>
+        <div class="pc-champ"><label for="doc-corps">Texte complet (3000 caractères maximum)</label><textarea id="doc-corps" maxlength="3000"></textarea></div>
+        <div class="pc-champ"><label for="doc-debut">Date de début du contrat</label><input type="date" id="doc-debut"></div>
+        <div class="pc-champ"><label for="doc-expiration">Date d'expiration (ou « X » si permanent)</label><input type="text" id="doc-expiration" placeholder="JJ/MM/AAAA ou X"></div>
+        <div id="doc-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="doc-envoyer">Envoyer le document</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Boîte de réception</h3>
+        <div id="liste-messages"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+    </div>
+
+    <div id="onglet-signatures" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Faire un emprunt d'argent</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Vous prêtez de l'argent à quelqu'un, remboursable avec intérêt. Le montant n'est transféré qu'une fois que l'emprunteur a signé.</p>
+        <div class="pc-champ"><label for="em-dest">Emprunteur (nom d'utilisateur)</label><input type="text" id="em-dest"></div>
+        <div class="pc-champ"><label for="em-montant">Montant prêté</label><input type="number" id="em-montant" min="0" step="0.01"></div>
+        <div class="pc-champ"><label for="em-interet">Taux d'intérêt mensuel (0 à 5 %)</label><input type="number" id="em-interet" min="0" max="5" step="0.01"></div>
+        <div class="pc-champ"><label for="em-date">Date limite de remboursement</label><input type="date" id="em-date"></div>
+        <div id="em-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="em-creer">Signer et envoyer l'offre</button>
+      </div>
+      <div class="pc-carte">
+        <h3>Mes contrats</h3>
+        <div id="liste-emprunts"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+    </div>
+
+    <div id="onglet-documents" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mes documents contractuels</h3>
+        <div id="liste-documents"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+    </div>
+
+    <div id="onglet-contacter" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Contacter un ministère, une association ou le gouvernement</h3>
+        <div class="pc-champ">
+          <label for="ct-cible">Destinataire</label>
+          <select id="ct-cible">${CIBLES_CONTACT.map(c => `<option>${c}</option>`).join('')}</select>
+        </div>
+        <div class="pc-champ"><label for="ct-titre">Titre</label><input type="text" id="ct-titre"></div>
+        <div class="pc-champ"><label for="ct-corps">Message (500 caractères maximum)</label><textarea id="ct-corps" maxlength="500"></textarea></div>
+        <div id="ct-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ct-envoyer">Envoyer</button>
+      </div>
+    </div>
+
+    ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
+    ${citoyen.est_admin ? panneauAdminHTML() : ''}
+  `;
+
+  document.getElementById('deconnexion').onclick = async () => { arreterTicker(); await sb.auth.signOut(); afficherConnexion(); };
+
+  document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
+      btn.classList.add('actif');
+      ['profil', 'paiements', 'constats', 'messages', 'signatures', 'documents', 'contacter', 'agent', 'admin'].forEach(o => {
+        const el = document.getElementById('onglet-' + o);
+        if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
+      });
+    };
+  });
+
+  document.getElementById('m-envoyer').onclick = () => envoyerMessageNormal(citoyen.username);
+  chargerMessages(citoyen);
+  chargerConstats(citoyen);
+  initialiserOngletPaiements(citoyen);
+  initialiserOngletContacter();
+  initialiserOngletDocument(citoyen);
+  chargerHistorique(citoyen);
+  initialiserOngletSignatures(citoyen);
+  chargerEmprunts(citoyen);
+  chargerDocuments(citoyen);
+
+  if (citoyen.est_agent_paix) initialiserPanneauAgent();
+  if (citoyen.est_admin) initialiserPanneauAdmin();
+
+  demarrerTicker(utilisateur.id);
+}
+
+/* =====================================================================
+   TICKER TRÉSORERIE (visuel chaque seconde, synchro DB chaque 5 secondes)
+   ===================================================================== */
+function afficherTresorerie() {
+  const el = document.getElementById('stat-tresorerie');
+  if (el) el.textContent = compteurLocal.toFixed(2);
+}
+
+function demarrerTicker(userId) {
+  afficherTresorerie();
+  minuteur = setInterval(() => {
+    compteurLocal += 12.5 / 60;
+    afficherTresorerie();
+  }, 1000);
+
+  minuteurSync = setInterval(async () => {
+    const { data } = await sb.rpc('deposer_revenu_citoyen', { p_minutes: 5 / 60 });
+    if (typeof data === 'number') { compteurLocal = data; afficherTresorerie(); }
+  }, 5 * 1000);
+
+  canalRealtime = sb.channel('compte-' + userId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'citoyens', filter: `id=eq.${userId}` }, (payload) => {
+      compteurLocal = Number(payload.new.tresorerie);
+      afficherTresorerie();
+      const d = document.getElementById('stat-dettes'); if (d) d.textContent = Number(payload.new.dettes).toFixed(2);
+      const p = document.getElementById('stat-prets'); if (p) p.textContent = Number(payload.new.prets).toFixed(2);
+      const a = document.getElementById('stat-attendu'); if (a) a.textContent = Number(payload.new.argent_attendu).toFixed(2);
+    })
+    .subscribe();
+}
+
+function arreterTicker() {
+  if (minuteur) clearInterval(minuteur);
+  if (minuteurSync) clearInterval(minuteurSync);
+  if (canalRealtime) sb.removeChannel(canalRealtime);
+}
+
+/* =====================================================================
+   MESSAGERIE
+   ===================================================================== */
+async function envoyerMessageNormal(monUsername) {
+  const dest = document.getElementById('m-dest').value.trim();
+  const titre = document.getElementById('m-titre').value.trim();
+  const corps = document.getElementById('m-corps').value.trim();
+  const msg = document.getElementById('m-message');
+  if (!dest || !titre || !corps) { msg.innerHTML = '<p class="pc-erreur">Tous les champs sont requis.</p>'; return; }
+  const { error } = await sb.rpc('envoyer_message', { p_destinataire_username: dest, p_titre: titre, p_contenu: corps });
+  if (error) { msg.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  msg.innerHTML = '<p class="pc-succes">Message envoyé.</p>';
+  document.getElementById('m-dest').value = '';
+  document.getElementById('m-titre').value = '';
+  document.getElementById('m-corps').value = '';
+  chargerMessages({ username: monUsername });
+}
+
+async function chargerMessages(citoyen) {
+  const conteneur = document.getElementById('liste-messages');
+  const { data: messages, error } = await sb.from('messages').select('*').order('envoye_le', { ascending: false });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!messages || messages.length === 0) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun message.</p>'; return; }
+
+  conteneur.innerHTML = messages.map(m => rendreMessage(m, citoyen.est_admin)).join('');
+
+  messages.forEach(m => {
+    const btnSupprExp = document.getElementById('sup-exp-' + m.id);
+    if (btnSupprExp) btnSupprExp.onclick = async () => { await sb.rpc('supprimer_message_expediteur', { p_message_id: m.id }); chargerMessages(citoyen); };
+
+    const btnSupprDest = document.getElementById('sup-dest-' + m.id);
+    if (btnSupprDest) btnSupprDest.onclick = async () => {
+      const { error } = await sb.rpc('supprimer_message_destinataire', { p_message_id: m.id });
+      if (error) alert(error.message); else chargerMessages(citoyen);
+    };
+
+    const btnModifier = document.getElementById('mod-' + m.id);
+    if (btnModifier) btnModifier.onclick = async () => {
+      const nouveau = prompt('Modifier le message :', m.contenu);
+      if (nouveau === null) return;
+      const { error } = await sb.rpc('modifier_message', { p_message_id: m.id, p_nouveau_contenu: nouveau });
+      if (error) alert(error.message); else chargerMessages(citoyen);
+    };
+
+    const btnSignaler = document.getElementById('sig-' + m.id);
+    if (btnSignaler) btnSignaler.onclick = async () => {
+      const raison = prompt('Signaler ce message à l\'administration (100 caractères max) :');
+      if (!raison) return;
+      const { error } = await sb.rpc('signaler_message', { p_message_id: m.id, p_raison: raison.slice(0, 100) });
+      if (error) alert(error.message); else alert('Signalement envoyé.');
+    };
+
+    // Suppression admin — autorisée sur n'importe quel message, y compris gouvernemental.
+    // Un citoyen normal n'a jamais ce bouton (il n'est rendu que si citoyen.est_admin).
+    const btnSupprAdmin = document.getElementById('sup-admin-' + m.id);
+    if (btnSupprAdmin) btnSupprAdmin.onclick = async () => {
+      if (!confirm('Supprimer définitivement ce message (y compris pour le destinataire) ?')) return;
+      const { error } = await sb.rpc('admin_supprimer_message', { p_message_id: m.id });
+      if (error) alert(error.message); else chargerMessages(citoyen);
+    };
+  });
+}
+
+function rendreMessage(m, estAdminConnecte) {
+  const estGouv = m.type === 'gouvernemental';
+  const estAgent = m.type === 'agent';
+  const estOfficiel = estGouv || estAgent;
+  const nomExpediteur = estGouv ? (m.nom_affiche || 'Gouvernement d\'Étalie') : (estAgent ? (m.nom_affiche || 'Agent de la paix') : 'Citoyen');
+  const classeAvert = m.est_avertissement ? ' avertissement' : '';
+  return `
+    <div class="pc-message${classeAvert}">
+      <div class="entete-msg">
+        <div class="expediteur">
+          ${estGouv ? `<strong>${nomExpediteur}</strong> <span class="u">— message gouvernemental</span>` : ''}
+          ${estAgent ? `<strong>@Message d'un agent de la paix</strong> <span class="u">— ${escapeHtml(nomExpediteur)}</span>` : ''}
+          ${!estOfficiel ? `<span class="u">@${escapeHtml(m.expediteur_username || '?')}</span>` : ''}
+        </div>
+        <span style="font-size:.72rem; color:var(--gris-ardoise);">${new Date(m.envoye_le).toLocaleString('fr-FR')}</span>
+      </div>
+      ${m.est_avertissement ? '<span class="pc-tag-avert">@AVERTISSEMENT</span><br>' : ''}
+      <div class="titre-msg">${escapeHtml(m.titre)}</div>
+      <div class="corps-msg">${escapeHtml(m.contenu)}</div>
+      <div class="pc-actions-msg">
+        ${!estOfficiel ? `<button id="sig-${m.id}">🚩 Signaler</button>` : ''}
+        ${!estOfficiel ? `<button id="mod-${m.id}">Modifier</button><button class="danger" id="sup-exp-${m.id}">Supprimer (les deux)</button>` : ''}
+        ${!estOfficiel ? `<button class="danger" id="sup-dest-${m.id}">Supprimer pour moi</button>` : ''}
+        ${estAdminConnecte ? `<button class="danger" id="sup-admin-${m.id}">Supprimer (admin)</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* =====================================================================
+   PANNEAU ADMIN
+   ===================================================================== */
+/* =====================================================================
+   PAIEMENTS — dettes, prêts, virements
+   ===================================================================== */
+function initialiserOngletPaiements(citoyen) {
+  const msg = document.getElementById('p-message');
+
+  document.getElementById('p-payer-dette').onclick = async () => {
+    const montant = parseFloat(document.getElementById('p-dette-montant').value);
+    if (!montant || montant <= 0) { msg.innerHTML = '<p class="pc-erreur">Montant invalide.</p>'; return; }
+    const { error } = await sb.rpc('payer_dette', { p_montant: montant });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Paiement effectué.</p>';
+  };
+
+  document.getElementById('p-payer-pret').onclick = async () => {
+    const montant = parseFloat(document.getElementById('p-pret-montant').value);
+    if (!montant || montant <= 0) { msg.innerHTML = '<p class="pc-erreur">Montant invalide.</p>'; return; }
+    const { error } = await sb.rpc('payer_pret', { p_montant: montant });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Remboursement effectué.</p>';
+  };
+
+  document.getElementById('vf-envoyer').onclick = async () => {
+    const dest = document.getElementById('vf-dest').value.trim();
+    const montant = parseFloat(document.getElementById('vf-montant').value);
+    const vfMsg = document.getElementById('vf-message');
+    if (!dest || !montant || montant <= 0) { vfMsg.innerHTML = '<p class="pc-erreur">Destinataire et montant requis.</p>'; return; }
+    const { error } = await sb.rpc('virement_famille', { p_destinataire_username: dest, p_montant: montant });
+    vfMsg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Virement envoyé (5% de taxe prélevée).</p>';
+  };
+
+  document.getElementById('vb-envoyer').onclick = async () => {
+    const dests = document.getElementById('vb-dest').value.split(',').map(s => s.trim()).filter(Boolean);
+    const montant = parseFloat(document.getElementById('vb-montant').value);
+    const vbMsg = document.getElementById('vb-message');
+    if (dests.length === 0 || !montant || montant <= 0) { vbMsg.innerHTML = '<p class="pc-erreur">Au moins un destinataire et un montant sont requis.</p>'; return; }
+    const { error } = await sb.rpc('virement_business', { p_destinataires_usernames: dests, p_montant_par_personne: montant });
+    vbMsg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Virement envoyé (1,65% de taxe prélevée sur le total).</p>';
+  };
+
+  document.getElementById('ve-envoyer').onclick = async () => {
+    const dest = document.getElementById('ve-dest').value.trim();
+    const montant = parseFloat(document.getElementById('ve-montant').value);
+    const veMsg = document.getElementById('ve-message');
+    if (!dest || !montant) { veMsg.innerHTML = '<p class="pc-erreur">Destinataire et montant requis.</p>'; return; }
+    const { error } = await sb.rpc('virement_econome', { p_destinataire_username: dest, p_montant: montant });
+    veMsg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Virement envoyé (0,35% de taxe prélevée).</p>';
+  };
+}
+
+/* =====================================================================
+   HISTORIQUE — virements et paiements
+   ===================================================================== */
+async function chargerHistorique(citoyen) {
+  const conteneur = document.getElementById('liste-historique');
+  const [{ data: transferts, error: e1 }, { data: paiements, error: e2 }] = await Promise.all([
+    sb.from('transferts').select('*').order('cree_le', { ascending: false }),
+    sb.from('paiements_historique').select('*').order('cree_le', { ascending: false }),
+  ]);
+  if (e1 || e2) { conteneur.innerHTML = `<p class="pc-erreur">${(e1 || e2).message}</p>`; return; }
+
+  let html = '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Virements</h4>';
+  if (!transferts || transferts.length === 0) {
+    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun virement.</p>';
+  } else {
+    html += '<div class="table-wrap" style="margin-bottom:24px;"><table class="table-donnees"><thead><tr><th>Type</th><th class="num">Montant / pers.</th><th class="num">Taxe</th><th class="num">Total débité</th><th>Statut</th><th>Date</th></tr></thead><tbody>';
+    html += transferts.map(t => `
+      <tr>
+        <td>${t.type === 'famille' ? 'Familial' : t.type === 'business' ? 'Business' : 'Économe'} ${t.expediteur_id === citoyen.id ? '(envoyé)' : '(reçu)'}</td>
+        <td class="num">${Number(t.montant_par_personne).toFixed(2)}</td>
+        <td class="num">${Number(t.taxe_totale).toFixed(2)} (${t.taxe_pourcentage}%)</td>
+        <td class="num">${Number(t.total_debite).toFixed(2)}</td>
+        <td>${t.rembourse ? 'Remboursé' : 'Complété'}</td>
+        <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
+      </tr>
+    `).join('');
+    html += '</tbody></table></div>';
+  }
+
+  html += '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Paiements</h4>';
+  if (!paiements || paiements.length === 0) {
+    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun paiement.</p>';
+  } else {
+    html += '<div class="table-wrap"><table class="table-donnees"><thead><tr><th>Type</th><th class="num">Montant</th><th>Date</th></tr></thead><tbody>';
+    html += paiements.map(p => {
+      const libelles = { dette: 'Dette', pret: 'Prêt', constat: "Constat d'infraction", emprunt: 'Emprunt' };
+      return `
+      <tr><td>${libelles[p.type] || p.type}</td>
+      <td class="num">${Number(p.montant).toFixed(2)}</td><td>${new Date(p.cree_le).toLocaleDateString('fr-FR')}</td></tr>
+    `;
+    }).join('');
+    html += '</tbody></table></div>';
+  }
+
+  conteneur.innerHTML = html;
+}
+
+/* =====================================================================
+   SIGNATURES — emprunts d'argent
+   ===================================================================== */
+function initialiserOngletSignatures(citoyen) {
+  document.getElementById('em-creer').onclick = async () => {
+    const dest = document.getElementById('em-dest').value.trim();
+    const montant = parseFloat(document.getElementById('em-montant').value);
+    const interet = parseFloat(document.getElementById('em-interet').value);
+    const dateLimite = document.getElementById('em-date').value;
+    const msg = document.getElementById('em-message');
+    if (!dest || !montant || isNaN(interet) || !dateLimite) { msg.innerHTML = '<p class="pc-erreur">Tous les champs sont requis.</p>'; return; }
+    const { error } = await sb.rpc('creer_emprunt', { p_emprunteur_username: dest, p_montant: montant, p_taux_interet: interet, p_date_limite: dateLimite });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Offre de prêt envoyée. En attente de la signature de l\'emprunteur.</p>';
+    if (!error) chargerEmprunts(citoyen);
+  };
+}
+
+async function chargerEmprunts(citoyen) {
+  const conteneur = document.getElementById('liste-emprunts');
+  const { data, error } = await sb.from('emprunts').select('*').order('cree_le', { ascending: false });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun contrat.</p>'; return; }
+
+  const noms = {
+    'en_attente': 'En attente de signature', 'actif': 'Actif', 'annule': 'Annulé (fonds insuffisants)', 'rembourse': 'Remboursé'
+  };
+
+  conteneur.innerHTML = data.map(e => {
+    const estPreteur = e.preteur_id === citoyen.id;
+    const jours = e.date_signature ? Math.max(0, Math.floor((new Date() - new Date(e.date_signature)) / 86400000)) : 0;
+    const montantActuelApprox = e.date_signature ? (e.montant_initial * (1 + (e.taux_interet / 100) * (Math.min(jours, (new Date(e.date_limite) - new Date(e.date_signature)) / 86400000) / 30))).toFixed(2) : e.montant_initial;
+    const expire = e.date_limite < new Date().toISOString().slice(0, 10);
+    return `
+    <div class="pc-message">
+      <div class="titre-msg">Contrat ${escapeHtml(e.numero_suivi)} — ${noms[e.statut] || e.statut}</div>
+      <table class="table-donnees" style="margin:10px 0;">
+        <tbody>
+          <tr><td>Rôle</td><td>${estPreteur ? 'Prêteur (signature envoyée)' : 'Emprunteur'}</td></tr>
+          <tr><td>Montant initial</td><td class="num">${Number(e.montant_initial).toFixed(2)} R$</td></tr>
+          <tr><td>Taux d'intérêt</td><td class="num">${e.taux_interet}% / mois</td></tr>
+          <tr><td>Date limite de remboursement</td><td>${new Date(e.date_limite).toLocaleDateString('fr-FR')}${expire && e.statut === 'actif' ? ' (dépassée)' : ''}</td></tr>
+          <tr><td>Signature du prêteur</td><td>${e.signe_preteur ? 'Signé' : '—'}</td></tr>
+          <tr><td>Signature de l'emprunteur</td><td>${e.signe_emprunteur ? 'Signé le ' + new Date(e.date_signature).toLocaleDateString('fr-FR') : 'En attente'}</td></tr>
+          ${e.statut === 'actif' ? `<tr><td>Montant dû aujourd'hui (estimation)</td><td class="num">${montantActuelApprox} R$</td></tr>` : ''}
+        </tbody>
+      </table>
+      <div class="pc-actions-msg">
+        ${!estPreteur && e.statut === 'en_attente' ? `<button id="signer-emprunt-${e.id}">Signer et accepter le prêt</button>` : ''}
+        ${!estPreteur && e.statut === 'actif' ? `<button id="rembourser-emprunt-${e.id}">Rembourser en totalité</button>` : ''}
+        ${estPreteur && e.statut === 'actif' && expire && !e.plainte_deposee ? `<button class="danger" id="plainte-emprunt-${e.id}">Porter plainte (échéance dépassée)</button>` : ''}
+        ${e.statut === 'rembourse' ? `<button class="danger" id="retirer-emprunt-${e.id}">Retirer de ma liste</button>` : ''}
+      </div>
+    </div>
+  `; }).join('');
+
+  data.forEach(e => {
+    const btnSigner = document.getElementById('signer-emprunt-' + e.id);
+    if (btnSigner) btnSigner.onclick = async () => {
+      const { data: res, error } = await sb.rpc('signer_emprunt', { p_id: e.id });
+      if (error) { alert(error.message); return; }
+      if (res && res.statut === 'annule') alert('Le prêteur n\'avait pas les fonds suffisants : le contrat est annulé.');
+      chargerEmprunts(citoyen);
+    };
+    const btnRembourser = document.getElementById('rembourser-emprunt-' + e.id);
+    if (btnRembourser) btnRembourser.onclick = async () => {
+      if (!confirm('Rembourser ce contrat en totalité maintenant ?')) return;
+      const { error } = await sb.rpc('rembourser_emprunt', { p_id: e.id });
+      if (error) alert(error.message); else chargerEmprunts(citoyen);
+    };
+    const btnPlainte = document.getElementById('plainte-emprunt-' + e.id);
+    if (btnPlainte) btnPlainte.onclick = async () => {
+      const { error } = await sb.rpc('porter_plainte_emprunt', { p_id: e.id });
+      if (error) alert(error.message); else { alert('Plainte transmise à l\'administration.'); chargerEmprunts(citoyen); }
+    };
+    const btnRetirer = document.getElementById('retirer-emprunt-' + e.id);
+    if (btnRetirer) btnRetirer.onclick = async () => {
+      const { error } = await sb.rpc('supprimer_emprunt', { p_id: e.id });
+      if (error) alert(error.message); else chargerEmprunts(citoyen);
+    };
+  });
+}
+
+/* =====================================================================
+   DOCUMENTS CONTRACTUELS
+   ===================================================================== */
+function initialiserOngletDocument(citoyen) {
+  document.getElementById('doc-envoyer').onclick = async () => {
+    const dest = document.getElementById('doc-dest').value.trim();
+    const titre = document.getElementById('doc-titre').value.trim();
+    const corps = document.getElementById('doc-corps').value.trim();
+    const debut = document.getElementById('doc-debut').value;
+    const expiration = document.getElementById('doc-expiration').value.trim() || 'X';
+    const msg = document.getElementById('doc-message');
+    if (!dest || !titre || !corps || !debut) { msg.innerHTML = '<p class="pc-erreur">Destinataire, titre, texte et date de début sont requis.</p>'; return; }
+    const { error } = await sb.rpc('envoyer_document', { p_destinataire_username: dest, p_titre: titre, p_contenu: corps, p_date_debut: debut, p_date_expiration: expiration });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Document envoyé et signé par les deux parties.</p>';
+    if (!error) chargerDocuments(citoyen);
+  };
+}
+
+async function chargerDocuments(citoyen) {
+  const conteneur = document.getElementById('liste-documents');
+  const { data, error } = await sb.from('documents_contractuels').select('*').order('cree_le', { ascending: false });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun document.</p>'; return; }
+
+  conteneur.innerHTML = data.map(d => `
+    <div class="pc-message">
+      <div class="titre-msg">${escapeHtml(d.titre)}</div>
+      <div class="corps-msg" style="margin-bottom:10px;">${escapeHtml(d.contenu)}</div>
+      <table class="table-donnees">
+        <tbody>
+          <tr><td>${d.expediteur_id === citoyen.id ? 'Envoyé à' : 'Reçu de'}</td><td>—</td></tr>
+          <tr><td>Date de début</td><td>${new Date(d.date_debut).toLocaleDateString('fr-FR')}</td></tr>
+          <tr><td>Date d'expiration</td><td>${d.date_expiration === 'X' ? 'Permanent' : escapeHtml(d.date_expiration)}</td></tr>
+          <tr><td>Signature de l'expéditeur</td><td>${d.signe_expediteur ? 'Signé' : '—'}</td></tr>
+          <tr><td>Signature du destinataire</td><td>${d.signe_destinataire ? 'Signé' : '—'}</td></tr>
+          <tr><td>Envoyé le</td><td>${new Date(d.cree_le).toLocaleString('fr-FR')}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+}
+function initialiserOngletContacter() {
+  document.getElementById('ct-envoyer').onclick = async () => {
+    const cible = document.getElementById('ct-cible').value;
+    const titre = document.getElementById('ct-titre').value.trim();
+    const corps = document.getElementById('ct-corps').value.trim();
+    const msg = document.getElementById('ct-message');
+    if (!titre || !corps) { msg.innerHTML = '<p class="pc-erreur">Titre et message requis.</p>'; return; }
+    const { error } = await sb.rpc('contacter_gouvernement', { p_cible: cible, p_titre: titre, p_contenu: corps });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Message transmis.</p>';
+  };
+}
+
+/* =====================================================================
+   CONSTATS D'INFRACTION (côté citoyen)
+   ===================================================================== */
+async function chargerConstats(citoyen) {
+  const conteneur = document.getElementById('liste-constats');
+  const { data, error } = await sb.from('constats_infraction').select('*').order('cree_le', { ascending: false });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || data.length === 0) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun constat.</p>'; return; }
+
+  conteneur.innerHTML = data.map(c => `
+    <div class="pc-message" style="border-color: ${c.paye ? 'var(--gris-ligne)' : 'var(--rouge-etalie)'};">
+      <div class="titre-msg">Constat d'infraction commis le ${new Date(c.date_infraction).toLocaleDateString('fr-FR')}</div>
+      <table class="table-donnees" style="margin:10px 0;">
+        <tbody>
+          <tr><td>Infraction</td><td>${escapeHtml(c.infraction)} (n° ${escapeHtml(c.numero_infraction)})</td></tr>
+          <tr><td>Raison</td><td>${escapeHtml(c.raison)}</td></tr>
+          <tr><td>Justification</td><td>${escapeHtml(c.justification)}</td></tr>
+          <tr><td>Date / heure toutouïenne</td><td>${escapeHtml(c.date_infraction_toutouienne)} — ${c.heure_infraction}</td></tr>
+          <tr><td>Lieu</td><td>${escapeHtml(c.lieu_rue)}, ${escapeHtml(c.lieu_ville)}, ${escapeHtml(c.lieu_province)}</td></tr>
+          <tr><td>Commissariat</td><td>${escapeHtml(c.commissariat)} (${c.commissariat_type})</td></tr>
+          <tr><td>Agent — a vu</td><td>${escapeHtml(c.nom_agent_vu)} (matricule ${escapeHtml(c.matricule_agent_vu)})</td></tr>
+          <tr><td>Agent — a donné</td><td>${escapeHtml(c.nom_agent_donne)} (matricule ${escapeHtml(c.matricule_agent_donne)})</td></tr>
+          ${c.nom_agent_assiste ? `<tr><td>Agent — assistant</td><td>${escapeHtml(c.nom_agent_assiste)} (matricule ${escapeHtml(c.matricule_agent_assiste || '')})</td></tr>` : ''}
+          <tr><td>Montant de l'infraction</td><td class="num">${Number(c.prix_infraction).toFixed(2)} R$</td></tr>
+          <tr><td>Taxes</td><td class="num">${Number(c.prix_taxes).toFixed(2)} R$</td></tr>
+          <tr><td><strong>Total</strong></td><td class="num"><strong>${Number(c.prix_total).toFixed(2)} R$</strong></td></tr>
+          <tr><td>Statut</td><td>${c.paye ? 'Payé le ' + new Date(c.paye_le).toLocaleDateString('fr-FR') : 'Impayé'}</td></tr>
+        </tbody>
+      </table>
+      <div class="pc-actions-msg">
+        ${!c.paye && citoyen.id ? `<button id="payer-constat-${c.id}">Payer (${Number(c.prix_total).toFixed(2)} R$)</button>` : ''}
+        ${c.paye ? `<button class="danger" id="retirer-constat-${c.id}">Retirer de ma liste</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  data.forEach(c => {
+    const btnPayer = document.getElementById('payer-constat-' + c.id);
+    if (btnPayer) btnPayer.onclick = async () => {
+      const { error } = await sb.rpc('payer_constat', { p_id: c.id });
+      if (error) alert(error.message); else chargerConstats(citoyen);
+    };
+    const btnRetirer = document.getElementById('retirer-constat-' + c.id);
+    if (btnRetirer) btnRetirer.onclick = async () => {
+      const saisie = prompt('Pourcentage à verser en commission au(x) agent(s) impliqué(s) (entre 0,25 et 2,25) :', '0.25');
+      if (saisie === null) return;
+      const pourcentage = parseFloat(saisie.replace(',', '.'));
+      if (isNaN(pourcentage) || pourcentage < 0.25 || pourcentage > 2.25) {
+        alert('Le pourcentage doit être entre 0,25 et 2,25.');
+        return;
+      }
+      const { error } = await sb.rpc('retirer_constat_paye', { p_id: c.id, p_pourcentage: pourcentage });
+      if (error) alert(error.message); else chargerConstats(citoyen);
+    };
+  });
+}
+
+/* =====================================================================
+   PANNEAU AGENT DE LA PAIX
+   ===================================================================== */
+function panneauAgentHTML() {
+  return `
+    <div id="onglet-agent" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Rechercher un citoyen (par CAS)</h3>
+        <div class="pc-champ"><label for="ag-cas">Code d'Assurance Social (ex: 982-391-743)</label><input type="text" id="ag-cas" placeholder="982-391-743"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ag-rechercher">Rechercher</button>
+        <div id="ag-resultat" style="margin-top:16px;"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Envoyer un message</h3>
+        <div class="pc-champ"><label for="ag-m-dest">Nom d'utilisateur du destinataire</label><input type="text" id="ag-m-dest"></div>
+        <div class="pc-champ" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="ag-m-tag" style="width:auto;">
+          <label for="ag-m-tag" style="margin:0; text-transform:none; letter-spacing:0; font-family:var(--police-texte); font-size:.88rem; color:var(--gris-ardoise);">Envoyer avec le tag « @Message d'un agent de la paix » (sinon envoyé comme simple citoyen)</label>
+        </div>
+        <div class="pc-champ"><label for="ag-m-titre">Titre</label><input type="text" id="ag-m-titre"></div>
+        <div class="pc-champ"><label for="ag-m-corps">Message</label><textarea id="ag-m-corps" maxlength="500"></textarea></div>
+        <div id="ag-m-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ag-m-envoyer">Envoyer</button>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Créer un constat d'infraction</h3>
+        <div class="pc-champ"><label for="ci-dest">Nom d'utilisateur du destinataire</label><input type="text" id="ci-dest"></div>
+        <div class="pc-champ"><label for="ci-raison">Raison</label><textarea id="ci-raison"></textarea></div>
+        <div class="pc-champ"><label for="ci-justification">Justification</label><textarea id="ci-justification"></textarea></div>
+        <div class="pc-champ"><label for="ci-date">Date de l'infraction</label><input type="date" id="ci-date"></div>
+        <div class="pc-champ"><label for="ci-date-t">Date toutouïenne (ex: « An 33, jour 12 »)</label><input type="text" id="ci-date-t"></div>
+        <div class="pc-champ"><label for="ci-heure">Heure de l'infraction</label><input type="time" id="ci-heure"></div>
+        <div class="pc-champ"><label for="ci-infraction">Infraction (description)</label><input type="text" id="ci-infraction"></div>
+        <div class="pc-champ"><label for="ci-numero">Numéro d'infraction (code pénal)</label><input type="text" id="ci-numero"></div>
+        <div class="pc-champ"><label for="ci-mat-vu">Matricule — agent qui a vu l'infraction</label><input type="text" id="ci-mat-vu"></div>
+        <div class="pc-champ"><label for="ci-mat-donne">Matricule — agent qui l'a donné</label><input type="text" id="ci-mat-donne"></div>
+        <div class="pc-champ"><label for="ci-mat-assiste">Matricule — agent assistant (optionnel)</label><input type="text" id="ci-mat-assiste"></div>
+        <div class="pc-champ"><label for="ci-nom-vu">Nom légal — agent qui a vu l'infraction</label><input type="text" id="ci-nom-vu"></div>
+        <div class="pc-champ"><label for="ci-nom-donne">Nom légal — agent qui l'a donné</label><input type="text" id="ci-nom-donne"></div>
+        <div class="pc-champ"><label for="ci-nom-assiste">Nom légal — agent assistant (optionnel)</label><input type="text" id="ci-nom-assiste"></div>
+        <div class="pc-champ"><label for="ci-user-vu">Nom d'utilisateur — agent qui a vu l'infraction (pour la commission)</label><input type="text" id="ci-user-vu"></div>
+        <div class="pc-champ"><label for="ci-user-donne">Nom d'utilisateur — agent qui l'a donné (pour la commission)</label><input type="text" id="ci-user-donne"></div>
+        <div class="pc-champ"><label for="ci-user-assiste">Nom d'utilisateur — agent assistant (optionnel, pour la commission)</label><input type="text" id="ci-user-assiste"></div>
+        <div class="pc-champ"><label for="ci-rue">Lieu — rue</label><input type="text" id="ci-rue"></div>
+        <div class="pc-champ"><label for="ci-ville">Lieu — ville</label><input type="text" id="ci-ville"></div>
+        <div class="pc-champ"><label for="ci-province">Lieu — province</label><input type="text" id="ci-province"></div>
+        <div class="pc-champ"><label for="ci-prix">Montant de l'infraction (sans taxes)</label><input type="number" id="ci-prix" min="0" step="0.01"></div>
+        <div class="pc-champ"><label for="ci-taxes">Montant des taxes</label><input type="number" id="ci-taxes" min="0" step="0.01"></div>
+        <div class="pc-champ"><label for="ci-commissariat">Nom du commissariat</label><input type="text" id="ci-commissariat"></div>
+        <div class="pc-champ">
+          <label for="ci-commissariat-type">Type de commissariat</label>
+          <select id="ci-commissariat-type"><option value="provincial">Provincial</option><option value="federal">Fédéral</option></select>
+        </div>
+        <div id="ci-message"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ci-creer">Émettre le constat</button>
+      </div>
+    </div>
+  `;
+}
+
+function initialiserPanneauAgent() {
+  document.getElementById('ag-rechercher').onclick = async () => {
+    const casEntre = document.getElementById('ag-cas').value.trim();
+    const resultat = document.getElementById('ag-resultat');
+    const codeEncrypte = encrypterCode(casEntre);
+    const { data, error } = await sb.rpc('agent_rechercher_citoyen', { p_cas_encrypte: codeEncrypte });
+    if (error) { resultat.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+    if (!data || data.length === 0) { resultat.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun citoyen trouvé pour ce CAS.</p>'; return; }
+    const c = data[0];
+    resultat.innerHTML = `
+      <table class="table-donnees">
+        <tbody>
+          <tr><td>Nom d'utilisateur</td><td>${escapeHtml(c.username)}</td></tr>
+          <tr><td>Nom légal</td><td>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</td></tr>
+          <tr><td>Courriel</td><td>${escapeHtml(c.email)}</td></tr>
+          <tr><td>Date de naissance</td><td>${c.date_naissance}</td></tr>
+          <tr><td>Trésorerie</td><td class="num">${Number(c.tresorerie).toFixed(2)} R$</td></tr>
+          <tr><td>Dettes</td><td class="num">${Number(c.dettes).toFixed(2)} R$</td></tr>
+          <tr><td>Prêts</td><td class="num">${Number(c.prets).toFixed(2)} R$</td></tr>
+        </tbody>
+      </table>
+    `;
+  };
+
+  document.getElementById('ag-m-envoyer').onclick = async () => {
+    const dest = document.getElementById('ag-m-dest').value.trim();
+    const titre = document.getElementById('ag-m-titre').value.trim();
+    const corps = document.getElementById('ag-m-corps').value.trim();
+    const enTantAgent = document.getElementById('ag-m-tag').checked;
+    const msg = document.getElementById('ag-m-message');
+    if (!dest || !titre || !corps) { msg.innerHTML = '<p class="pc-erreur">Tous les champs sont requis.</p>'; return; }
+    const { error } = await sb.rpc('agent_envoyer_message', { p_destinataire_username: dest, p_titre: titre, p_contenu: corps, p_en_tant_agent: enTantAgent });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Message envoyé.</p>';
+  };
+
+  document.getElementById('ci-creer').onclick = async () => {
+    const val = (id) => document.getElementById(id).value.trim();
+    const msg = document.getElementById('ci-message');
+    const params = {
+      p_destinataire_username: val('ci-dest'),
+      p_raison: val('ci-raison'),
+      p_justification: val('ci-justification'),
+      p_date_infraction: val('ci-date'),
+      p_date_infraction_toutouienne: val('ci-date-t'),
+      p_heure_infraction: val('ci-heure'),
+      p_infraction: val('ci-infraction'),
+      p_numero_infraction: val('ci-numero'),
+      p_matricule_agent_vu: val('ci-mat-vu'),
+      p_matricule_agent_donne: val('ci-mat-donne'),
+      p_matricule_agent_assiste: val('ci-mat-assiste') || null,
+      p_nom_agent_vu: val('ci-nom-vu'),
+      p_nom_agent_donne: val('ci-nom-donne'),
+      p_nom_agent_assiste: val('ci-nom-assiste') || null,
+      p_username_agent_vu: val('ci-user-vu'),
+      p_username_agent_donne: val('ci-user-donne'),
+      p_username_agent_assiste: val('ci-user-assiste') || null,
+      p_lieu_rue: val('ci-rue'),
+      p_lieu_ville: val('ci-ville'),
+      p_lieu_province: val('ci-province'),
+      p_prix_infraction: parseFloat(val('ci-prix')) || 0,
+      p_prix_taxes: parseFloat(val('ci-taxes')) || 0,
+      p_commissariat: val('ci-commissariat'),
+      p_commissariat_type: val('ci-commissariat-type'),
+    };
+    if (!params.p_destinataire_username || !params.p_raison || !params.p_date_infraction || !params.p_infraction
+        || !params.p_username_agent_vu || !params.p_username_agent_donne) {
+      msg.innerHTML = '<p class="pc-erreur">Veuillez remplir au minimum le destinataire, la raison, la date, l\'infraction, et les noms d\'utilisateur des agents « vu » et « donné ».</p>';
+      return;
+    }
+    const { error } = await sb.rpc('agent_creer_constat', params);
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Constat émis et transmis au citoyen.</p>';
+  };
+}
+
+async function chargerToutesLesTresoreries() {
+  const conteneur = document.getElementById('a-liste-tresoreries');
+  const { data, error } = await sb.from('citoyens').select('id, username, prenom, nom, tresorerie, dettes, prets, argent_attendu').order('tresorerie', { ascending: false });
+  const { data: tresorPublic } = await sb.from('tresor_public').select('solde').eq('id', 1).single();
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  conteneur.innerHTML = `
+    <p style="font-size:.9rem; color:var(--gris-ardoise); margin-bottom:14px;">Trésor public (taxes collectées) : <strong>${tresorPublic ? Number(tresorPublic.solde).toFixed(2) : '—'} R$</strong></p>
+    <div class="table-wrap">
+      <table class="table-donnees">
+        <thead><tr><th>Citoyen</th><th class="num">Trésorerie</th><th class="num">Dettes</th><th class="num">Prêts</th><th class="num">Argent attendu</th><th>UUID</th></tr></thead>
+        <tbody>
+          ${data.map(c => `
+            <tr>
+              <td>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)} (@${escapeHtml(c.username)})</td>
+              <td class="num">${Number(c.tresorerie).toFixed(2)}</td>
+              <td class="num">${Number(c.dettes).toFixed(2)}</td>
+              <td class="num">${Number(c.prets).toFixed(2)}</td>
+              <td class="num">${Number(c.argent_attendu).toFixed(2)}</td>
+              <td style="font-family:var(--police-util); font-size:.72rem;">${c.id}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function panneauAdminHTML() {
+  return `
+    <div id="onglet-admin" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Trésorerie de tous les citoyens</h3>
+        <div id="a-liste-tresoreries"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Gestion des comptes (par UUID)</h3>
+        <div class="pc-champ"><label for="a-uuid">UUID du citoyen</label><input type="text" id="a-uuid" placeholder="00000000-0000-0000-0000-000000000000"></div>
+        <div class="pc-champ"><label for="a-montant">Montant (ex: +100 ou -50)</label><input type="text" id="a-montant" placeholder="+100"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit);" id="a-tresorerie">Modifier trésorerie</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit);" id="a-dette">Modifier dette</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit);" id="a-pret">Modifier prêt (+20% à l'ajout)</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit);" id="a-attendu">Modifier argent attendu</button>
+        </div>
+        <button class="bouton" style="background:var(--rouge-etalie); color:#fff; border:none; cursor:pointer;" id="a-supprimer">Supprimer ce compte définitivement</button>
+        <div id="a-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Envoyer un message</h3>
+        <div class="pc-champ">
+          <label for="a-type">Type de message</label>
+          <select id="a-type">
+            <option value="normal">Normal</option>
+            <option value="gouvernemental">Gouvernemental</option>
+          </select>
+        </div>
+        <div class="pc-champ">
+          <label for="a-cible">Destinataires</label>
+          <select id="a-cible">
+            <option value="un">Un seul (nom d'utilisateur)</option>
+            <option value="plusieurs">Plusieurs (noms d'utilisateur séparés par des virgules)</option>
+            <option value="tous">Tout le monde</option>
+          </select>
+        </div>
+        <div class="pc-champ" id="a-bloc-dest">
+          <label for="a-dest">Nom(s) d'utilisateur</label>
+          <input type="text" id="a-dest" placeholder="ex: fcong, jdupont">
+        </div>
+        <div class="pc-champ pc-masque" id="a-bloc-liste">
+          <label for="a-liste">Liste gouvernementale</label>
+          <select id="a-liste">
+            <option value="royale">Royale (mot de passe requis)</option>
+            <option value="gouvernementale">Gouvernementale (mot de passe requis)</option>
+            <option value="congressionnelle">Congressionnelle (mot de passe requis)</option>
+            <option value="anonyme">Anonyme</option>
+          </select>
+        </div>
+        <div class="pc-champ pc-masque" id="a-bloc-nom-affiche">
+          <label for="a-nom-affiche">Se présenter en tant que</label>
+          <select id="a-nom-affiche"></select>
+        </div>
+        <div class="pc-champ" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="a-avertissement" style="width:auto;">
+          <label for="a-avertissement" style="margin:0; text-transform:none; letter-spacing:0; font-family:var(--police-texte); font-size:.88rem; color:var(--gris-ardoise);">Marquer comme @AVERTISSEMENT (texte rouge)</label>
+        </div>
+        <div class="pc-champ"><label for="a-titre">Titre</label><input type="text" id="a-titre"></div>
+        <div class="pc-champ"><label for="a-corps">Message</label><textarea id="a-corps"></textarea></div>
+        <div id="a-message-envoi"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-envoyer">Envoyer</button>
+      </div>
+    </div>
+  `;
+}
+
+function initialiserPanneauAdmin() {
+  chargerToutesLesTresoreries();
+
+  const lireMontant = () => parseFloat(document.getElementById('a-montant').value);
+  const uuid = () => document.getElementById('a-uuid').value.trim();
+  const msg = document.getElementById('a-message');
+
+  async function appelerFonction(nomFn, extra) {
+    const m = lireMontant();
+    if (!uuid() || isNaN(m)) { msg.innerHTML = '<p class="pc-erreur">UUID et montant requis (ex: +100 ou -50).</p>'; return; }
+    const { error } = await sb.rpc(nomFn, { p_uuid: uuid(), p_montant: m });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Mis à jour.</p>';
+  }
+
+  document.getElementById('a-tresorerie').onclick = () => appelerFonction('admin_modifier_tresorerie');
+  document.getElementById('a-dette').onclick = () => appelerFonction('admin_modifier_dette');
+  document.getElementById('a-pret').onclick = () => appelerFonction('admin_modifier_pret');
+  document.getElementById('a-attendu').onclick = () => appelerFonction('admin_modifier_argent_attendu');
+
+  document.getElementById('a-supprimer').onclick = async () => {
+    if (!uuid()) { msg.innerHTML = '<p class="pc-erreur">UUID requis.</p>'; return; }
+    if (!confirm('Supprimer définitivement ce compte ? Cette action est irréversible.')) return;
+    const { error } = await sb.rpc('admin_supprimer_compte', { p_uuid: uuid() });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : '<p class="pc-succes">Compte supprimé.</p>';
+  };
+
+  const type = document.getElementById('a-type');
+  const cible = document.getElementById('a-cible');
+  const blocDest = document.getElementById('a-bloc-dest');
+  const blocListe = document.getElementById('a-bloc-liste');
+  const blocNomAffiche = document.getElementById('a-bloc-nom-affiche');
+  const selectListe = document.getElementById('a-liste');
+  const selectNomAffiche = document.getElementById('a-nom-affiche');
+  let listeDeverrouillee = null;
+
+  function majAffichageChamps() {
+    blocDest.classList.toggle('pc-masque', cible.value === 'tous');
+    blocListe.classList.toggle('pc-masque', type.value !== 'gouvernemental');
+    blocNomAffiche.classList.toggle('pc-masque', type.value !== 'gouvernemental');
+  }
+  type.onchange = majAffichageChamps;
+  cible.onchange = majAffichageChamps;
+  majAffichageChamps();
+
+  function remplirNomsAffiches(cleListe) {
+    const infos = LISTES_GOUV[cleListe];
+    selectNomAffiche.innerHTML = infos.noms.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  }
+  remplirNomsAffiches('anonyme');
+
+  selectListe.onchange = () => {
+    const cle = selectListe.value;
+    const infos = LISTES_GOUV[cle];
+    if (infos.motDePasse && listeDeverrouillee !== cle) {
+      const saisi = prompt(`Mot de passe pour la liste "${cle}" :`);
+      if (saisi !== infos.motDePasse) {
+        alert('Mot de passe incorrect.');
+        selectListe.value = 'anonyme';
+        remplirNomsAffiches('anonyme');
+        return;
+      }
+      listeDeverrouillee = cle;
+    }
+    remplirNomsAffiches(cle);
+  };
+
+  document.getElementById('a-envoyer').onclick = async () => {
+    const msgEnvoi = document.getElementById('a-message-envoi');
+    const t = type.value, c = cible.value;
+    const titre = document.getElementById('a-titre').value.trim();
+    const corps = document.getElementById('a-corps').value.trim();
+    const avertissement = document.getElementById('a-avertissement').checked;
+    if (!titre || !corps) { msgEnvoi.innerHTML = '<p class="pc-erreur">Titre et message requis.</p>'; return; }
+
+    let destinataires = [];
+    if (c !== 'tous') {
+      destinataires = document.getElementById('a-dest').value.split(',').map(s => s.trim()).filter(Boolean);
+      if (destinataires.length === 0) { msgEnvoi.innerHTML = '<p class="pc-erreur">Au moins un destinataire requis.</p>'; return; }
+    }
+
+    const params = {
+      p_destinataires: destinataires,
+      p_tous: c === 'tous',
+      p_type: t,
+      p_titre: titre,
+      p_contenu: corps,
+      p_est_avertissement: avertissement,
+      p_nom_affiche: t === 'gouvernemental' ? selectNomAffiche.value : null,
+      p_liste_gouvernementale: t === 'gouvernemental' ? selectListe.value : null,
+    };
+    const { data, error } = await sb.rpc('admin_envoyer_message', params);
+    msgEnvoi.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">${data} message(s) envoyé(s).</p>`;
+  };
+}
+
+demarrer();
+</script>
+<script defer src="assets/i18n.js"></script></body>
+</html>
