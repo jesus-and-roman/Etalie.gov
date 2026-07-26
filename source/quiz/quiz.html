@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quiz — Gouvernement d'Étalie</title>
+<meta content="Testez vos connaissances sur les provinces, les municipalités et le climat d'Étalie." name="description"/>
+<link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
+<style>
+  .quiz-carte{ background:var(--blanc); border:1px solid var(--gris-ligne); padding:28px; margin-bottom:22px; }
+  .quiz-carte h3{ font-family:var(--police-titre); font-size:1.15rem; color:var(--vert-nuit); margin-bottom:10px; }
+  .quiz-grille-modes{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--gris-ligne); border:1px solid var(--gris-ligne); }
+  .quiz-mode{ background:var(--blanc); padding:28px; display:flex; flex-direction:column; }
+  .quiz-mode h4{ font-family:var(--police-titre); font-size:1.1rem; color:var(--vert-nuit); margin-bottom:10px; }
+  .quiz-mode p{ font-size:.9rem; color:var(--gris-ardoise); flex:1; margin-bottom:16px; }
+  .quiz-masque{ display:none; }
+  .quiz-minuteur{ font-family:var(--police-util); font-size:1.4rem; color:var(--vert-nuit); background:var(--blanc-casse); border:1px solid var(--gris-ligne); padding:10px 18px; display:inline-block; margin-bottom:18px; }
+  .quiz-minuteur.urgent{ color:var(--rouge-etalie); border-color:var(--rouge-etalie); }
+  .quiz-champ input[type="text"]{ width:100%; padding:11px 13px; border:1px solid var(--gris-ligne); border-radius:2px; font-size:.95rem; font-family:var(--police-texte); }
+  .quiz-liste-trouves{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .quiz-jeton{ background:var(--blanc-casse); border:1px solid var(--gris-ligne); padding:5px 12px; font-size:.82rem; border-radius:2px; }
+  .quiz-jeton.trouve{ background:#E7F4EC; border-color:var(--vert-institut); color:var(--vert-institut); }
+  .quiz-carte-image{ max-width:100%; border:1px solid var(--gris-ligne); margin-bottom:18px; }
+  .quiz-question{ font-family:var(--police-titre); font-size:1.15rem; color:var(--vert-nuit); margin-bottom:16px; }
+  .quiz-options{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .quiz-option{ background:var(--blanc); border:1px solid var(--gris-ligne); padding:14px 16px; text-align:left; cursor:pointer; font-size:.92rem; font-family:var(--police-texte); border-radius:2px; }
+  .quiz-option:hover{ background:var(--blanc-casse); }
+  .quiz-option.correcte{ background:#E7F4EC; border-color:var(--vert-institut); }
+  .quiz-option.incorrecte{ background:#FBEAEA; border-color:var(--rouge-etalie); }
+  .quiz-resultat{ text-align:center; padding:40px 20px; }
+  .quiz-resultat .score{ font-family:var(--police-titre); font-size:3rem; color:var(--vert-nuit); }
+  @media (max-width:760px){
+    .quiz-grille-modes, .quiz-options{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body data-page="quiz">
+<div class="bandeau-utilitaire">
+<div class="conteneur">
+<span><span class="puce"></span><span data-i18n="t001">République d'Étalie — Site officiel du gouvernement</span></span>
+<div class="liens-util">
+<a data-i18n="t002" href="roie.html">Notre Roîe</a>
+<a data-no-i18n="1" href="javascript:void(0)" onclick="basculerLangue()">Bintuk</a>
+<a data-i18n="t003" href="portail-citoyen.html">Mon espace citoyen</a>
+<a data-i18n="t004" href="contact.html">Nous joindre</a>
+</div>
+</div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+<header class="entete">
+<div class="conteneur">
+<div class="identite">
+<img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
+<div class="texte-identite">
+<span class="surtitre" data-i18n="t005">République d'Étalie</span>
+<h1 data-i18n="t006">Gouvernement d'Étalie</h1>
+</div>
+</div>
+<nav aria-label="Navigation principale" class="principale">
+<ul>
+<li><a data-i18n="t007" href="index.html">Accueil</a></li>
+<li><a data-i18n="t008" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t009" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t010" href="documents.html">Documents</a></li>
+<li><a data-i18n="t011" href="histoire.html">Histoire</a></li>
+<li><a data-i18n="t012" href="provinces.html">Provinces</a></li>
+<li><a data-i18n="t013" href="taxes.html">Taxes</a></li>
+<li><a aria-current="page" data-i18n="t014" href="quiz.html">Quiz</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="entete-page">
+<div class="conteneur">
+<span class="surtitre" data-i18n="t015">Culture générale</span>
+<h2 data-i18n="t016">Quiz d'Étalie</h2>
+</div>
+</div>
+<div class="conteneur">
+<p class="fil-ariane"><a data-i18n="t018" href="index.html">Accueil</a> <span data-i18n="t017">/ Quiz</span></p>
+</div>
+<section class="section" style="padding-top:12px;">
+<div class="conteneur" id="ecran-accueil">
+<div class="quiz-carte">
+<h3 data-i18n="t019">Testez vos connaissances sur Étalie</h3>
+<p style="font-size:.92rem; color:var(--gris-ardoise);"><span data-i18n="t020">Trois quiz de géographie et de climat, basés sur les données officielles du territoire. Chaque quiz dure</span> <strong data-i18n="t022">3 minutes</strong> <span data-i18n="t021">et vous donne un score à la fin.</span></p>
+</div>
+<div class="quiz-grille-modes">
+<div class="quiz-mode">
+<h4 data-i18n="t023">Les provinces</h4>
+<p data-i18n="t024">Regardez la carte du pays et nommez le plus de provinces possible avant la fin du chrono.</p>
+<button class="bouton bouton-or" data-i18n="t025" onclick="demarrerQuizProvinces()" style="border:none; cursor:pointer;">Commencer</button>
+</div>
+<div class="quiz-mode">
+<h4 data-i18n="t026">Les municipalités</h4>
+<p data-i18n="t027">Nommez le plus de municipalités (villes et villages) d'Étalie possible avant la fin du chrono.</p>
+<button class="bouton bouton-or" data-i18n="t028" onclick="demarrerQuizMunicipalites()" style="border:none; cursor:pointer;">Commencer</button>
+</div>
+<div class="quiz-mode">
+<h4 data-i18n="t029">Climat et statistiques</h4>
+<p data-i18n="t030">Répondez à des questions à choix multiples : la province la plus froide, la plus chaude, la plus haute, la plus peuplée...</p>
+<button class="bouton bouton-or" data-i18n="t031" onclick="demarrerQuizStatistiques()" style="border:none; cursor:pointer;">Commencer</button>
+</div>
+</div>
+</div>
+<div class="conteneur quiz-masque" id="ecran-provinces">
+<div class="quiz-carte">
+<h3 data-i18n="t032">Nommez toutes les provinces d'Étalie</h3>
+<div class="quiz-minuteur" data-i18n="t033" id="minuteur-provinces">3:00</div>
+<img alt="Carte d'Étalie" class="quiz-carte-image" src="assets/quiz-carte-etalie.png"/>
+<div class="quiz-champ">
+<input autocomplete="off" data-i18n-ph="t079" id="entree-provinces" placeholder="Tapez le nom d'une province et appuyez sur Entrée" type="text"/>
+</div>
+<p style="font-size:.85rem; color:var(--gris-ardoise); margin-top:10px;"><span data-i18n="t034">Trouvées :</span> <strong data-i18n="t036" id="compte-provinces">0</strong> <span data-i18n="t035">/</span> <span data-i18n="t037" id="total-provinces">—</span></p>
+<div class="quiz-liste-trouves" id="jetons-provinces"></div>
+<button class="bouton bouton-contour" data-i18n="t038" onclick="terminerQuizProvinces()" style="color:var(--vert-nuit); border-color:var(--vert-nuit); margin-top:20px;">Terminer maintenant</button>
+</div>
+</div>
+<div class="conteneur quiz-masque" id="ecran-municipalites">
+<div class="quiz-carte">
+<h3 data-i18n="t039">Nommez toutes les municipalités d'Étalie</h3>
+<div class="quiz-minuteur" data-i18n="t040" id="minuteur-municipalites">3:00</div>
+<div class="quiz-champ">
+<input autocomplete="off" data-i18n-ph="t080" id="entree-municipalites" placeholder="Tapez le nom d'une municipalité et appuyez sur Entrée" type="text"/>
+</div>
+<p style="font-size:.85rem; color:var(--gris-ardoise); margin-top:10px;"><span data-i18n="t041">Trouvées :</span> <strong data-i18n="t043" id="compte-municipalites">0</strong> <span data-i18n="t042">/</span> <span data-i18n="t044" id="total-municipalites">—</span></p>
+<div class="quiz-liste-trouves" id="jetons-municipalites"></div>
+<button class="bouton bouton-contour" data-i18n="t045" onclick="terminerQuizMunicipalites()" style="color:var(--vert-nuit); border-color:var(--vert-nuit); margin-top:20px;">Terminer maintenant</button>
+</div>
+</div>
+<div class="conteneur quiz-masque" id="ecran-statistiques">
+<div class="quiz-carte">
+<div class="quiz-minuteur" data-i18n="t046" id="minuteur-statistiques">3:00</div>
+<p style="font-size:.85rem; color:var(--gris-ardoise); margin-bottom:14px;"><span data-i18n="t047">Question</span> <strong data-i18n="t049" id="num-question">1</strong> <span data-i18n="t048">/</span> <span data-i18n="t050" id="total-questions">8</span></p>
+<div class="quiz-question" data-i18n="t051" id="texte-question">—</div>
+<div class="quiz-options" id="options-question"></div>
+</div>
+</div>
+<div class="conteneur quiz-masque" id="ecran-resultat">
+<div class="quiz-carte quiz-resultat">
+<h3 data-i18n="t052" id="titre-resultat">Résultat</h3>
+<div class="score" data-i18n="t053" id="valeur-score">0</div>
+<p id="detail-score" style="color:var(--gris-ardoise);"></p>
+<div id="liste-manquants" style="text-align:left; margin-top:20px;"></div>
+<button class="bouton bouton-or" data-i18n="t054" onclick="retourAccueilQuiz()" style="border:none; cursor:pointer; margin-top:24px;">Retour aux quiz</button>
+</div>
+</div>
+</section>
+<footer>
+<div class="conteneur">
+<div class="pied-grille" style="grid-template-columns:1.1fr repeat(4,1fr);">
+<div>
+<h5 data-i18n="t055">Gouvernement d'Étalie</h5>
+<p data-i18n="t056" style="max-width:30ch; font-size:.88rem;">Site officiel de la République d'Étalie. Toute reproduction des symboles de l'État est soumise à autorisation.</p>
+<li><a data-i18n="t057" href="z-conditions.html">Conditions et traitement des données</a></li>
+</div>
+<div>
+<h5 data-i18n="t058">Institutions</h5>
+<ul>
+<li><a data-i18n="t059" href="gouvernement.html">Gouvernement</a></li>
+<li><a data-i18n="t060" href="provinces.html">Provinces &amp; municipalités</a></li>
+<li><a data-i18n="t061" href="protectorats.html">Protectorats</a></li>
+<li><a data-i18n="t062" href="histoire.html">Histoire d'Étalie</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t063">Services</h5>
+<ul>
+<li><a data-i18n="t064" href="portail-citoyen.html">Portail citoyen</a></li>
+<li><a data-i18n="t065" href="actualites.html">Actualités</a></li>
+<li><a data-i18n="t066" href="taxes.html">Fiscalité</a></li>
+<li><a data-i18n="t067" href="vote.html">Élections</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t068">Ressources</h5>
+<ul>
+<li><a data-i18n="t069" href="documents.html">Documents officiels</a></li>
+<li><a data-i18n="t070" href="calendrier.html">Calendrier toutouïen</a></li>
+<li><a data-i18n="t071" href="quiz.html">Quiz</a></li>
+<li><a data-i18n="t072" href="telechargements.html">Téléchargements</a></li>
+</ul>
+</div>
+<div>
+<h5 data-i18n="t073">Contact</h5>
+<ul>
+<li><a data-i18n="t074" href="contact.html">Nous joindre</a></li>
+<li><a data-i18n="t075" href="voyage.html">Avis aux voyageurs</a></li>
+<li><a data-i18n="t076" href="connexion.html">Connexion officielle</a></li>
+</ul>
+</div>
+</div>
+<div class="pied-bas">
+<span data-i18n="t077">© 2023 – 2026 République d'Étalie — Tous droits réservés</span>
+<span data-i18n="t078">Site fictif à des fins narratives</span>
+</div>
+</div>
+</footer>
+<script>
+/* ============================================================
+   Chargement des données (source/quiz/*.csv)
+   ============================================================ */
+function parserCSV(texte) {
+  const lignes = texte.trim().split(/\r?\n/);
+  const entetes = lignes[0].split(',');
+  return lignes.slice(1).map(l => {
+    const valeurs = l.split(',');
+    const obj = {};
+    entetes.forEach((e, i) => obj[e] = valeurs[i]);
+    return obj;
+  });
+}
+
+async function chargerCSV(chemin) {
+  const reponse = await fetch(chemin, { cache: 'no-store' });
+  if (!reponse.ok) throw new Error(`Impossible de charger ${chemin}`);
+  return parserCSV(await reponse.text());
+}
+
+let DONNEES_PROVINCES = null, DONNEES_MUNICIPALITES = null, DONNEES_CLIMAT = null;
+
+async function donneesProvinces() {
+  if (!DONNEES_PROVINCES) DONNEES_PROVINCES = await chargerCSV('source/quiz/provinces.csv');
+  return DONNEES_PROVINCES;
+}
+async function donneesMunicipalites() {
+  if (!DONNEES_MUNICIPALITES) DONNEES_MUNICIPALITES = await chargerCSV('source/quiz/municipalites.csv');
+  return DONNEES_MUNICIPALITES;
+}
+async function donneesClimat() {
+  if (!DONNEES_CLIMAT) DONNEES_CLIMAT = await chargerCSV('source/quiz/climat.csv');
+  return DONNEES_CLIMAT;
+}
+
+/* ============================================================
+   Navigation entre écrans
+   ============================================================ */
+function afficherEcran(id) {
+  ['ecran-accueil', 'ecran-provinces', 'ecran-municipalites', 'ecran-statistiques', 'ecran-resultat']
+    .forEach(e => document.getElementById(e).classList.toggle('quiz-masque', e !== id));
+}
+
+function retourAccueilQuiz() {
+  arreterMinuteurActif();
+  afficherEcran('ecran-accueil');
+}
+
+function normaliser(texte) {
+  return texte.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
+    .replace(/[’']/g, "'");
+}
+
+/* ============================================================
+   Minuteur générique (3 minutes)
+   ============================================================ */
+let minuteurActifId = null;
+
+function arreterMinuteurActif() {
+  if (minuteurActifId) { clearInterval(minuteurActifId); minuteurActifId = null; }
+}
+
+function demarrerMinuteur(idAffichage, dureeSecondes, callbackFin) {
+  arreterMinuteurActif();
+  let restant = dureeSecondes;
+  const el = document.getElementById(idAffichage);
+  function maj() {
+    const min = Math.floor(restant / 60);
+    const sec = restant % 60;
+    el.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+    el.classList.toggle('urgent', restant <= 30);
+  }
+  maj();
+  minuteurActifId = setInterval(() => {
+    restant--;
+    maj();
+    if (restant <= 0) {
+      arreterMinuteurActif();
+      callbackFin();
+    }
+  }, 1000);
+}
+
+/* ============================================================
+   QUIZ 1 — Nommer toutes les provinces
+   ============================================================ */
+let provincesRestantes = [], provincesTrouvees = [];
+
+async function demarrerQuizProvinces() {
+  const data = await donneesProvinces();
+  provincesRestantes = data.map(p => p.Province);
+  provincesTrouvees = [];
+  document.getElementById('total-provinces').textContent = provincesRestantes.length;
+  document.getElementById('compte-provinces').textContent = '0';
+  document.getElementById('jetons-provinces').innerHTML = '';
+  document.getElementById('entree-provinces').value = '';
+  afficherEcran('ecran-provinces');
+  document.getElementById('entree-provinces').focus();
+  demarrerMinuteur('minuteur-provinces', 180, terminerQuizProvinces);
+}
+
+document.getElementById('entree-provinces').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const saisie = normaliser(e.target.value);
+  if (!saisie) return;
+  const trouve = provincesRestantes.find(p => normaliser(p) === saisie);
+  if (trouve && !provincesTrouvees.includes(trouve)) {
+    provincesTrouvees.push(trouve);
+    document.getElementById('compte-provinces').textContent = provincesTrouvees.length;
+    const jeton = document.createElement('span');
+    jeton.className = 'quiz-jeton trouve';
+    jeton.textContent = trouve;
+    document.getElementById('jetons-provinces').appendChild(jeton);
+  }
+  e.target.value = '';
+});
+
+function terminerQuizProvinces() {
+  arreterMinuteurActif();
+  const manquantes = provincesRestantes.filter(p => !provincesTrouvees.includes(p));
+  afficherResultat('Quiz des provinces', provincesTrouvees.length, provincesRestantes.length, manquantes);
+}
+
+/* ============================================================
+   QUIZ 2 — Nommer toutes les municipalités
+   ============================================================ */
+let municipalitesRestantes = [], municipalitesTrouvees = [];
+
+async function demarrerQuizMunicipalites() {
+  const data = await donneesMunicipalites();
+  municipalitesRestantes = data.map(m => m.Municipalite);
+  municipalitesTrouvees = [];
+  document.getElementById('total-municipalites').textContent = municipalitesRestantes.length;
+  document.getElementById('compte-municipalites').textContent = '0';
+  document.getElementById('jetons-municipalites').innerHTML = '';
+  document.getElementById('entree-municipalites').value = '';
+  afficherEcran('ecran-municipalites');
+  document.getElementById('entree-municipalites').focus();
+  demarrerMinuteur('minuteur-municipalites', 180, terminerQuizMunicipalites);
+}
+
+document.getElementById('entree-municipalites').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const saisie = normaliser(e.target.value);
+  if (!saisie) return;
+  const trouve = municipalitesRestantes.find(m => normaliser(m) === saisie);
+  if (trouve && !municipalitesTrouvees.includes(trouve)) {
+    municipalitesTrouvees.push(trouve);
+    document.getElementById('compte-municipalites').textContent = municipalitesTrouvees.length;
+    const jeton = document.createElement('span');
+    jeton.className = 'quiz-jeton trouve';
+    jeton.textContent = trouve;
+    document.getElementById('jetons-municipalites').appendChild(jeton);
+  }
+  e.target.value = '';
+});
+
+function terminerQuizMunicipalites() {
+  arreterMinuteurActif();
+  const manquantes = municipalitesRestantes.filter(m => !municipalitesTrouvees.includes(m));
+  afficherResultat('Quiz des municipalités', municipalitesTrouvees.length, municipalitesRestantes.length, manquantes);
+}
+
+/* ============================================================
+   QUIZ 3 — Climat et statistiques (choix multiples)
+   ============================================================ */
+let questionsStatistiques = [], indexQuestion = 0, bonnesReponses = 0;
+
+function melanger(tableau) {
+  const t = [...tableau];
+  for (let i = t.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [t[i], t[j]] = [t[j], t[i]];
+  }
+  return t;
+}
+
+function construireQuestions(provinces, climat) {
+  const parNom = {};
+  climat.forEach(c => parNom[c.Province] = c);
+
+  const gabarits = [
+    { texte: "Quelle province a la température minimale la plus basse ?", champ: c => parseFloat(parNom[c.Province]?.TemperatureMinC), sens: 'min' },
+    { texte: "Quelle province a la température maximale la plus élevée ?", champ: c => parseFloat(parNom[c.Province]?.TemperatureMaxC), sens: 'max' },
+    { texte: "Quelle province a l'élévation moyenne la plus haute ?", champ: c => parseFloat(parNom[c.Province]?.ElevationM), sens: 'max' },
+    { texte: "Quelle province reçoit le plus de précipitations ?", champ: c => parseFloat(parNom[c.Province]?.PrecipitationMax), sens: 'max' },
+    { texte: "Quelle province est la plus peuplée ?", champ: c => parseFloat(c.Population), sens: 'max' },
+    { texte: "Quelle province est la moins peuplée ?", champ: c => parseFloat(c.Population), sens: 'min' },
+    { texte: "Quelle province a la plus grande superficie ?", champ: c => parseFloat(c.AireKm2), sens: 'max' },
+    { texte: "Quelle province a la plus petite superficie ?", champ: c => parseFloat(c.AireKm2), sens: 'min' },
+  ];
+
+  return gabarits.map(g => {
+    const valides = provinces.filter(p => !isNaN(g.champ(p)));
+    const triees = [...valides].sort((a, b) => g.sens === 'max' ? g.champ(b) - g.champ(a) : g.champ(a) - g.champ(b));
+    const bonne = triees[0];
+    const distracteurs = melanger(triees.slice(1)).slice(0, 3);
+    const options = melanger([bonne, ...distracteurs].map(p => p.Province));
+    return { texte: g.texte, bonneReponse: bonne.Province, options };
+  });
+}
+
+async function demarrerQuizStatistiques() {
+  const [provinces, climat] = await Promise.all([donneesProvinces(), donneesClimat()]);
+  questionsStatistiques = melanger(construireQuestions(provinces, climat));
+  indexQuestion = 0;
+  bonnesReponses = 0;
+  document.getElementById('total-questions').textContent = questionsStatistiques.length;
+  afficherEcran('ecran-statistiques');
+  afficherQuestionCourante();
+  demarrerMinuteur('minuteur-statistiques', 180, terminerQuizStatistiques);
+}
+
+function afficherQuestionCourante() {
+  if (indexQuestion >= questionsStatistiques.length) { terminerQuizStatistiques(); return; }
+  const q = questionsStatistiques[indexQuestion];
+  document.getElementById('num-question').textContent = indexQuestion + 1;
+  document.getElementById('texte-question').textContent = q.texte;
+  const conteneur = document.getElementById('options-question');
+  conteneur.innerHTML = '';
+  q.options.forEach(opt => {
+    const bouton = document.createElement('button');
+    bouton.className = 'quiz-option';
+    bouton.textContent = opt;
+    bouton.onclick = () => repondreQuestion(opt, bouton);
+    conteneur.appendChild(bouton);
+  });
+}
+
+function repondreQuestion(reponseChoisie, boutonClique) {
+  const q = questionsStatistiques[indexQuestion];
+  document.querySelectorAll('#options-question .quiz-option').forEach(b => {
+    b.onclick = null;
+    if (b.textContent === q.bonneReponse) b.classList.add('correcte');
+    else if (b === boutonClique) b.classList.add('incorrecte');
+  });
+  if (reponseChoisie === q.bonneReponse) bonnesReponses++;
+  setTimeout(() => { indexQuestion++; afficherQuestionCourante(); }, 900);
+}
+
+function terminerQuizStatistiques() {
+  arreterMinuteurActif();
+  afficherResultat('Quiz climat et statistiques', bonnesReponses, questionsStatistiques.length, []);
+}
+
+/* ============================================================
+   ÉCRAN RÉSULTAT (commun aux 3 quiz)
+   ============================================================ */
+function afficherResultat(titre, score, total, manquants) {
+  document.getElementById('titre-resultat').textContent = titre;
+  document.getElementById('valeur-score').textContent = `${score} / ${total}`;
+  document.getElementById('detail-score').textContent =
+    score === total ? 'Score parfait !' : `${total - score} élément(s) manquant(s) ou incorrect(s).`;
+  const conteneurManquants = document.getElementById('liste-manquants');
+  if (manquants.length > 0) {
+    conteneurManquants.innerHTML = '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Non trouvés :</h4>' +
+      '<div class="quiz-liste-trouves">' + manquants.map(m => `<span class="quiz-jeton">${m}</span>`).join('') + '</div>';
+  } else {
+    conteneurManquants.innerHTML = '';
+  }
+  afficherEcran('ecran-resultat');
+}
+</script>
+<script defer="" src="assets/i18n.js"></script></body>
+</html>
