@@ -58,7 +58,7 @@
 <section class="section" style="padding-top:12px;">
 <div class="conteneur prose">
 <h3 data-i18n="t019">Principe</h3>
-<p><span data-i18n="t020">Le calendrier toutouïen est le système officiel de datation utilisé par les nations du Nouveau Monde, dont Étalie. Il ne compte ni mois ni semaines : uniquement des années de 30 jours toutouïens. L'An 0 débute le</span> <strong data-i18n="t023">16 octobre 2023</strong><span data-i18n="t021">, un jour avant la création officielle du premier pays (« Toutou »). Tout ce qui précède l'An 0 se note en négatif ou avec la mention</span> <strong data-i18n="t024">B.T.</strong> <span data-i18n="t022">(Avant Toutou).</span></p>
+<p><span data-i18n="t020">Le calendrier toutouïen est le système officiel de datation utilisé par les nations du Nouveau Monde, dont Étalie. Il ne compte ni mois ni semaines : uniquement des années de 30 jours toutouïens. L'An 0 débute le</span> <strong data-i18n="t023">16 octobre 2023</strong><span data-i18n="t021">, un jour avant la création officielle du premier pays (« Toutou ») le 17 octobre 2023 à 07h29. Tout ce qui précède l'An 0 se note en négatif ou avec la mention</span> <strong data-i18n="t024">B.T.</strong> <span data-i18n="t022">(Avant Toutou).</span></p>
 <p><span data-i18n="t025">Étalie (anciennement appelé « Toutou ») a été fondée le</span> <strong data-i18n="t027">17 octobre 2023</strong><span data-i18n="t026">, soit l'An 0, jour 1 du calendrier toutouïen.</span></p>
 <h3 data-i18n="t028">La formule corrigée</h3>
 <p data-i18n="t029">Une erreur de calcul affectait auparavant les dates affichées sur ce site (le chiffre « 603 » utilisé par le passé n'était pas exact). La formule officielle, validée sur les exemples de référence du gouvernement, est la suivante :</p>
@@ -109,7 +109,7 @@ function versToutouien(dateFondation, dateRef) {
 const input = document.getElementById('date-input');
 const resultat = document.getElementById('resultat');
 const detail = document.getElementById('resultat-detail');
-const fondationEtalie = new Date('2023-10-17T00:00:00');
+const fondationEtalie = new Date('2023-10-17T07:29:00');
 
 function majResultat() {
   const val = input.value ? new Date(input.value + 'T00:00:00') : new Date();
@@ -130,8 +130,9 @@ input.value = aujourdhui.toISOString().slice(0,10);
 majResultat();
 
 const reperes = [
-  {nom: "Étalie", fondation: new Date('2023-10-17T00:00:00')},
+  {nom: "Étalie", fondation: new Date('2023-10-17T07:29:00')},
   {nom: "Dimensionworld", fondation: new Date('2025-01-29T00:00:00')},
+  {nom: "Yhorule", fondation: new Date('2025-03-05T14:52:00')},
   {nom: "Montcurie", fondation: new Date('2025-10-10T00:00:00')},
 ];
 const tbody = document.getElementById('table-reperes');
