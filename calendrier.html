@@ -116,11 +116,11 @@ function majResultat() {
   const r = versToutouien(fondationEtalie, val);
   document.getElementById('f-jours').textContent = r.jours.toLocaleString('fr-FR');
   if (r.jours < 0) {
-    resultat.textContent = "Avant la fondation d'Étalie (B.T.)";
-    detail.textContent = '';
+    resultat.textContent = "An ${r.an} B.T., jours ${r.reste} toutouïens";
+    detail.textContent = `${Math.abs(r.jours).toLocaleString('fr-FR')} jours avant la fondation d'Étalie.`;
     return;
   }
-  resultat.textContent = `An ${r.an}, jour ${r.reste} du calendrier toutouïen`;
+  resultat.textContent = `An ${r.an}, jours ${r.reste} toutouïens`;
   detail.textContent = `Soit ${r.jours.toLocaleString('fr-FR')} jours réels après la fondation d'Étalie (30 septembre 2024).`;
 }
 
