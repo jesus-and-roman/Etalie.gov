@@ -109,10 +109,31 @@ function versToutouien(dateFondation, dateRef) {
 const input = document.getElementById('date-input');
 const resultat = document.getElementById('resultat');
 const detail = document.getElementById('resultat-detail');
-const fondationEtalie = new Date('2024-09-17T07:29:00');
+const fondationEtalie = new Date('2024-09-30T00:00:00');
 
 function majResultat() {
-  const val = input.value ? new Date(input.value + 'T00:00:00') : new Date();
+  function dateValide(str) {
+  const d = new Date(str + 'T00:00:00');
+  const [annee, mois, jour] = str.split('-').map(Number);
+
+  return (
+    d.getFullYear() === annee &&
+    d.getMonth() + 1 === mois &&
+    d.getDate() === jour
+  );
+}
+
+function majResultat() {
+  const valeur = input.value;
+
+  if (!dateValide(valeur)) {
+    resultat.textContent = "Date invalide";
+    detail.textContent = "";
+    return;
+  }
+
+  const val = new Date(valeur + 'T00:00:00');
+  const r = versToutouien(fondationEtalie, val);
   const r = versToutouien(fondationEtalie, val);
   document.getElementById('f-jours').textContent = r.jours.toLocaleString('fr-FR');
   if (r.jours < 0) {
