@@ -116,7 +116,7 @@ function majResultat() {
   const r = versToutouien(fondationEtalie, val);
   document.getElementById('f-jours').textContent = r.jours.toLocaleString('fr-FR');
   if (r.jours < 0) {
-    resultat.textContent = "An ${r.an} B.T., jours ${r.reste} toutouïens";
+    resultat.textContent = `An ${r.an} B.T., jours ${r.reste} toutouïens`;
     detail.textContent = `${Math.abs(r.jours).toLocaleString('fr-FR')} jours avant la fondation d'Étalie.`;
     return;
   }
