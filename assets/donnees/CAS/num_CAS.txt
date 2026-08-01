@@ -1,3 +1,4 @@
+-- Imprimeurs d'argent; 0 roiyals (payés par impression), | roi; 877,78 (1027002.6), | reine; 535,05 (625989.6), | reine; 535,05 (625989.6), | princes/princesses; 195.73 (229000), | allocation royale (personne qui est en rapport avec la famille royale - i.e. la mère du Roîe, elle peut remonter jusqu'à 3 générations); 1 génération de distance = 64.11 par secondes de plus, 2 générations de distance = 64.11 par secondes de plus, 29.91 pour 2 générations de distance et 3 plus 12.81 par secondes.
 Q-Q-Q/Q-Q-Q/Q-Q-Q$$$ADMIN###ADMIN@@@0&&&20*12?2029=O/policeO/[0]
 B-N-E/Z-B-Q/H-V-Z$$$CONG###FREDERIC@@@0&&&01*11?2028=O/policeO/[35,25]
 V-N-H/E-Z-Z/X-T-Q$$$LAFLEUR###ROMAN@@@0&&&05*09?2027=O/policeN/[877,78]
