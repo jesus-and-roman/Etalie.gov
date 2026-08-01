@@ -21,9 +21,15 @@
 
   async function chargerDictionnaire() {
     try {
-      const reponse = await fetch(`traduction/${nomPage()}.json`, { cache: 'no-store' });
-      if (!reponse.ok) return {};
-      return await reponse.json();
+      const [reponsePage, reponseUniversel] = await Promise.all([
+        fetch(`traduction/${nomPage()}.json`, { cache: 'no-store' }),
+        fetch('translation/others/dates_et_taille.json', { cache: 'no-store' }),
+      ]);
+      const dictPage = reponsePage.ok ? await reponsePage.json() : {};
+      const dictUniversel = reponseUniversel.ok ? await reponseUniversel.json() : {};
+      // Le dictionnaire universel (tdlXXX, panneau Paramètres) est
+      // disponible sur toutes les pages, fusionné avec celui de la page.
+      return { ...dictUniversel, ...dictPage };
     } catch (e) {
       console.warn('Traduction indisponible pour cette page :', e);
       return {};
