@@ -42,8 +42,8 @@ Allocation royale (personne qui est en rapport avec la famille royale - i.e. la 
 
 Allocation de noblesse (personne noble)
 (cette allocation s'applique à tout les gens nobles, peu-importe leurs métiers, juste un titre de noblesse peut s'accorder.)
-Noblesse héréditaire; [salaire minimum] / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; 1 génération du roîe actuel; raîne, roîe, mère de la raîne, père de la raîne, mère du roîe, mère de la raîne, ancien roîe, ancienne raîne, enfants du roîe, frères du roîe, soeur du roîe)
-Noblesse héréditaire (NH); [salaire minimum] × 1.75 / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; possède le sang royal.)
+Noblesse de famille (NF); [salaire minimum] / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; 1 génération du roîe actuel; raîne, roîe, mère de la raîne, père de la raîne, mère du roîe, mère de la raîne, ancien roîe, ancienne raîne, enfants du roîe, frères du roîe, soeur du roîe)
+Noblesse héréditaire (NH); [salaire minimum] × 1.75 / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; possède le sang royal, mais peut pas être dans NF, pas assez proche.)
 Noblesse accordée (NA); [salaire minimum] × 1.5 / minutes +salaire habituel. (noblesse donnée par le roîe, une noblesse de mérite.)
 Noblesse d'État (NE); [salaire minimum] × 1.25 / minutes +salaire habituel. (noblesse donnée par le roîe, pour faire un travail pour l'état. Seulement noble pendant le travail.)
 Noblesse conférée (NC); [salaire minimum] × 1 / minutes +salaire habituel. (noblesse donnée par le roîe.)
