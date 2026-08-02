@@ -1,31 +1,16 @@
 TEMPLATE:
 [ dir [NUMÉRO DE DOSSIER]
 Q-Q-Q/Q-Q-Q/Q-Q-Q$$$ADMIN###ADMIN@@@0&&&20*12?2029=O/policeO/[0]
-alloc_royale: N (X (pour non), 1, 2 ou 3)
-alloc_noblesse: N (X (pour non), NF, NH, NA, NE ou NC)
-alloc_pv_fie: N (X (pour non), L (logement), S (soutiens psychologiques), F[SALAIRE]/[DATE_DE_FIN_ALLOCATION_FAMILIALE (JJ/MM/AAAA)] (allocation familiale si décès), R[SALAIRE]/[DATE_DE_FIN_RETRAITE_MILITAIRE (JJ/MM/AAAA)] (la retraite des militaires, leur salaires.) (peut mettre plusieurs, séparer par ";")
-chomage: (X (pour non) ou O[SALAIRE_CHOMAGE]/[DATE_DE_FIN_DE_CHOMAGE (JJ/MM/AAAA)] (pour oui, salaire par minutes))
-retraite: (X (pour non) ou O[SALAIRE_RETRAITE]/[DATE_DE_FIN_DE_RETRAITE (JJ/MM/AAAA)] (pour oui, salaire par minutes))
-parentalite: (X (pour non) ou O[SALAIRE]/[DATE_DE_FIN_DE_PARENTALITÉ (JJ/MM/AAAA)] (pour oui, salaire par minutes, c'est pour donner le salaire parentalité aux employeurs)) (séparer chaque allocations de parentalité par un ";")
+alloc_royale: X (X (pour non), 1, 2 ou 3)
+alloc_noblesse: X (X (pour non), NF, NH, NA, NE ou NC)
+alloc_pv_fie: X (X (pour non), L (logement), S (soutiens psychologiques), F[SALAIRE]/[DATE_DE_FIN_ALLOCATION_FAMILIALE (JJ/MM/AAAA)] (pour oui, salaire par 7 jours depuis début, allocation familiale si décès) (peut mettre plusieurs, séparer par ";")
+extra_alloc: X (X (pour non) ou E[SALAIRE]/[DATE_DE_FIN_ALLOCATION (JJ/MM/AAAA)] (c'est des allocations supplémentaires) (pour oui, salaire par 7 jours depuis début, peut mettre plusieurs, séparer par ";")
+retraite: (X (pour non) ou O[SALAIRE_RETRAITE_TOTAL]/[DATE_DE_DÉBUT_DE_RETRAITE (JJ/MM/AAAA)] (pour oui, salaire de chomage total, pas par minutes cette fois. la date de fin de chomage est calculée comme ça; tu traduiras la date_de_début_de_retraite en âge toutouïen (les ans et les jours) s'il s'est déclaré M lors de l'inscription alors on soustrait l'âge actuel de la personne moins l'espérence de vie Étaloise, ce sera décidé par le sexe qu'il se sera choisit lors de son inscription: F (femelle) avec une espérance de vie moyenne de 105 ans, M (male) avec une espérance de vie moyenne de 90 ans, I (intersexe) avec une espérance de vie moyenne de 97.5 ans) tu soustrais l'âge acutel avec l'âge moyen, puis ça te donnera combien d'années toutouïens tu devras le payer, tu vas multiplier par 30 et tu vas ajouter le nombre de jours de l'âge actuel et ça va te donner le nombre de jour total, tu vas diviser par le nombre total par 7 et à chaque 7 jours, et tu devras lui donner ce montant à chaque 7 jours. Par exemple j'ai 37 ans, et j'ai 1 663 740 de salaire de retraite total, je suis un mâle alors je fais 90-37 = 53 ans de retraite, 53x30 = 1590 jours de retraite, 1590/7 = 227.142857143 arrondi à 227 (jamais arrondi à 0.5, tout le temps nombre plat, par exemple 227.6 donnera 227) ça donne le nombre de semaine total dans lequel il faudra lui payer sa retraite. 1663740/227.142857143 ça donne 7324.64150943 par semaines à partir de la date du début de retraite.)
+chomage: (X (pour non) ou O[SALAIRE_CHOMAGE]/[DATE_DE_FIN_DE_DÉBUT_DE_CHOMAGE (JJ/MM/AAAA) (pour oui, salaire par 7 jours depuis début)
+parentalite: (X (pour non) ou O[SALAIRE]/[DATE_DE_FIN_DE_PARENTALITÉ (JJ/MM/AAAA)] (pour oui, salaire par 7 jours depuis début, c'est pour donner le salaire parentalité aux employeurs)) (séparer chaque allocations de parentalité par un ";")
 admin_banque?: (X (pour non) O pour oui, accès à la banque en tant qu'admin et non employé)
 employeur?: (X (pour non) O pour oui)
 admin_du_site?: (X (pour non) O pour oui)
+pension_veterane: (X (pour non), O[SALAIRE]/[DATE_DE_FIN_DE_PENSION (JJ/MM/AAAA)]
+mort: (X (pour non), O (pour oui), s'il est mort et il reste du temps sur ses épargnes de alloc_pv_fie, retraite, chomage, parentalite alors l'argent sera envoyé au gouvernement)
 ] dir [FIN DU DOSSIER NUMÉRO]
-
-Example:
-[ dir 2
-V-N-H/E-Z-Z/X-T-Q$$$LAFLEUR###ROMAN@@@0&&&05*09?2027=O/policeN/[899,66]
-alloc_royale: X
-alloc_noblesse: NF
-alloc_pv_fie: N (X (pour non), L (logement), S (soutiens psychologiques) ou F[SALAIRE]/[DATE_DE_FIN_ALLOCATION_FAMILIALE (JJ/MM/AAAA)] (allocation familiale si décès) (peut mettre plusieurs, séparer par ";")
-chomage: (X (pour non) ou O[SALAIRE_CHOMAGE]/[DATE_DE_FIN_DE_CHOMAGE (JJ/MM/AAAA)] (pour oui, salaire par minutes))
-retraite: (X (pour non) ou O[SALAIRE_RETRAITE]/[DATE_DE_FIN_DE_RETRAITE (JJ/MM/AAAA)] (pour oui, salaire par minutes))
-parentalite: (X (pour non) ou O[SALAIRE]/[DATE_DE_FIN_DE_PARENTALITÉ (JJ/MM/AAAA)] (pour oui, salaire par minutes, c'est pour donner le salaire parentalité aux employeurs)) (séparer chaque allocations de parentalité par un ";")
-admin_banque?: (X (pour non) O pour oui, accès à la banque en tant qu'admin et non employé)
-employeur?: (X (pour non) O pour oui)
-admin_du_site?: (X (pour non) O pour oui)
-] dir [FIN DU DOSSIER NUMÉRO]
-
-B-N-E/Z-B-Q/H-V-Z$$$CONG###FREDERIC@@@0&&&01*11?2028=O/policeO/[35,25]
-E-Q-X/Z-K-K/E-B-Q$$$BOIVIN###KELLIE@@@0&&&06*02?2029=O/policeN/[12,50]
-T-E-H/Z-N-Q/N-B-E$$$MURDER###KONDOR@@@0&&&06*02?2027=O/policeN/[25]
