@@ -1,1 +1,59 @@
+-- [ [
 
+SALAIRES
+
+Calculer salaire par année: ([salaire]×39)×30
+Calculer salaire par secondes: [salaire]/60
+
+Salaire minimum: 12,5 / minutes ;
+Policier; 35,25 / minutes ;
+Imprimeurs d'argent; 0 / minutes (payés par impression) ;
+Roîe; 877,78 / minutes (1027002.6) +noblesse héréditaire: 899,66 (1052596.35) ;
+Raîne; 535,05 / minutes (625989.6) +noblesse héréditaire: 556.91 (651583.35) ;
+Vassaroîx/vassaraînes; 195.73 / minutes (229000) +noblesse héréditaire: 217.60 (254593.75) ;
+Ducs/duchesses; 299.15 / minutes (350005.5) + noblesse d'état: 314.775 (368286.75) ;
+Impérialis; 256.41 R$/minute (300000) +noblesse d'État: 272,04 (318281.25) ;
+Majest; 222.22 R$/minute (260000) +noblesse d'État: 237,85 (278281.25) ;
+Majesté-laterre; 205.13 R$/minute (240000) ;
+Majesté-lamarine; 205.13 R$/minute (240000) ;
+Majesté-laviation; 205.13 R$/minute (240000) ;
+Noblé; 170.94 R$/minute (200000) ;
+Lieutenant-général-major; 145.30 R$/minute (170000);
+Noble-major; 119.66 R$/minute (140000) ;
+Lieutenant-général; 102.56 R$/minute (120000) ;
+Général; 85.47 R$/minute (100000) ;
+Lieutenant; 68.38 R$/minute (80000) ;
+Major; 55.56 R$/minute (65000) ;
+Grand-Capitaine; 47.01 R$/minute (55000) ;
+Capitaine-de-base; 42.74 R$/minute (50000) ;
+Haut-Caporal; 35.90 R$/minute (42000) ;
+Caporal-À-Vous; 32.48 R$/minute (38000) ;
+Milites; 27.35 R$/minute (32000) ;
+Recrues; 21.37 R$/minute (25000) ;
+
+
+ALLOCATIONS
+
+Allocation royale (personne qui est en rapport avec la famille royale - i.e. la mère du Roîe, elle peut remonter jusqu'à 3 générations)
+(elle ne s'applique pas aux roîx, raînes, vassaroîx, vassaraînes)
+1 génération de distance; 64.11 / minutes +salaire habituel
+2 générations de distances; 29.91 / minutes +salaire habituel 
+3 générations de distances; 12.81 / minutes +salaire habituel.
+
+Allocation de noblesse (personne noble)
+(cette allocation s'applique à tout les gens nobles, peu-importe leurs métiers, juste un titre de noblesse peut s'accorder.)
+Noblesse héréditaire; [salaire minimum] / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; 1 génération du roîe actuel; raîne, roîe, mère de la raîne, père de la raîne, mère du roîe, mère de la raîne, ancien roîe, ancienne raîne, enfants du roîe, frères du roîe, soeur du roîe)
+Noblesse héréditaire (NH); [salaire minimum] × 1.75 / minutes +salaire habituel. (noblesse obtenue par naissance ou descendance de la dynastie Dalma; possède le sang royal.)
+Noblesse accordée (NA); [salaire minimum] × 1.5 / minutes +salaire habituel. (noblesse donnée par le roîe, une noblesse de mérite.)
+Noblesse d'État (NE); [salaire minimum] × 1.25 / minutes +salaire habituel. (noblesse donnée par le roîe, pour faire un travail pour l'état. Seulement noble pendant le travail.)
+Noblesse conférée (NC); [salaire minimum] × 1 / minutes +salaire habituel. (noblesse donnée par le roîe.)
+
+[ [ [ Personnes nobles: Murder, Kondor (NC), Lafleur Roman (NH) ] ] ]
+
+Allocations de l'armée (Programme Volontaire des Forces Impériales Étaliennes (PV-FIE))
+(cette allocation comprends plusieurs options, il peut donc y avoir plusieurs allocations en même temps)
+Allocation de logement (SI SUR LA BASE): si célibataire 0.29914529914 / minutes +salaire habituel. (350 R$), si marié mais famille hors de la base 0.55555555556 / minutes +salaire habituel (650 R$) et si marié et famille militaire dans la base 1.02564102564 / minutes +salaire habituel (1200 R$)
+Allocation de soutiens psychologique: seulement s'il est joint au Programme de Santé Mentale 0.04273504273 / minutes +salaire habituel (50 R$)
+Allocation de soutien pour la famille si décès du militaire en mission: 2 R$ par jour de service du militaire et au maximum 17383 R$
+
+] ] -- 
