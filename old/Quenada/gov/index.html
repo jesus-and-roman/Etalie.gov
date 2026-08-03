@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notre gouvernement - Gouvernement du Quénada</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f3f6fb;
+      color: #002244;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #002244;
+      color: white;
+      padding: 1rem 1.5rem;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    .menu-btn {
+      display: none;
+      position: absolute;
+      left: 1rem;
+      font-size: 2rem;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    nav {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 0;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: #002244;
+      font-weight: 600;
+      font-size: 1.1rem;
+      text-decoration: none;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      width: 100px;
+      transition: color 0.3s ease;
+    }
+
+    nav a:hover,
+    nav a[aria-current="page"] {
+      color: #0055aa;
+    }
+
+    nav a span.label {
+      margin-top: 6px;
+    }
+
+    nav a img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: contain;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 2s ease;
+    }
+
+    nav a img.fade-out {
+      opacity: 0;
+    }
+
+    nav a .img-container {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+
+    main {
+      flex-grow: 1;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    h2 {
+      border-left: 5px solid #004080;
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+      color: #002244;
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    .minister {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .minister-info {
+      max-width: 700px;
+    }
+
+    .minister-info h3 {
+      margin-bottom: 0.3rem;
+      font-weight: 700;
+      color: #002244;
+    }
+
+    .minister-info .role {
+      font-weight: 600;
+      color: #0055aa;
+      margin-bottom: 0.7rem;
+      font-size: 1.05rem;
+    }
+
+    .minister-info .description {
+      font-weight: 400;
+      color: #333;
+      line-height: 1.4;
+      font-size: 1rem;
+    }
+
+    .minister img {
+      width: 160px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    footer {
+      margin-top: auto;
+      background: #001f3f;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .menu-btn {
+        display: block;
+      }
+      nav {
+        flex-direction: column;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        gap: 1rem;
+      }
+      nav.open {
+        max-height: 420px;
+        padding: 1rem 0;
+      }
+      nav a {
+        width: 100%;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+      }
+      nav a img, nav a .img-container {
+        position: static;
+        transform: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="menu-btn" aria-label="Menu" onclick="toggleMenu()">☰</button>
+  <h1>Notre gouvernement</h1>
+</header>
+
+<nav id="menu">
+  <a href="/Quenada" data-images='["https://img.icons8.com/color/48/000000/info--v1.png","https://img.icons8.com/ios-filled/48/000000/info.png"]'>
+    <div class="img-container"></div>
+    <span class="label">À propos</span>
+  </a>
+  <a href="/Quenada/gov" aria-current="page" data-images='["https://img.icons8.com/color/48/000000/organization.png","https://img.icons8.com/ios-filled/48/000000/organization.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Notre gouvernement</span>
+  </a>
+  <a href="/Quenada/act" data-images='["https://img.icons8.com/color/48/000000/news.png","https://img.icons8.com/ios-filled/48/000000/news.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Actualités</span>
+  </a>
+  <a href="/Quenada/document" data-images='["https://img.icons8.com/color/48/000000/document--v1.png","https://img.icons8.com/ios-filled/48/000000/document.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Documents</span>
+  </a>
+  <a href="/Quenada/histoire" data-images='["https://img.icons8.com/color/48/000000/time-machine.png","https://img.icons8.com/ios-filled/48/000000/time-machine.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Histoire</span>
+  </a>
+  <a href="/Quenada/connect" data-images='["https://img.icons8.com/color/48/000000/lock--v1.png","https://img.icons8.com/ios-filled/48/000000/lock.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Connexion officiel</span>
+  </a>
+  <a href="/Quenada/voyage" data-images='["https://img.icons8.com/color/48/000000/globe--v1.png","https://img.icons8.com/ios-filled/48/000000/globe.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Voyage</span>
+</a>
+<a href="/Quenada/vote/sept2025" data-images='["https://img.icons8.com/color/48/ballot-box--v1.png","https://img.icons8.com/ios-filled/48/ballot-box.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Vote</span>
+</a>
+
+<a href="/Quenada/religion" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Religion</span>
+</a>
+<a href="/Quenada/city" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Provinces & Villes</span>
+</nav>
+
+<main>
+  <section>
+    <h2>Présentation</h2>
+    <p>Le Gouvernement du Quénada est composé de plusieurs ministères et départements dédiés à assurer la bonne gestion et le développement du pays. Notre équipe est engagée à servir la population avec transparence, compétence et intégrité.</p>
+  </section>
+
+  <section>
+    <h2>Les ministres principaux</h2>
+
+    <div class="minister">
+      <img src="roman.png" alt="Roman Yara Cacanoir" />
+      <div class="minister-info">
+        <h3>Roman Yara « Le juste » Cacanoir</h3>
+        <div class="role">Roi du Quénada</div>
+        <p class="description">Roman Yara Cacanoir est le souverain du Quénada, garant de l’unité nationale et du respect des traditions ancestrales.</p>
+      </div>
+    </div>
+
+    <div class="minister">
+      <img src="laurent.png" alt="Laurent Kilian Simard" />
+      <div class="minister-info">
+        <h3>Laurent Kilian « Le philosophe » MacDonald</h3>
+        <div class="role">Sous-roi du Quénada centre</div>
+        <p class="description">Laurent Kilian MacDonald supervise la région centrale du Quénada, assurant la coordination locale et le développement harmonieux.</p>
+      </div>
+    </div>
+
+    <div class="minister">
+      <img src="kellie.png" alt="Kellie Blew Boivin" />
+      <div class="minister-info">
+        <h3>Kellie Blew « La décoratrice » Boivin</h3>
+        <div class="role">Sous-roi du Quénada nord</div>
+        <p class="description">Kellie Blew Boivin dirige la région nord du Quénada, œuvrant pour la prospérité et la sécurité de ses habitants.</p>
+      </div>
+    </div>
+
+  </section>
+
+  <section>
+    <h2>Organigramme simplifié</h2>
+      <li>Lire article 9.3 à 9.4 dans le livre LLDQ</li>
+  </section>
+</main>
+
+<footer>
+  &copy; 2025 Gouvernement du Quénada. Tous droits réservés.
+</footer>
+
+<script>
+  function toggleMenu() {
+    document.getElementById('menu').classList.toggle('open');
+  }
+
+  const navLinks = document.querySelectorAll('nav a');
+  navLinks.forEach(link => {
+    const container = link.querySelector('.img-container');
+    const imgs = JSON.parse(link.dataset.images);
+    let current = 0;
+
+    imgs.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    const img1 = document.createElement('img');
+    img1.src = imgs[0];
+    container.appendChild(img1);
+
+    const img2 = document.createElement('img');
+    img2.src = imgs[1];
+    img2.classList.add('fade-out');
+    container.appendChild(img2);
+
+    setInterval(() => {
+      if (current === 0) {
+        img1.classList.add('fade-out');
+        img2.classList.remove('fade-out');
+        current = 1;
+      } else {
+        img2.classList.add('fade-out');
+        img1.classList.remove('fade-out');
+        current = 0;
+      }
+    }, 6000);
+  });
+</script>
+
+</body>
+</html>
