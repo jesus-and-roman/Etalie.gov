@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+  <title>Élections Quénada 2025</title>  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />  
+  <style>  
+    body { font-family: 'Inter', sans-serif; margin: 0; background: #f3f6fb; color: #002244; }
+    header { background: #002244; color: white; padding: 1rem; text-align: center; font-size: 1.5rem; font-weight: bold; }
+    section { max-width: 800px; margin: 3rem auto; padding: 1rem; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    h2 { text-align: center; font-size: 1.8rem; color: #003366; margin-bottom: 1.5rem; }
+    .candidat-container { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 430px; }
+    .candidat-card { position: absolute; width: 100%; max-width: 600px; text-align: center; background: white; border-radius: 10px; transition: transform 0.5s ease, opacity 0.5s ease; opacity: 0; transform: translateX(100%); z-index: 1; }
+    .candidat-card.active { opacity: 1; transform: translateX(0); z-index: 2; }
+    .candidat-card.exit-left { transform: translateX(-100%); opacity: 0; }
+    .candidat-card.exit-right { transform: translateX(100%); opacity: 0; }
+    .candidat-card img { width: 180px; height: 180px; object-fit: cover; border-radius: 50%; margin-top: 1rem; margin-bottom: 1rem; }
+    .candidat-nom { font-weight: bold; font-size: 1.3rem; }
+    .candidat-age { font-style: italic; color: #666; margin-bottom: 0.5rem; }
+    .candidat-region { font-size: 0.9rem; color: #0055aa; margin-bottom: 0.5rem; }
+    .candidat-desc { font-size: 0.95rem; padding: 0 1rem; }
+    .vote-btn { margin-top: 1rem; padding: 0.6rem 1.2rem; border: none; background: #0055aa; color: white; border-radius: 6px; cursor: pointer; }
+    .vote-btn:hover { background: #003366; }
+    .arrow-btn { position: absolute; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 2rem; color: #0055aa; cursor: pointer; z-index: 3; }
+    .arrow-btn:hover { color: #003366; }
+    .arrow-left { left: 0.5rem; }
+    .arrow-right { right: 0.5rem; }
+
+    /* Overlay du cadenas */  
+    #lockOverlay { position: fixed; z-index: 9999; inset: 0; background: white; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 1s ease; }
+    #lockIcon { font-size: 100px; color: #888; transition: transform 2s ease-in-out; }
+    #countdown { margin-top: 1rem; font-size: 1.2rem; color: #002244; text-align: center; }
+    .unlocked { animation: fall 1s ease forwards; }
+    @keyframes fall { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(300px) rotate(90deg); opacity: 0; } }
+
+    /* Bouton "En savoir plus" dans l'overlay */
+    #lockOverlay a button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #0055aa;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #lockOverlay a {
+      text-decoration: none;
+    }
+
+    /* Barre mot de passe fixée en bas */
+    #passwordBox {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #eef4fb;
+      border-top: 2px solid #0055aa;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 10000;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    #passwordBox input {
+      padding: 0.6rem 1rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      width: 250px;
+    }
+    #passwordBox button {
+      padding: 0.6rem 1.2rem;
+      background: #0055aa;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    #passwordError {
+      position: fixed;
+      bottom: 4.8rem;
+      width: 100%;
+      text-align: center;
+      color: red;
+      font-weight: bold;
+      font-size: 1rem;
+      display: none;
+      z-index: 10001;
+    }
+  </style>  
+</head>  
+<body>
+
+<!-- 🔒 Overlay de sécurité avec cadenas -->  
+<div id="lockOverlay">  
+  <div id="lockIcon">🔒</div>  
+  <div id="countdown">Chargement…</div>  
+
+  <!-- Bouton "En savoir plus" ajouté ici -->
+  <a href="info">
+    <button>En savoir plus</button>
+  </a>
+<a href="wait">
+    <button>Retourner au menu</button>
+  </a>
+</div>
+
+<header>Élections du Quénada — Septembre à Octobre 2025</header>  
+
+<section id="sous-rois">
+  <h2>Sous-Rois</h2>
+  <div class="candidat-container">
+    <button class="arrow-btn arrow-left" onclick="changeCandidate('sousRois', -1)">←</button>
+    <div class="candidat-card" id="sousRoisCard"></div>
+    <button class="arrow-btn arrow-right" onclick="changeCandidate('sousRois', 1)">→</button>
+  </div>
+</section>
+
+<section id="rois">
+  <h2>Rois</h2>
+  <div class="candidat-container">
+    <button class="arrow-btn arrow-left" onclick="changeCandidate('rois', -1)">←</button>
+    <div class="candidat-card" id="roisCard"></div>
+    <button class="arrow-btn arrow-right" onclick="changeCandidate('rois', 1)">→</button>
+  </div>
+</section>
+
+<section id="representants">
+  <h2>Représentants</h2>
+  <div class="candidat-container">
+    <button class="arrow-btn arrow-left" onclick="changeCandidate('reps', -1)">←</button>
+    <div class="candidat-card" id="repsCard"></div>
+    <button class="arrow-btn arrow-right" onclick="changeCandidate('reps', 1)">→</button>
+  </div>
+</section>
+
+<!-- Barre mot de passe fixée en bas -->
+<div id="passwordError">Mot de passe incorrect.</div>
+<div id="passwordBox">
+  <input type="password" id="manualPass" placeholder="Entrez le mot de passe..." aria-label="Mot de passe pour déverrouiller">
+  <button onclick="checkPassword()">Déverrouiller</button>
+</div>
+
+<script>  
+  const sousRois = [
+    { nom: "Julien Martin", age: 34, promesses: "Éducation, sécurité, autonomie régionale.", desc: "Julien est passionné par les droits civiques et la justice sociale.", img: "https://randomuser.me/api/portraits/men/11.jpg" },
+    { nom: "Aucun", age: 0, promesses: "Aucune", desc: "Aucune", img: "https://randomuser.me/api/portraits/women/45.jpg" }
+  ];
+
+  const rois = [
+    { nom: "Kondor Murder", age: 180, promesses: "De réduire les impôts de 70% à la team Xbox et garder la paix", desc: "Roi très gentil pas du tous titanique. Pas du tout Tiranique très geune près à tout pour son pays très loyale", img: "https://randomuser.me/api/portraits/men/56.jpg" },
+    { nom: "Laurent Kilian《 Le philosophe 》MacDonald", age: 16, promesses: "Aucune", desc: "Aucune", img: "https://randomuser.me/api/portraits/women/65.jpg" }
+  ];
+
+  const reps = [
+    { nom: "Sophie Tremblay", age: 38, desc: "Défend l’éducation gratuite et l’égalité d’accès pour tous.", region: "Région Nord", img: "https://randomuser.me/api/portraits/women/15.jpg" },
+    { nom: "Marc Lefevre", age: 45, desc: "Agriculteur engagé pour l’écologie durable et locale.", region: "Centre-Sud", img: "https://randomuser.me/api/portraits/men/36.jpg" }
+  ];
+
+  let index = { sousRois: 0, rois: 0, reps: 0 };
+
+  function voteGoogleForm(categorie) {
+    const forms = {
+      'sousRois': 'https://docs.google.com/forms/d/e/1FAIpQLSdU6uZfvjm6ijU9M5rA-gBgzp0HQ0_Nlld0mQuLYzwuZuALEg/viewform?usp=dialog',
+      'rois': 'https://docs.google.com/forms/d/e/1FAIpQLSeQimLOe67GRb4GZRVkTD5_MTpo5IEFZG4eGzH2s7_mfUbyig/viewform?usp=header',
+      'reps': 'https://docs.google.com/forms/d/e/1FAIpQLSfp3knq6QL3kbEkvg4pABInqqdf9LHhgPM6-Ps2VdVwd9uj7w/viewform?usp=header'
+    };
+    window.open(forms[categorie], '_blank');
+  }
+
+  function renderCard(type, data, id) {
+    const container = document.getElementById(id);
+    const person = data[index[type]];
+    container.classList.remove('active', 'exit-left', 'exit-right');
+    void container.offsetWidth;
+
+    container.innerHTML = `
+      <img src="${person.img}" alt="Portrait de ${person.nom}">
+      <div class="candidat-nom">${person.nom}</div>
+      <div class="candidat-age">Âge : ${person.age} ans</div>
+      ${type === 'reps'
+        ? `<div class="candidat-region">Région : ${person.region}</div>
+           <div class="candidat-desc">${person.desc}</div>`
+        : `<div class="candidat-desc">${person.promesses}</div>
+           <div class="candidat-desc">${person.desc}</div>`
+      }
+      <button class="vote-btn" onclick="voteGoogleForm('${type}')">Voter</button>
+    `;
+    setTimeout(() => container.classList.add('active'), 20);
+  }
+
+  function changeCandidate(type, direction) {
+    const data = type === 'sousRois' ? sousRois : type === 'rois' ? rois : reps;
+    const id = type === 'sousRois' ? 'sousRoisCard' : type === 'rois' ? 'roisCard' : 'repsCard';
+    const container = document.getElementById(id);
+
+    container.classList.remove('active');
+    container.classList.add(direction === 1 ? 'exit-left' : 'exit-right');
+
+    setTimeout(() => {
+      index[type] = (index[type] + direction + data.length) % data.length;
+      renderCard(type, data, id);
+    }, 300);
+  }
+
+  function init() {
+    renderCard('sousRois', sousRois, 'sousRoisCard');
+    renderCard('rois', rois, 'roisCard');
+    renderCard('reps', reps, 'repsCard');
+  }
+
+  init();
+
+  // Gestion du cadenas
+  const unlockDate = new Date("2025-09-10T00:00:00").getTime();
+  const overlay = document.getElementById("lockOverlay");
+  const lockIcon = document.getElementById("lockIcon");
+  const countdown = document.getElementById("countdown");
+
+  function updateCountdown() {
+    const now = new Date().getTime();
+    let diff = unlockDate - now;
+
+    if (diff <= 0) {
+      lockIcon.classList.add("unlocked");
+      setTimeout(() => {
+        overlay.style.opacity = "0";
+        setTimeout(() => overlay.remove(), 1000);
+      }, 1000);
+      return;
+    }
+
+    let remaining = diff;
+
+    const months = Math.floor(remaining / (1000 * 60 * 60 * 24 * 30));
+    remaining -= months * (1000 * 60 * 60 * 24 * 30);
+
+    const weeks = Math.floor(remaining / (1000 * 60 * 60 * 24 * 7));
+    remaining -= weeks * (1000 * 60 * 60 * 24 * 7);
+
+    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+    remaining -= days * (1000 * 60 * 60 * 24);
+
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    remaining -= hours * (1000 * 60 * 60);
+
+    const minutes = Math.floor(remaining / (1000 * 60));
+    remaining -= minutes * (1000 * 60);
+
+    const seconds = Math.floor(remaining / 1000);
+
+    countdown.innerHTML = `
+      Déverrouillage dans<br>
+      <strong>${months}</strong> mois,
+      <strong>${weeks}</strong> semaines,
+      <strong>${days}</strong> jours<br>
+      <strong>${hours}h ${minutes}m ${seconds}s</strong>
+    `;
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Déverrouillage manuel
+  function checkPassword() {
+    const input = document.getElementById("manualPass").value;
+    const error = document.getElementById("passwordError");
+
+    if (input === "Cacahuète43$") {
+      lockIcon.classList.add("unlocked");
+      setTimeout(() => {
+        overlay.style.opacity = "0";
+        setTimeout(() => overlay.remove(), 1000);
+      }, 1000);
+      error.style.display = "none";
+    } else {
+      error.style.display = "block";
+    }
+  }
+</script>
+
+</body>
+</html>
