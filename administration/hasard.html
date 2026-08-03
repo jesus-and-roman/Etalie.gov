@@ -1,1 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Générateur de codes gouvernementaux</title>
 
+<style>
+body {
+    font-family: Arial;
+    background:#f2f2f2;
+    padding:30px;
+}
+
+.container {
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    max-width:900px;
+    margin:auto;
+}
+
+h1,h2 {
+    color:#1b3a57;
+}
+
+select,input,button {
+    padding:10px;
+    font-size:16px;
+    margin:5px;
+}
+
+#result {
+    background:#111;
+    color:#00ff88;
+    padding:15px;
+    font-size:22px;
+    border-radius:5px;
+    margin-top:20px;
+}
+
+.rules {
+    background:#eee;
+    padding:15px;
+    margin-top:25px;
+    border-radius:8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Générateur de codes gouvernementaux</h1>
+
+<select id="type" onchange="fields()">
+
+<option value="nas">Code d'assurance social</option>
+<option value="naissance">Acte de naissance</option>
+<option value="mariage">Acte mariage</option>
+<option value="deces">Acte décès</option>
+<option value="divorce">Acte divorce</option>
+<option value="permis">Permis</option>
+<option value="visa">Visa</option>
+<option value="legal">Document légal gouvernemental</option>
+<option value="asile">Certificat permission d'asile</option>
+<option value="assurance">Assurance maladie</option>
+<option value="rapport">Rapport gouvernemental</option>
+
+<option value="dftn1">DFTN1</option>
+<option value="dftn2">DFTN2</option>
+<option value="rhper">RHPE royale</option>
+<option value="rhpee">RHPE excellence</option>
+<option value="rhpeb">RHPE base</option>
+<option value="draee">DRAEE</option>
+
+<option value="police">Matricule police</option>
+<option value="medecin">Matricule médecin</option>
+<option value="pompier">Matricule pompier</option>
+<option value="militaire">Matricule militaire</option>
+<option value="gouv">Matricule gouvernemental</option>
+<option value="justice">Matricule justice</option>
+<option value="entreprise">Matricule entreprise</option>
+
+</select>
+
+
+<div id="inputs"></div>
+
+
+<button onclick="generate()">Générer</button>
+
+
+<div id="result">
+Votre code apparaîtra ici
+</div>
+
+
+
+<div class="rules">
+
+<h2>Règles</h2>
+
+<p>CCC : chiffres 0-9</p>
+<p>CCU : lettres majuscules A-Z</p>
+<p>CCM : lettres majuscules/minuscules</p>
+<p>CCL : lettres autorisées + chiffres</p>
+<p>CCS : lettres + chiffres</p>
+<p>CCD : lettres + chiffres + ! / $ % ? &</p>
+
+<p>
+Maximum 2 caractères identiques consécutifs.
+</p>
+
+
+<h2>Templates</h2>
+
+<pre>
+
+NAS:
+XXX-XXX-XXX
+
+Acte naissance:
+AN-[année naissance]-[12 CCC]-N
+
+Acte mariage:
+AM-[12 CCC]-M
+
+Acte décès:
+AN-[année décès]-[12 CCC]-D
+
+Acte divorce:
+AM-[12 CCC]-D
+
+Permis:
+P[8 CCC]
+
+Visa:
+VISA-[16 CCL]
+
+Document légal:
+G-[18 CCC]
+
+Asile:
+CA-[année]-[8 CCL]
+
+Assurance:
+T-[année]-[9 CCC]
+
+Rapport:
+R-[année][mois][jour]-[5 CCC]
+
+</pre>
+
+</div>
+
+</div>
+
+
+<script>
+
+const CCC="0123456789";
+
+const CCL="ACDEFGHJKL MNPQRSTUWXY123456789".replaceAll(" ","");
+
+const CCD="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!/$%?&";
+
+
+function random(chars,n){
+
+let r="";
+
+while(r.length<n){
+
+let c=chars[Math.floor(Math.random()*chars.length)];
+
+if(r.endsWith(c+c)) continue;
+
+r+=c;
+
+}
+
+return r;
+
+}
+
+
+
+function fields(){
+
+let t=document.getElementById("type").value;
+
+let box=document.getElementById("inputs");
+
+box.innerHTML="";
+
+
+if(t=="naissance" || t=="deces" || t=="assurance"){
+
+box.innerHTML=
+"Année : <input id='year' type='number' placeholder='AAAA'>";
+
+}
+
+}
+
+
+
+function generate(){
+
+let t=document.getElementById("type").value;
+
+let year=document.getElementById("year")?.value;
+
+let now=new Date();
+
+let r="";
+
+
+switch(t){
+
+
+case "nas":
+
+r=random(CCC,9).match(/.{1,3}/g).join("-");
+
+break;
+
+
+case "naissance":
+
+r="AN-"+year+"-"+random(CCC,12)+"-N";
+
+break;
+
+
+case "mariage":
+
+r="AM-"+random(CCC,12)+"-M";
+
+break;
+
+
+case "deces":
+
+r="AN-"+year+"-"+random(CCC,12)+"-D";
+
+break;
+
+
+case "divorce":
+
+r="AM-"+random(CCC,12)+"-D";
+
+break;
+
+
+case "permis":
+
+r="P"+random(CCC,8);
+
+break;
+
+
+case "visa":
+
+r="VISA-"+random(CCL,16);
+
+break;
+
+
+case "legal":
+
+r="G-"+random(CCC,18);
+
+break;
+
+
+case "asile":
+
+r="CA-"+year+"-"+random(CCL,8);
+
+break;
+
+
+case "assurance":
+
+r="T-"+year+"-"+random(CCC,9);
+
+break;
+
+
+case "rapport":
+
+r="R-"+String(now.getFullYear()).slice(-2)
++(now.getMonth()+1)
++now.getDate()
++"-"+random(CCC,5);
+
+break;
+
+
+case "dftn1":
+
+r=random(CCD,4);
+
+break;
+
+
+case "dftn2":
+
+r=random(CCD,5);
+
+break;
+
+
+case "rhper":
+
+r=random(CCD,40);
+
+break;
+
+
+case "rhpee":
+
+r=random(CCD,20);
+
+break;
+
+
+case "rhpeb":
+
+r=random(CCD,6);
+
+break;
+
+
+case "draee":
+
+r=random(CCD,5);
+
+break;
+
+
+case "police":
+
+r=random(CCC,6);
+
+break;
+
+
+case "medecin":
+
+r="M-"+random(CCC,7);
+
+break;
+
+
+case "pompier":
+
+r="P-"+random(CCC,7);
+
+break;
+
+
+case "militaire":
+
+r=random(CCC,8);
+
+break;
+
+
+case "gouv":
+
+r="GG-"+random(CCC,7);
+
+break;
+
+
+case "justice":
+
+r="J-"+random(CCC,7);
+
+break;
+
+
+case "entreprise":
+
+r="E-"+random(CCC,9);
+
+break;
+
+
+}
+
+
+document.getElementById("result").innerHTML=r;
+
+}
+
+
+fields();
+
+</script>
+
+</body>
+</html>
