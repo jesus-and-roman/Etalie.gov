@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Actualités du Quénada</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    /* Reset et base */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f7fa;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-top: 70px;
+    }
+
+    /* Header avec bouton hamburger */
+    header {
+      background: #002244;
+      color: white;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+    }
+    .menu-btn {
+      display: none;
+      position: absolute;
+      left: 1rem;
+      font-size: 2rem;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+    header h1 {
+      font-weight: 600;
+      font-size: 1.4rem;
+    }
+
+    /* Navigation full width */
+    nav {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      right: 0;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 999;
+      /* Pour faire la nav full largeur */
+      width: 100%;
+    }
+    nav .nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 0;
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: #002244;
+      font-weight: 600;
+      font-size: 1.1rem;
+      text-decoration: none;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      width: 100px;
+      transition: color 0.3s ease;
+    }
+    nav a:hover, nav a[aria-current="page"] {
+      color: #0055aa;
+    }
+    nav a span.label {
+      margin-top: 6px;
+    }
+    nav a img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: contain;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 2s ease;
+    }
+    nav a img.fade-out {
+      opacity: 0;
+    }
+    nav a .img-container {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 26px;
+    }
+
+    /* Container principal */
+    .container {
+      max-width: 900px;
+      margin: 100px auto 30px;
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    /* Articles */
+    .article {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+      padding: 25px;
+      transition: transform 0.3s;
+    }
+    .article:hover {
+      transform: translateY(-4px);
+    }
+    .article h2 {
+      margin-top: 0;
+      color: #002244;
+    }
+    .date {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .description {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .elapsed {
+      margin-top: 10px;
+      font-size: 14px;
+      font-style: italic;
+      color: #999;
+    }
+    .news-img {
+      width: 100%;
+      max-height: 400px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Responsive - Hamburger */
+    @media (max-width: 768px) {
+      .menu-btn {
+        display: block;
+      }
+      nav .nav-inner {
+        flex-direction: column;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        gap: 1rem;
+        padding: 0;
+      }
+      nav.open .nav-inner {
+        max-height: 420px;
+        padding: 1rem 0;
+      }
+      nav a {
+        width: 100%;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+        padding-left: 1.5rem;
+      }
+      nav a .img-container {
+        position: static;
+        transform: none;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="toggleMenu()">☰</button>
+    <h1>Actualités du Quénada</h1>
+  </header>
+
+  <nav id="menu" aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a href="/Quenada" data-images='["https://img.icons8.com/color/48/000000/info--v1.png","https://img.icons8.com/ios-filled/48/000000/info.png"]'>
+        <div class="img-container"></div>
+        <span class="label">À propos</span>
+      </a>
+      <a href="/Quenada/gov" data-images='["https://img.icons8.com/color/48/000000/organization.png","https://img.icons8.com/ios-filled/48/000000/organization.png"]'>
+        <div class="img-container"></div>
+        <span class="label">Notre gouvernement</span>
+      </a>
+      <a href="/Quenada/act" aria-current="page" data-images='["https://img.icons8.com/color/48/000000/news.png","https://img.icons8.com/ios-filled/48/000000/news.png"]'>
+        <div class="img-container"></div>
+        <span class="label">Actualités</span>
+      </a>
+      <a href="/Quenada/document" data-images='["https://img.icons8.com/color/48/000000/document--v1.png","https://img.icons8.com/ios-filled/48/000000/document.png"]'>
+        <div class="img-container"></div>
+        <span class="label">Documents</span>
+      </a>
+      <a href="/Quenada/histoire" data-images='["https://img.icons8.com/color/48/000000/time-machine.png","https://img.icons8.com/ios-filled/48/000000/time-machine.png"]'>
+        <div class="img-container"></div>
+        <span class="label">Histoire</span>
+      </a>
+      <a href="/Quenada/connect" data-images='["https://img.icons8.com/color/48/000000/lock--v1.png","https://img.icons8.com/ios-filled/48/000000/lock.png"]'>
+        <div class="img-container"></div>
+        <span class="label">Connexion officiel</span>
+      </a>
+      <a href="/Quenada/voyage" data-images='["https://img.icons8.com/color/48/000000/globe--v1.png","https://img.icons8.com/ios-filled/48/000000/globe.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Voyage</span>
+</a>
+<a href="/Quenada/vote/sept2025" data-images='["https://img.icons8.com/color/48/ballot-box--v1.png","https://img.icons8.com/ios-filled/48/ballot-box.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Vote</span>
+</a>
+
+<a href="/Quenada/religion" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Religion</span>
+</a>
+<a href="/Quenada/city" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Provinces & Villes</span>
+</a>
+    </div>
+  </nav>
+
+  <div class="container" id="articles">
+
+       <div class="article" data-time="2025-09-10T11:30:00">
+      <h2>Élections</h2>
+      <div class="date">Publié le 10 Septembre 2025 à 11h30</div>
+      <img class="news-img" src="photo/3.png" alt="Image élection" />
+      <div class="description">
+        Depuis la révolution de l'an 603 on a une personne qu'on connait tous, Roman Yara « Le juste » Cacanoir,
+        le Roi actuel élu après la révolution contre Kondor qui marqua la fin de l'Ère de la terreur.
+        Et bien si je vous disais que les éléctions s'en venait? Et oui!
+        Les actuels sous-Rois, Kellie Blew « La décoratrice » Boivin et Laurent Kilian « Le philosophe » MacDonald, 
+        devront aussi se dissocier de leurs pouvoirs!
+
+        Toutes personnse majeur (En haut de 16 ans) pourront participer a l'élection.
+        Elle se déroulera sur 35 jours (Du 10 septembre au 15 octobre), 
+        si tout le monde est d'accord. Le temps de l'élection peut se réduire.
+
+        Vous pourrez postuler pour être Roi, contactez le Roi actuel.
+        Vous pourrez postuler pour être Roi, contactez le Roi actuel.
+        Vous pourrez être le parleur pour honorer votre province! Vous pourrez aussi contactez le roi.
+        Sinon, vous pourrez tout simplement voter. Il y aura 3 votes, 1 pour le Roi, 1 pour les sous-Rois, 1 pour le représentant de votre reégion.
+        Vous pouvez vous inscrire pour être Roi, sous-Roi ou parleur jusqu'au 09 septembre.
+
+        Pour voter, n'oubliez pas que vous devez être civil officiel du Quénada depuis 1 ans.
+
+        01 au 09 septembre: Inscriptions aux élections
+        10 septembre au 17 septembre: Présentation des sous-Rois
+        17 septembre au 24 septembre: Vote des sous-Rois
+        24 septembre au 01 octobre: Présentation des Rois
+        01 octobre au 08 octobre: Vote des Rois
+        08 octobre au 11 octobre: Présentation et vote des représentants de région.
+
+        Je vous souhaite une bonne chance!
+      </div>
+      <div class="elapsed">Publié il y a ...</div>
+    </div>
+
+<!-- Exemple d’actualité -->
+    <div class="article" data-time="2025-07-07T23:30:39">
+      <h2>Découverte Historique</h2>
+      <div class="date">Publié le 07 Juillet 2025 à 23h30</div>
+      <img class="news-img" src="photo/uu.png" alt="P" />
+      <div class="description">
+        En date du 07 Juillet, des documents historique ont été retrouvés dans un lieu pas normal! Depuis l'an 601, juste après la révolution, plusieurs exemplaires des livres de la révolution furent donner à plusieurs personnes dont Kondor, nous ens sommes sûr. Par contre nous avons qu'il y avait environ 3-6 exemplaires de chaque livre et environ 3 à 5 livres totaux et 1 message. Mais les historians tiennent juste de découvrir un vieil endroit, sale, remplit de bactéries et d'insecte. Ils viennent de trouver 3 exemplaires des livres principaux de la révolution,《 La révolte dragonne 》écrit par Ulrick, un des révolutionnaire《 Je déteste le roi Kondor Murder 》Roman, qui en est aussi un《 pour Kondor 》et même travail pour Laurent. Avec les traces restantes et les indices, les scientifiques ont estimés la publication de ces livres le 27 au 28 janvier 2025, cela nous permet d'avoir des dates plus exactes sur l'histoire du Quénada, la vraie fondation du Quénada est à l'an 596 tant-dis qu'elle était dite à l'an 597 par les historiens.
+      </div>
+      <div class="elapsed">Publié il y a ...</div>
+    </div>
+
+    <div class="article" data-time="2025-06-30T17:36:39">
+      <h2>Publication de la version 1 de l'INSPEQ</h2>
+      <div class="date">Publié le 30 Juin 2025 à 17h36</div>
+      <img class="news-img" src="photo/2.png" alt="Publication LLDQ" />
+      <div class="description">
+        En date du 30 juin 2025, le roi actuel du Quénada, Roman Yara « Le juste » Cacanoir a officielement publier comment noter la sécurité d'un pays.
+        Il compte aussi ajouter au site officiel du Quénada un bouton pour voir la sécurité des autres pays. INSPEQ est un outil officiel, et peut être utilisé par tout le monde,
+        mais personne n'est obligé de le télécharger car ils pourront aller sur le site du Quénada. D'après les hackeur Ubum Bubum, le site devrais être https:\\caplotz.github.io\Quenada\inspeq\
+        même si on pourrait juste tout simplement y acceder en appuyant sur un bouton.
+        Pages totales: 11 Pages (.PDF)
+      </div>
+      <div class="elapsed">Publié il y a ...</div>
+    </div>
+
+    <!-- Exemple d’actualité -->
+    <div class="article" data-time="2025-06-29T19:14:39">
+      <h2>Publication de la version 1 du LLDQ</h2>
+      <div class="date">Publié le 29 Juin 2025 à 11h39</div>
+      <img class="news-img" src="photo/1.png" alt="Publication LLDQ" />
+      <div class="description">
+        En date du 29 Juin 2025, la première version du Livre des Lois et des Droits du Quénada a été officiellement publié sur le site officiel du Quénada.
+        Publiant tout le contenu du début, avec la démocratie. 
+        Pages totales: 150 Pages (.PDF)
+      </div>
+      <div class="elapsed">Publié il y a ...</div>
+    </div>
+
+<!-- Exemple d’actualité -->
+    <div class="article" data-time="2025-06-29T17:32:39">
+      <h2>No rassurage</h2>
+      <div class="date">Publié le 29 Juin 2025 à 17h32</div>
+      <img class="news-img" src="photo/8.png" alt="P" />
+      <div class="description">
+        En date du 29 Juin 2025, Kondor Saytin Murder annonça une nouvelle éclatante, il déclare la guerre à Yhorule. 2 pays faisant parti de la FIDS se déclarant la guerre? Ça ne va pas bien ce passer et ce finir, personne ne sait si la FIDS va aider un pays ou non. Kondor va probablement envoyer une bombe nucléaire sur son pays ou d'autres choses, lui Ulrick (Président de Yhorule) à une plus grande puissance avec une gigantesque armée. Qui va jouer le plus intelligament? On va voir. À noter que ! S'il vous plaît veuillez faire attention, ne visitez pas ses 2 pays car ils ont un niveau de sécurité critique. La guerre n'est pas un jeu ! 
+      </div>
+      <div class="elapsed">Publié il y a ...</div>
+    </div>
+
+        <!-- Exemple d’actualité -->
+ 
+
+  </div>
+
+  <script>
+    // Toggle menu hamburger
+    function toggleMenu() {
+      const menu = document.getElementById('menu');
+      menu.classList.toggle('open');
+      const btn = document.querySelector('.menu-btn');
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', !expanded);
+    }
+
+    // Animation images menu
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+      const container = link.querySelector('.img-container');
+      const imgs = JSON.parse(link.dataset.images);
+      let current = 0;
+
+      // Précharge images
+      imgs.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+
+      // Création 2 images pour effet fondu
+      const img1 = document.createElement('img');
+      img1.src = imgs[0];
+      container.appendChild(img1);
+
+      const img2 = document.createElement('img');
+      img2.src = imgs[1];
+      img2.classList.add('fade-out');
+      container.appendChild(img2);
+
+      setInterval(() => {
+        if (current === 0) {
+          img1.classList.add('fade-out');
+          img2.classList.remove('fade-out');
+          current = 1;
+        } else {
+          img2.classList.add('fade-out');
+          img1.classList.remove('fade-out');
+          current = 0;
+        }
+      }, 6000);
+    });
+
+    // Fonction temps écoulé depuis publication
+    function timeAgo(fromDate) {
+      const now = new Date();
+      let delta = Math.floor((now - fromDate) / 1000);
+
+      const y = Math.floor(delta / (365 * 24 * 3600));
+      delta %= 365 * 24 * 3600;
+      const mo = Math.floor(delta / (30 * 24 * 3600));
+      delta %= 30 * 24 * 3600;
+      const d = Math.floor(delta / 86400);
+      delta %= 86400;
+      const h = Math.floor(delta / 3600);
+      delta %= 3600;
+      const m = Math.floor(delta / 60);
+      const s = delta % 60;
+
+      let result = "il y a ";
+      if (y) result += `${y} an${y > 1 ? 's' : ''}, `;
+      if (mo) result += `${mo} mois, `;
+      if (d) result += `${d} jour${d > 1 ? 's' : ''}, `;
+      if (h) result += `${h} heure${h > 1 ? 's' : ''}, `;
+      if (m) result += `${m} minute${m > 1 ? 's' : ''}, `;
+      result += `${s} seconde${s > 1 ? 's' : ''}, `;
+      return result;
+    }
+
+    // Mise à jour chaque seconde
+    function updateElapsedTimes() {
+      const articles = document.querySelectorAll('.article');
+      articles.forEach(article => {
+        const timeStr = article.getAttribute('data-time');
+        const pubDate = new Date(timeStr);
+        const elapsedText = timeAgo(pubDate);
+        article.querySelector('.elapsed').textContent = "Publié " + elapsedText;
+      });
+    }
+
+    updateElapsedTimes();
+    setInterval(updateElapsedTimes, 1000);
+  </script>
+
+</body>
+</html>
