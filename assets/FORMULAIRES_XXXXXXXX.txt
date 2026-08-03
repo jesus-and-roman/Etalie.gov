@@ -1,1 +1,135 @@
+[[ F-0001 — Demande d'acte de naissance déjà enregistré ]]
 
+F-0001.a - Informations sur le demandeur
+Nom légal complet,
+Date de naissance,
+Code d'Assurance Social,
+Lieu de naissance,
+Adresse courriel.
+
+F-0001.b - Personne concernée
+☐ Je demande mon propre acte de naissance.
+☐ Je demande l'acte de naissance d'une autre personne.
+Si c'est une autre personne;
+Nom légal complet,
+Date de naissance,
+Code d'Assurance Social,
+Lieu de naissance,
+Adresse courriel,
+Nom du père,
+Nom de la mère.
+
+F-0001.c - Lien avec la personne concernée
+☐ Moi-même
+☐ Parent
+☐ Tuteur légal
+☐ Enfant
+☐ Conjoint
+☐ Représentant autorisé
+☐ Autre : __________
+
+F-0001.d - Type de document demandé
+Nombre d'exemplaires : ___
+
+F-0001.e - Motif de la demande
+☐ Première demande
+☐ Passeport
+☐ Carte d'identité
+☐ Immigration
+☐ Mariage
+☐ Études
+☐ Emploi
+☐ Perte ou vol
+☐ Autre : __________
+
+F-0001.f - Livraison
+☐ Envoi postal
+☐ Courriel sécurisé (si autorisé)
+☐ Retrait en personne
+Adresse de livraison (si différente) :
+
+F-0001.g - Paiement
+Montant : 95 R$
+Mode de paiement :
+☐ Carte bancaire
+☐ Virement
+☐ Autre
+
+F-0001.h - Déclaration
+☐ Je certifie que les renseignements fournis sont exacts.
+☐ Je comprends que toute fausse déclaration peut entraîner des sanctions prévues par la loi.
+Signature : __________________ (bouton qui agit comme signature)
+Date : ____ / ____ / ______
+
+[[ F-0002 — Déclaration de naissance ]]
+
+F-0002.a - Informations sur la tuteur
+Nom légal complet,
+Date de naissance,
+Code d'Assurance Social,
+Lieu de naissance,
+Adresse courriel
+
+F-0002.b - Informations sur le tuteur second
+Nom légal complet,
+Date de naissance,
+Code d'Assurance Social,
+Lieu de naissance,
+Adresse courriel
+
+F-0002.c - Informations sur l'enfant
+Nom,
+Nom du millieu,
+Prénom,
+Sexe (Masculin, féminin, intersexe),
+Date de naissance,
+Heure de naissance,
+Lieu de naissance,
+Poids à la naissance,
+Taille à la naissance.
+
+F-0002.d - Situation familiale
+☐ Mariés
+☐ Union civile
+☐ Conjoints de fait
+☐ Célibataires
+☐ Autre : ___________________
+Adresse principale où l'enfant résidera
+Adresse secondaire où l'enfant résidera (optionel)
+
+F-0002.e - Informations médicales
+Grossesse simple ou multiple
+Nombre d'enfants nés (si naissance multiple)
+Noms légaux complet des autres enfants (si applicable)
+
+F-0002.g - Informations sur le docteur qui a accouché l'enfant
+Nom légal complet,
+Adresse courriel,
+Matricule,
+Hôpital.
+
+F-0002.h - Informations sur le docteur qui a fait la demande
+Nom légal complet,
+Adresse courriel,
+Matricule,
+Hôpital.
+
+F-0002.i - Informations supplémentaires
+☐ Je déclare que les renseignements fournis sont exacts.
+☐ Je comprends que toute fausse déclaration constitue une infraction.
+Signature du parent 1 : ______________________
+Signature du parent 2 : ______________________
+Signature du demandeur: ______________________
+Signature du médecin qui a accouché l'enfant: ______________________
+
+F-0002.j - Réservé à l'administration
+Numéro de dossier (généré au hasard, 
+Numéro d'acte de naissance
+Date de réception
+Date d'enregistrement
+Agent responsable
+Statut
+☐ Reçu
+☐ En traitement
+☐ Enregistré
+☐ Refusé
