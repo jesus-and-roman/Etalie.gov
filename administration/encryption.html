@@ -1,0 +1,93 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Password Prompt - Thank you to Jellis</title>
+    <script type="text/javascript">
+    function checkpassword(){
+    	var VIPpassword;	
+    	VIPpassword = prompt("Please enter the password", "");
+    	if (VIPpassword != 'ETALIE321?') {
+    		 alert("The password you entered is not correct. Please see the correct password on the page.");
+    		 window.location = "http://romanbouchard.github.io/Etalie.gov";
+    	}
+    }
+    </script>
+</head>
+<body onload="javascript:checkpassword();">
+<meta charset="UTF-8">
+<title>Encryption CAS — Outil interne (non lié au site)</title>
+</head>
+<body>
+
+<h1>Outil d'encryption des Codes d'Assurance Sociale (CAS)</h1>
+<p>Cet outil ne communique avec aucun serveur. Tout se passe dans ce fichier, localement.</p>
+<p>Table de substitution : 1=Q, 2=E, 3=Z, 4=V, 5=X, 6=T, 7=H, 8=N, 9=B, 0=K — les lettres obtenues sont séparées par un "-", un espace devient "/".</p>
+
+<p>
+  <label for="entree">Code réel à encrypter :</label><br>
+  <input type="text" id="entree" size="40" placeholder="Ex: 123 456 789">
+  <button onclick="encrypter()">Encrypter</button>
+</p>
+
+<p>
+  <label for="sortie">Résultat encrypté :</label><br>
+  <input type="text" id="sortie" size="40" readonly>
+</p>
+
+<hr>
+
+<h2>Encryption en lot (une ligne = un code)</h2>
+<p>
+  <label for="entreeLot">Codes réels (un par ligne) :</label><br>
+  <textarea id="entreeLot" rows="10" cols="50" placeholder="123 456 789&#10;987 654 321"></textarea>
+</p>
+<p>
+  <button onclick="encrypterLot()">Encrypter tout</button>
+</p>
+<p>
+  <label for="sortieLot">Résultats encryptés (un par ligne) :</label><br>
+  <textarea id="sortieLot" rows="10" cols="50" readonly></textarea>
+</p>
+
+<script>
+const TABLE = {
+  '1': 'Q', '2': 'E', '3': 'Z', '4': 'V', '5': 'X',
+  '6': 'T', '7': 'H', '8': 'N', '9': 'B', '0': 'K'
+};
+
+function encrypterCode(str) {
+  let out = '';
+  let dernierEtaitLettre = false;
+  for (const ch of str) {
+    if (TABLE[ch]) {
+      if (dernierEtaitLettre) out += '-';
+      out += TABLE[ch];
+      dernierEtaitLettre = true;
+    } else if (ch === ' ') {
+      out += '/';
+      dernierEtaitLettre = false;
+    } else {
+      // caractère non prévu (déjà une lettre, tiret, etc.) : recopié tel quel
+      out += ch;
+      dernierEtaitLettre = false;
+    }
+  }
+  return out;
+}
+
+function encrypter() {
+  const entree = document.getElementById('entree').value;
+  document.getElementById('sortie').value = encrypterCode(entree);
+}
+
+function encrypterLot() {
+  const lignes = document.getElementById('entreeLot').value.split('\\n');
+  const resultats = lignes.map(l => encrypterCode(l.trim())).filter(l => l.length > 0);
+  document.getElementById('sortieLot').value = resultats.join('\\n');
+}
+</script>
+
+</body>
+</html>
