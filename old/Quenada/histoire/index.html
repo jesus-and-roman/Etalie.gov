@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Histoire du Quénada</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7f9fc;
+      color: #222;
+      padding-top: 130px; /* hauteur cumulée header + nav */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #002244;
+      color: white;
+      padding: 1rem 1.5rem;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+
+    .menu-btn {
+      display: none;
+      position: absolute;
+      left: 1rem;
+      font-size: 2rem;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+      z-index: 1100;
+    }
+
+    nav {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 0;
+      flex-wrap: wrap;
+      position: fixed;
+      top: 70px;
+      width: 100%;
+      z-index: 999;
+    }
+
+    nav a {
+      color: #002244;
+      font-weight: 600;
+      font-size: 1.1rem;
+      text-decoration: none;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      width: 100px;
+      transition: color 0.3s ease;
+    }
+
+    nav a:hover, nav a.active {
+      color: #0055aa;
+    }
+
+    nav a span.label {
+      margin-top: 6px;
+    }
+
+    nav a img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: contain;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 2s ease;
+      opacity: 1;
+    }
+
+    nav a img.fade-out {
+      opacity: 0;
+    }
+
+    nav a .img-container {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 20px; /* espace entre image et label */
+    }
+
+    main {
+      flex-grow: 1;
+      max-width: 1000px;
+      margin: 20px auto 80px auto; /* marge pour éviter nav fixe */
+      padding: 0 20px;
+      line-height: 1.8;
+      font-size: 17px;
+      animation: fadeIn 0.7s ease-in-out;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #002244;
+      margin-top: 40px;
+      border-left: 4px solid #004080;
+      padding-left: 10px;
+    }
+
+    strong {
+      color: #004080;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive - hamburger */
+    @media (max-width: 768px) {
+      .menu-btn {
+        display: block;
+      }
+      nav {
+        flex-direction: column;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        gap: 1rem;
+        padding: 0;
+      }
+      nav.open {
+        max-height: 420px;
+        padding: 1rem 0;
+      }
+      nav a {
+        width: 100%;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+      }
+      nav a img, nav a .img-container {
+        position: static;
+        transform: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        margin-bottom: 0;
+      }
+      nav a span.label {
+        margin-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="menu-btn" aria-label="Menu" onclick="toggleMenu()">☰</button>
+  <h1>Gouvernement du Quénada</h1>
+</header>
+
+<nav id="menu">
+  <a href="/Quenada" data-images='["https://img.icons8.com/color/48/000000/info--v1.png","https://img.icons8.com/ios-filled/48/000000/info.png"]'>
+    <div class="img-container"></div>
+    <span class="label">À propos</span>
+  </a>
+  <a href="/Quenada/gov" data-images='["https://img.icons8.com/color/48/000000/organization.png","https://img.icons8.com/ios-filled/48/000000/organization.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Notre gouvernement</span>
+  </a>
+  <a href="/Quenada/act" data-images='["https://img.icons8.com/color/48/000000/news.png","https://img.icons8.com/ios-filled/48/000000/news.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Actualités</span>
+  </a>
+  <a href="/Quenada/document" data-images='["https://img.icons8.com/color/48/000000/document--v1.png","https://img.icons8.com/ios-filled/48/000000/document.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Documents</span>
+  </a>
+  <a href="/Quenada/histoire" class="active" data-images='["https://img.icons8.com/color/48/000000/time-machine.png","https://img.icons8.com/ios-filled/48/000000/time-machine.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Histoire</span>
+  </a>
+  <a href="/Quenada/connect" data-images='["https://img.icons8.com/color/48/000000/lock--v1.png","https://img.icons8.com/ios-filled/48/000000/lock.png"]'>
+    <div class="img-container"></div>
+    <span class="label">Connexion officiel</span>
+  </a>
+  <a href="/Quenada/voyage" data-images='["https://img.icons8.com/color/48/000000/globe--v1.png","https://img.icons8.com/ios-filled/48/000000/globe.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Voyage</span>
+</a>
+<a href="/Quenada/vote/sept2025" data-images='["https://img.icons8.com/color/48/ballot-box--v1.png","https://img.icons8.com/ios-filled/48/ballot-box.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Vote</span>
+</a>
+
+<a href="/Quenada/religion" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Religion</span>
+</a>
+<a href="/Quenada/city" data-images='["https://img.icons8.com/color/48/praying-hands.png","https://img.icons8.com/ios-filled/48/praying-hands.png"]'>
+  <div class="img-container"></div>
+  <span class="label">Provinces & Villes</span>
+</a>
+</nav>
+
+<main>
+  <h2>Année 596 — Fondation mythique du Quénada</h2>
+  <p>En l’an 596 du calendrier quénadien, deux frères — <strong>Quéna</strong> et <strong>Dion</strong> — las de la décadence morale et des régimes corrompus des anciens royaumes, entreprirent de créer une société nouvelle. Ils établirent les fondations d’un pays libre, souverain, et guidé par une règle unique : le peuple est maître de son destin. Ils appelèrent cette terre <strong>le Quénada</strong>, symbole de renouveau, d’espoir, et de résistance.</p>
+
+  <p>Dès sa création, le Quénada fut conçu comme une démocratie directe, où chaque citoyen avait voix au chapitre. Les premières assemblées populaires furent tenues à ciel ouvert, sur les pierres des <em>Hauts-Plateaux de Luvan</em> (maintenant un bijou de l’antiquité), et les décisions se prenaient à main levée. La liberté d’expression, la paix, la fraternité entre communautés étaient les piliers de la République naissante.</p>
+
+  <h2>Année 597 — L’ascension de Kondor</h2>
+  <p>Un homme originaire des Terres Extérieures, <strong>Kondor</strong>, fut introduit dans le gouvernement provisoire par son ami proche, <strong>Roman</strong>, un jeune stratège connu pour sa sagesse. Brillant orateur, Kondor séduisit l’Assemblée par ses promesses de stabilité et de prospérité. Mais peu à peu, il concentra les pouvoirs, marginalisa ses opposants, et installa une gouvernance autoritaire.</p>
+
+  <p>Une fois maître de l’appareil d’État, Kondor instaura un régime brutal et centralisé :</p>
+  <ul>
+    <li>Il autorisa la peine de mort publique ;</li>
+    <li>Il légitima la torture comme méthode judiciaire ;</li>
+    <li>Il réinstaura l’esclavage étatique, sous forme de travaux forcés.</li>
+  </ul>
+
+  <p>Mais au-delà de ces violences physiques, Kondor imposa une domination spirituelle inédite. Dans cette même période, des fouilles dans le nord révélèrent un édifice ancien, la <strong>Pyramide d’Avoh</strong>. On y découvrit des inscriptions évoquant <strong>Arouhin</strong>, un Dieu de paix intérieure.</p>
+
+  <p>Plutôt que de permettre une liberté religieuse, Kondor transforma cette découverte en outil de contrôle idéologique. Il fit du <strong>Capisme</strong> une religion d’État, l’imposa à tous les citoyens, persécuta les sceptiques, fit brûler les textes étrangers. Toute critique envers Arouhin ou ses prophètes était punie de déportation. Il créa aussi avec son bras droit, une fête nommée l'Ecchamalouphie, (également appelée Chinizfun, plus tard), ou que tout le monde devait donner un cadeau à un inconnu. Qui qu'on que oubliait le nom mourrait.</p>
+
+  <p>Des temples furent construits de force. L’école nationale enseignait les textes du Capisme comme vérités absolues. Le peuple était contraint de prier à heures fixes, sous surveillance militaire.</p>
+
+  <p>Pour verrouiller le pays, Kondor créa l’<strong>ONPP</strong>, prétendument destinée à protéger les « lieux sacrés » de l’humanité. En réalité, l’ONPP était une police secrète religieuse, équipée militairement, dont la mission était de contrôler les esprits et annihiler toute pensée dissidente.</p>
+
+  <p>L’enseignement fut censuré. Les langues locales furent interdites dans l’administration. Même le nom de Quéna fut effacé des archives publiques.</p>
+
+  <h2>Années 598–599 — La Résistance</h2>
+  <p>Face à ce totalitarisme, quatre jeunes figures émergèrent : <strong>Roman</strong>, ancien ami de Kondor ; <strong>Laurent</strong>, un philosophe autodidacte ; <strong>Kellie</strong>, guérisseuse du nord ; et <strong>Ulrick</strong>, ouvrier des mines de Toiur. Ensemble, ils formèrent une résistance souterraine. Ils falsifièrent des documents, piratèrent les réseaux de l’ONPP, distribuèrent des tracts secrets en plusieurs langues interdites.</p>
+
+  <h3>Année 599 — La chute de Kondor</h3>
+  <p>La tension atteignit son paroxysme. Les quatre révolutionnaires infiltrèrent la forteresse centrale de Kondor. Ils furent à un souffle de l’éliminer. Blessé, encerclé, Kondor céda et signa sa démission, préférant l’exil à la mort. Sa dernière trace connue remonte à un passage dans la route antique Saint-Yara. Il ne fut jamais retrouvé.</p>
+
+  <h2>Année 600 — La reconstruction démocratique</h2>
+  <p>Le vide de pouvoir fut comblé par une <strong>Assemblée d’Urgence</strong>, qui organisa une élection populaire. <strong>Roman</strong> fut élu Roi constitutionnel du Quénada, à l’unanimité des régions. Mais il refusa de gouverner seul :</p>
+  <ul>
+    <li>Il nomma Laurent comme Assistant royal chargé des affaires civiles ;</li>
+    <li>Kellie comme Assistante royale aux affaires spirituelles ;</li>
+    <li>Ulrick, quant à lui, devint roi d’un pays allié.</li>
+  </ul>
+
+  <p>Roman récupéra le <strong>Franitag</strong>, langue codée que Kondor utilisait pour cacher ses lois. Il en fit un langage administratif public, enseigné à tous. Toutefois, le français fut maintenu dans le nord et dans <strong>Lataylon</strong>, tandis que le Franitag dominait au sud et dans les institutions officielles.</p>
+
+  <p>Roman dissout l’ONPP. À sa place, il créa la <strong>Fédération Internationale de la Défense et de la Sécurité (FIDS)</strong>, un organisme multilatéral, non religieux, chargé d’assurer la paix, la diplomatie et la sécurité mondiale.</p>
+
+  <h2>Années suivantes — Spiritualité et avenir</h2>
+  <p>N’étant pas capiste lui-même, Roman proposa une nouvelle lecture de la foi, appelée <strong>Rabbaisme</strong>, branche issue de la Caplot, une école ésotérique ancienne. Dans cette doctrine :</p>
+  <ul>
+    <li><strong>Avoh</strong> (déformation de Arouhin) est Dieu, mais Il est opposé à <strong>Amoh</strong>, son jumeau maléfique, représentant la tromperie, la guerre et la désinformation (équivalent du « Saytin » capiste).</li>
+  </ul>
+
+  <p>Le Rabbaisme, à la différence du Capisme forcé, ne fut jamais imposé, mais proposé comme voie intérieure alternative, fondée sur l’équilibre entre lumière et vérité.</p>
+
+  <h2>Conclusion — Mémoire et vigilance</h2>
+  <p><strong>L’histoire du Quénada</strong> rappelle que même les idéaux les plus nobles peuvent être trahis lorsque la vigilance populaire s’endort. Le présent Code pénal n’est pas seulement un recueil de sanctions : il est le bouclier de la justice, le gardien de la mémoire, et la promesse d’un avenir libre.</p>
+
+  <p>Par la volonté des Quénadiens et Quénadiennes, les lois qui suivent sont adoptées pour préserver la paix, empêcher la tyrannie, et honorer les fondateurs, les martyrs et les résistants. Que jamais ne revienne une ère de silence, de chaînes ou de mensonges.</p>
+</main>
+
+<h2>Archive historique</h2>
+  <p>Les écrits sont les originaux, si  il y a des erreurs, ou autres c'est le texte original, on ne les corrigera pas. Et soyez indulgent car nos historiens ont travaillé dur pour pouvoir vous fournir des réponses à vos questions, parce que si vous pensez qu'il faut juste copier-coller et bien non. Il faut trouver ou ils sont situés, trouver la date, trouver l'écrivain et même réecrire le texte pour modifier les mots bugger (Par exemple: Aço⁹ŵ*2) donne le mot Allô!, alors merci de respecter leurs travail! <strong><a href="doc/boncitoyen.txt" download>Tu peux cliquer ici pour voir le livre du Bon Citoyen.</a></strong> ///===/// <strong><a href="doc/capoui.txt" download>Tu peux cliquer ici pour voir la Capoui (Livre du capisme) version 1.</a></strong> ///===/// <strong><a href="doc/capoui2.txt" download>Tu peux cliquer ici pour voir la Capoui (Livre du capisme) version 2.</a></strong> ///===/// <strong><a href="doc/revolutiondragon.txt" download>Tu peux cliquer ici pour voir le livre de La Déclaration de la révolution Dragonne (1er livre de Révolution)</a></strong> ///===/// <strong><a href="doc/revolutiondragon2.txt" download>Tu peux cliquer ici pour voir le texte de la Menace de Kondor (2e livre de Révolution)</a></strong> ///===/// <strong><a href="doc/revolutiondragon3.txt" download>Tu peux cliquer ici pour voir le livre de La réponse à la menace de Kondor(3e livre de Révolution) </a></strong> ///===/// <strong><a href="doc/caplot.txt" download>Tu peux cliquer ici pour voir la Caplot (Livre du capisme) version 3.</a></strong>. Je recommande la lecture sur ordinateur, car sur téléphone les fichiers (.txt) peuvent avoir des problèmes avec le traitement des caractères, créant un fichier super bizarre.</p>
+
+
+<script>
+  // Toggle menu for mobile
+  function toggleMenu() {
+    document.getElementById('menu').classList.toggle('open');
+  }
+
+  // Animate image switching in each nav button
+  const navLinks = document.querySelectorAll('nav a');
+  navLinks.forEach(link => {
+    const container = link.querySelector('.img-container');
+    const imgs = JSON.parse(link.dataset.images);
+    let current = 0;
+
+    // Preload images
+    imgs.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    // Create two img elements for crossfade
+    const img1 = document.createElement('img');
+    img1.src = imgs[0];
+    container.appendChild(img1);
+
+    const img2 = document.createElement('img');
+    img2.src = imgs[1];
+    img2.classList.add('fade-out');
+    container.appendChild(img2);
+
+    setInterval(() => {
+      if (current === 0) {
+        img1.classList.add('fade-out');
+        img2.classList.remove('fade-out');
+        current = 1;
+      } else {
+        img2.classList.add('fade-out');
+        img1.classList.remove('fade-out');
+        current = 0;
+      }
+    }, 6000);
+  });
+</script>
+
+</body>
+</html>
