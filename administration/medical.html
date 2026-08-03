@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="UTF-8">
+<title>Portail médical gouvernemental</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#e8eef2;
+padding:30px;
+}
+
+.container{
+background:white;
+max-width:800px;
+margin:auto;
+padding:25px;
+border-radius:12px;
+}
+
+h1{
+color:#145a86;
+}
+
+input,select,button{
+padding:10px;
+font-size:16px;
+margin:5px;
+}
+
+button{
+cursor:pointer;
+}
+
+#result{
+background:#111;
+color:#00ff88;
+padding:15px;
+font-size:22px;
+border-radius:5px;
+margin-top:20px;
+}
+
+.info{
+background:#eee;
+padding:15px;
+margin-top:25px;
+border-radius:8px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h1>Portail médical gouvernemental</h1>
+
+<label>Type de document :</label>
+
+<select id="type" onchange="fields()">
+
+<option value="naissance">
+Acte de naissance
+</option>
+
+<option value="deces">
+Acte de décès
+</option>
+
+<option value="rapport">
+Rapport gouvernemental
+</option>
+
+<option value="assurance">
+Assurance maladie
+</option>
+
+<option value="medecin">
+Matricule médecin
+</option>
+
+</select>
+
+
+<div id="inputs"></div>
+
+
+<button onclick="generate()">
+Générer
+</button>
+
+
+<div id="result">
+Aucun code généré
+</div>
+
+
+
+<div class="info">
+
+<h2>Modèles</h2>
+
+<pre>
+
+Acte naissance:
+AN-[année naissance]-[12 chiffres]-N
+
+
+Acte décès:
+AN-[année décès]-[12 chiffres]-D
+
+
+Rapport gouvernemental:
+R-[année][mois][jour]-[5 chiffres]
+
+
+Assurance maladie:
+T-[année naissance]-[9 chiffres]
+
+
+Matricule médecin:
+M-[7 chiffres]
+
+</pre>
+
+
+<h2>Règles</h2>
+
+<p>
+CCC = chiffres uniquement (0-9)
+</p>
+
+<p>
+Les chiffres sont générés aléatoirement.
+</p>
+
+<p>
+Les informations obligatoires sont demandées au médecin.
+</p>
+
+</div>
+
+
+</div>
+
+
+
+<script>
+
+
+const CCC="0123456789";
+
+
+function random(chars,length){
+
+let result="";
+
+while(result.length < length){
+
+result += chars[Math.floor(Math.random()*chars.length)];
+
+}
+
+return result;
+
+}
+
+
+
+function fields(){
+
+let type=document.getElementById("type").value;
+
+let box=document.getElementById("inputs");
+
+box.innerHTML="";
+
+
+if(type=="naissance"){
+
+box.innerHTML=
+"Année de naissance de l'enfant : <input id='annee' placeholder='AAAA'>";
+
+}
+
+
+if(type=="deces"){
+
+box.innerHTML=
+"Année du décès : <input id='annee' placeholder='AAAA'>";
+
+}
+
+
+if(type=="assurance"){
+
+box.innerHTML=
+"Année de naissance du patient : <input id='annee' placeholder='AAAA'>";
+
+}
+
+
+}
+
+
+
+function generate(){
+
+
+let type=document.getElementById("type").value;
+
+let annee=document.getElementById("annee")?.value;
+
+let date=new Date();
+
+let code="";
+
+
+
+switch(type){
+
+
+case "naissance":
+
+code=
+"AN-"+annee+"-"+random(CCC,12)+"-N";
+
+break;
+
+
+
+case "deces":
+
+code=
+"AN-"+annee+"-"+random(CCC,12)+"-D";
+
+break;
+
+
+
+case "rapport":
+
+code=
+"R-"+
+String(date.getFullYear()).slice(-2)+
+String(date.getMonth()+1).padStart(2,"0")+
+String(date.getDate()).padStart(2,"0")
++"-"+
+random(CCC,5);
+
+break;
+
+
+
+case "assurance":
+
+code=
+"T-"+annee+"-"+random(CCC,9);
+
+break;
+
+
+
+case "medecin":
+
+code=
+"M-"+random(CCC,7);
+
+break;
+
+
+}
+
+
+
+document.getElementById("result").innerHTML=code;
+
+
+}
+
+
+
+fields();
+
+
+</script>
+
+
+</body>
+
+</html>
