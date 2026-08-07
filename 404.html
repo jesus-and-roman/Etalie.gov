@@ -8,7 +8,623 @@
 <meta content="Évaluez la sécurité d'un pays selon la méthode officielle INSPEQ v2." name="description"/>
 <link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
 <link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
-<link href="css/styles.css" rel="stylesheet"/>
+<style>
+    /* =========================================================
+       Gouvernement d'Étalie — feuille de style institutionnelle, située dans css/style.css mais déplacé ici.
+       ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root{
+  --vert-nuit:      #0F3D22;
+  --vert-institut:  #009246;
+  --vert-clair:     #2FA968;
+  --or-laiton:      #C9A227;
+  --or-clair:       #F7C702;
+  --rouge-etalie:   #CE2B37;
+  --pourpre-blason: #742974;
+  --blanc-casse:    #FAF9F6;
+  --gris-ardoise:   #47536B;
+  --gris-ligne:     #DADFE7;
+  --blanc:          #FFFFFF;
+
+  --police-titre: 'Source Serif 4', Georgia, serif;
+  --police-texte: 'Public Sans', -apple-system, Segoe UI, sans-serif;
+  --police-util:  'IBM Plex Mono', monospace;
+
+  --rayon: 2px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+html{ scroll-behavior:smooth; }
+
+body{
+  font-family:var(--police-texte);
+  color:var(--gris-ardoise);
+  background:var(--blanc-casse);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+a{ color:inherit; text-decoration:none; }
+img{ max-width:100%; display:block; }
+ul{ list-style:none; }
+
+.conteneur{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+:focus-visible{
+  outline:3px solid var(--or-laiton);
+  outline-offset:2px;
+}
+
+/* ---------- Bandeau utilitaire ---------- */
+.bandeau-utilitaire{
+  background:var(--vert-nuit);
+  color:#D9E2F2;
+  font-size:.78rem;
+  letter-spacing:.02em;
+}
+.bandeau-utilitaire .conteneur{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-top:7px;
+  padding-bottom:7px;
+}
+.bandeau-utilitaire .puce{
+  display:inline-block;
+  width:6px; height:6px;
+  border-radius:50%;
+  background:var(--or-clair);
+  margin-right:8px;
+}
+.bandeau-utilitaire .liens-util{ display:flex; gap:20px; }
+.bandeau-utilitaire .liens-util a:hover{ color:var(--or-clair); }
+
+/* ---------- Tricolore signature ---------- */
+.tricolore{ height:5px; display:flex; }
+.tricolore span{ flex:1; }
+.tricolore span:nth-child(1){ background:var(--vert-institut); }
+.tricolore span:nth-child(2){ background:var(--blanc); }
+.tricolore span:nth-child(3){ background:var(--rouge-etalie); }
+
+/* ---------- En-tête ---------- */
+.entete{
+  background:var(--blanc);
+  border-bottom:1px solid var(--gris-ligne);
+}
+.entete .conteneur{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-top:20px;
+  padding-bottom:20px;
+  gap:32px;
+}
+.identite{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+.identite .texte-identite .surtitre{
+  font-family:var(--police-util);
+  font-size:.68rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--or-laiton);
+}
+.identite .texte-identite h1{
+  font-family:var(--police-titre);
+  font-size:1.32rem;
+  font-weight:700;
+  color:var(--vert-nuit);
+  letter-spacing:.01em;
+}
+
+nav.principale ul{
+  display:flex;
+  gap:30px;
+  font-size:.92rem;
+  font-weight:600;
+  color:var(--vert-nuit);
+}
+nav.principale a{
+  position:relative;
+  padding:6px 0;
+}
+nav.principale a::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:2px;
+  background:var(--or-laiton);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .18s ease;
+}
+nav.principale a:hover::after,
+nav.principale a[aria-current="page"]::after{ transform:scaleX(1); }
+
+/* ---------- Hero ---------- */
+.hero{
+  background:
+    linear-gradient(180deg, rgba(22,48,92,.94) 0%, rgba(22,48,92,.88) 100%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 2px, transparent 2px 26px);
+  color:var(--blanc);
+  padding:76px 0 64px;
+}
+.hero .conteneur{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:56px;
+  align-items:center;
+}
+.hero .surtitre{
+  font-family:var(--police-util);
+  font-size:.72rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--or-clair);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.hero .surtitre::before{
+  content:"";
+  width:26px; height:1px;
+  background:var(--or-clair);
+}
+.hero h2{
+  font-family:var(--police-titre);
+  font-size:2.6rem;
+  line-height:1.15;
+  font-weight:700;
+  margin-bottom:20px;
+}
+.hero p.chapeau{
+  font-size:1.05rem;
+  color:#D9E2F2;
+  max-width:46ch;
+  margin-bottom:30px;
+}
+.hero .cta-groupe{ display:flex; gap:14px; flex-wrap:wrap; }
+
+.bouton{
+  display:inline-block;
+  padding:13px 26px;
+  font-weight:600;
+  font-size:.92rem;
+  border-radius:var(--rayon);
+  border:1px solid transparent;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+.bouton-or{
+  background:var(--or-laiton);
+  color:var(--vert-nuit);
+}
+.bouton-or:hover{ background:var(--or-clair); }
+.bouton-contour{
+  border-color:rgba(255,255,255,.55);
+  color:var(--blanc);
+}
+.bouton-contour:hover{ border-color:var(--blanc); background:rgba(255,255,255,.08); }
+
+/* Panneau sceau dans le hero */
+.panneau-sceau{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:var(--rayon);
+  padding:30px;
+  text-align:center;
+}
+.panneau-sceau svg{ width:104px; height:104px; margin:0 auto 14px; }
+.panneau-sceau .devise{
+  font-family:var(--police-titre);
+  font-style:italic;
+  font-size:.92rem;
+  color:#E7ECF7;
+  margin-bottom:6px;
+}
+.panneau-sceau .republique{
+  font-family:var(--police-util);
+  font-size:.68rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--or-clair);
+}
+
+/* ---------- Avis officiel ---------- */
+.avis-officiel{
+  background:#FBF3E9;
+  border-top:1px solid #EEDFC8;
+  border-bottom:1px solid #EEDFC8;
+}
+.avis-officiel .conteneur{
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-size:.9rem;
+  color:var(--rouge-etalie);
+}
+.avis-officiel strong{ font-family:var(--police-util); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
+
+/* ---------- Accès rapides ---------- */
+.section{ padding:72px 0; }
+.entete-section{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  margin-bottom:36px;
+  gap:24px;
+  flex-wrap:wrap;
+}
+.entete-section .num-section{
+  font-family:var(--police-util);
+  font-size:.72rem;
+  letter-spacing:.12em;
+  color:var(--or-laiton);
+  text-transform:uppercase;
+  margin-bottom:8px;
+  display:block;
+}
+.entete-section h3{
+  font-family:var(--police-titre);
+  font-size:1.9rem;
+  color:var(--vert-nuit);
+  font-weight:700;
+}
+.entete-section p{ max-width:52ch; color:var(--gris-ardoise); }
+
+.grille-acces{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:1px;
+  background:var(--gris-ligne);
+  border:1px solid var(--gris-ligne);
+}
+.carte-acces{
+  background:var(--blanc);
+  padding:30px 26px;
+  transition:background .15s ease;
+}
+.carte-acces:hover{ background:#F3F6FB; }
+.carte-acces .icone{
+  width:42px; height:42px;
+  margin-bottom:18px;
+  color:var(--vert-institut);
+}
+.carte-acces h4{
+  font-family:var(--police-titre);
+  font-size:1.08rem;
+  color:var(--vert-nuit);
+  margin-bottom:8px;
+}
+.carte-acces p{ font-size:.88rem; color:var(--gris-ardoise); margin-bottom:14px; }
+.carte-acces .lien-fleche{
+  font-size:.82rem;
+  font-weight:600;
+  color:var(--or-laiton);
+}
+.carte-acces .lien-fleche::after{ content:" →"; }
+
+/* ---------- Chiffres officiels ---------- */
+.bande-chiffres{
+  background:var(--vert-institut);
+  color:var(--blanc);
+}
+.bande-chiffres .conteneur{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  padding:44px 24px;
+}
+.bande-chiffres .chiffre{
+  text-align:center;
+  border-left:1px solid rgba(255,255,255,.18);
+  padding:0 16px;
+}
+.bande-chiffres .chiffre:first-child{ border-left:none; }
+.bande-chiffres .valeur{
+  font-family:var(--police-titre);
+  font-size:2.3rem;
+  font-weight:700;
+  color:var(--or-clair);
+}
+.bande-chiffres .etiquette{
+  font-size:.8rem;
+  letter-spacing:.04em;
+  color:#D9E2F2;
+  margin-top:6px;
+}
+
+/* ---------- Actualités ---------- */
+.grille-actus{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:28px;
+}
+.carte-actu{
+  background:var(--blanc);
+  border:1px solid var(--gris-ligne);
+  display:flex;
+  flex-direction:column;
+}
+.carte-actu .media{
+  height:150px;
+  background:linear-gradient(135deg, var(--vert-institut), var(--vert-nuit));
+  position:relative;
+}
+.carte-actu .media .categorie{
+  position:absolute; left:16px; bottom:14px;
+  font-family:var(--police-util);
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--or-clair);
+}
+.carte-actu .corps{ padding:22px; }
+.carte-actu time{
+  font-family:var(--police-util);
+  font-size:.72rem;
+  color:var(--gris-ardoise);
+}
+.carte-actu h4{
+  font-family:var(--police-titre);
+  font-size:1.08rem;
+  color:var(--vert-nuit);
+  margin:8px 0 10px;
+  line-height:1.3;
+}
+.carte-actu p{ font-size:.88rem; }
+
+/* ---------- Pied de page ---------- */
+footer{
+  background:var(--vert-nuit);
+  color:#C6D2E7;
+  padding-top:56px;
+}
+.pied-grille{
+  display:grid;
+  grid-template-columns:1.4fr repeat(3,1fr);
+  gap:40px;
+  padding-bottom:44px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.pied-grille h5{
+  font-family:var(--police-util);
+  font-size:.72rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--or-clair);
+  margin-bottom:16px;
+}
+.pied-grille li{ margin-bottom:10px; font-size:.88rem; }
+.pied-grille a:hover{ color:var(--blanc); }
+.pied-bas{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:22px 0;
+  font-size:.78rem;
+  color:#8CA0C4;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+/* ---------- Page secondaire générique ---------- */
+.fil-ariane{
+  font-size:.82rem;
+  color:var(--gris-ardoise);
+  padding:22px 0;
+}
+.fil-ariane a{ color:var(--vert-institut); }
+.fil-ariane a:hover{ text-decoration:underline; }
+.entete-page{
+  background:var(--vert-nuit);
+  color:var(--blanc);
+  padding:52px 0;
+}
+.entete-page .surtitre{
+  font-family:var(--police-util);
+  font-size:.72rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--or-clair);
+  margin-bottom:12px;
+}
+.entete-page h2{
+  font-family:var(--police-titre);
+  font-size:2.1rem;
+}
+.en-construction{
+  border:1px dashed var(--gris-ligne);
+  padding:40px;
+  text-align:center;
+  color:var(--gris-ardoise);
+  font-size:.95rem;
+}
+.en-construction strong{ color:var(--vert-nuit); display:block; margin-bottom:8px; font-family:var(--police-titre); font-size:1.15rem; }
+
+/* ---------- Prose / contenu long ---------- */
+.prose{ max-width:74ch; }
+.prose h3{
+  font-family:var(--police-titre);
+  color:var(--vert-nuit);
+  font-size:1.35rem;
+  margin:34px 0 12px;
+}
+.prose h3:first-child{ margin-top:0; }
+.prose p{ margin-bottom:14px; font-size:.96rem; }
+.prose ul{ margin:0 0 14px 0; }
+.prose li{ margin-bottom:6px; font-size:.94rem; padding-left:18px; position:relative; }
+.prose li::before{
+  content:"—"; position:absolute; left:0; color:var(--or-laiton);
+}
+.prose strong{ color:var(--vert-nuit); }
+
+/* ---------- Fiches dirigeants (gouvernement) ---------- */
+.fiche-dirigeant{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  gap:26px;
+  padding:26px 0;
+  border-bottom:1px solid var(--gris-ligne);
+}
+.fiche-dirigeant:last-child{ border-bottom:none; }
+.fiche-dirigeant .photo{
+  width:180px; height:180px;
+  object-fit:cover;
+  border-radius:var(--rayon);
+  border:1px solid var(--gris-ligne);
+  background:var(--gris-ligne);
+}
+.fiche-dirigeant .role{
+  font-family:var(--police-util);
+  font-size:.7rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--or-laiton);
+  margin-bottom:6px;
+}
+.fiche-dirigeant h4{
+  font-family:var(--police-titre);
+  font-size:1.3rem;
+  color:var(--vert-nuit);
+  margin-bottom:10px;
+}
+.fiche-dirigeant p{ font-size:.92rem; color:var(--gris-ardoise); }
+
+/* ---------- Tableaux de données (provinces / municipalités / taxes) ---------- */
+.table-donnees{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.86rem;
+  background:var(--blanc);
+}
+.table-donnees caption{
+  text-align:left;
+  font-family:var(--police-titre);
+  font-size:1.1rem;
+  color:var(--vert-nuit);
+  margin-bottom:14px;
+  caption-side:top;
+}
+.table-donnees th{
+  text-align:left;
+  font-family:var(--police-util);
+  font-size:.68rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--or-laiton);
+  padding:10px 14px;
+  border-bottom:2px solid var(--vert-nuit);
+  white-space:nowrap;
+}
+.table-donnees td{
+  padding:10px 14px;
+  border-bottom:1px solid var(--gris-ligne);
+  color:var(--gris-ardoise);
+}
+.table-donnees tbody tr:hover{ background:#F3F6FB; }
+.table-donnees td.num, .table-donnees th.num{ text-align:right; font-family:var(--police-util); }
+.table-wrap{ overflow-x:auto; border:1px solid var(--gris-ligne); }
+
+/* ---------- Articles d'actualité (page complète) ---------- */
+.liste-actus{ display:flex; flex-direction:column; gap:26px; }
+.liste-actus .carte-actu{ flex-direction:row; }
+.liste-actus .media{
+  width:260px; min-width:260px; height:auto;
+}
+.liste-actus .corps p{ font-size:.9rem; color:var(--gris-ardoise); white-space:pre-line; }
+@media (max-width:760px){
+  .liste-actus .carte-actu{ flex-direction:column; }
+  .liste-actus .media{ width:100%; height:150px; }
+}
+
+/* ---------- Bandeau de recherche / filtre simple ---------- */
+.barre-filtre{
+  display:flex; gap:12px; flex-wrap:wrap; margin-bottom:26px;
+}
+.barre-filtre input{
+  flex:1; min-width:220px;
+  padding:11px 14px;
+  border:1px solid var(--gris-ligne);
+  border-radius:var(--rayon);
+  font-family:var(--police-texte);
+  font-size:.9rem;
+}
+.barre-filtre input:focus{ outline:2px solid var(--or-laiton); border-color:var(--or-laiton); }
+
+/* ---------- Outil interactif INSPEQ ---------- */
+.colori{
+  width:56px; height:56px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--police-titre); font-weight:700; color:#fff;
+  flex-shrink:0;
+}
+.niveau-inspeq{
+  background:var(--blanc);
+  border:1px solid var(--gris-ligne);
+  padding:20px 24px;
+  margin-bottom:14px;
+  display:flex; gap:18px; align-items:flex-start;
+}
+.niveau-inspeq h4{ font-family:var(--police-titre); font-size:1.05rem; color:var(--vert-nuit); margin-bottom:2px; }
+.niveau-inspeq .plage{ font-size:.78rem; color:var(--gris-ardoise); margin-bottom:10px; }
+.niveau-inspeq label{
+  display:flex; align-items:flex-start; gap:8px;
+  font-size:.86rem; color:var(--gris-ardoise);
+  padding:5px 0; cursor:pointer;
+}
+.niveau-inspeq input[type="checkbox"]{ margin-top:3px; accent-color:var(--vert-institut); }
+.resultat-inspeq{
+  position:sticky; top:16px;
+  background:var(--vert-nuit); color:#fff;
+  padding:26px; text-align:center;
+}
+.resultat-inspeq .cote{ font-family:var(--police-titre); font-size:2.4rem; color:var(--or-clair); }
+.resultat-inspeq .niveau-nom{ font-size:.95rem; margin-top:6px; }
+.resultat-inspeq .jauge{
+  height:8px; background:rgba(255,255,255,.2); border-radius:4px; margin:16px 0; overflow:hidden;
+}
+.resultat-inspeq .jauge-remplissage{ height:100%; background:var(--or-clair); width:0%; transition:width .2s ease; }
+
+@media (max-width:900px){
+  .colonnes-inspeq{ grid-template-columns:1fr !important; }
+  .resultat-inspeq{ position:static; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px){
+  .hero .conteneur{ grid-template-columns:1fr; }
+  .grille-acces{ grid-template-columns:repeat(2,1fr); }
+  .bande-chiffres .conteneur{ grid-template-columns:repeat(2,1fr); row-gap:28px; }
+  .grille-actus{ grid-template-columns:1fr; }
+  .pied-grille{ grid-template-columns:1fr 1fr; }
+}
+@media (max-width: 640px){
+  .bandeau-utilitaire .liens-util{ display:none; }
+  nav.principale ul{ gap:16px; font-size:.84rem; flex-wrap:wrap; }
+  .entete .conteneur{ flex-direction:column; align-items:flex-start; gap:14px; }
+  .hero h2{ font-size:1.9rem; }
+  .grille-acces{ grid-template-columns:1fr; }
+  .pied-grille{ grid-template-columns:1fr; }
+  .fiche-dirigeant{ grid-template-columns:1fr; }
+  .fiche-dirigeant .photo{ width:120px; height:120px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ scroll-behavior:auto !important; transition:none !important; }
+}
+    
+  </style>
 </head>
 <body data-page="roie">
 <div class="bandeau-utilitaire">
