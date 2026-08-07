@@ -313,7 +313,11 @@ function analyserDefinition(texte) {
 
 function decoderDate(nom) {
 
-    if (!/^\d{12}$/.test(nom)) {
+    const match = nom.match(
+        /(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})\.map$/i
+    );
+
+    if (!match) {
 
         return {
             texte: nom,
@@ -322,40 +326,37 @@ function decoderDate(nom) {
 
     }
 
-
-    const jour = nom.substring(0, 2);
-    const mois = nom.substring(2, 4);
-    const annee = nom.substring(4, 8);
-    const heure = nom.substring(8, 10);
-    const minute = nom.substring(10, 12);
-
+    const annee = Number(match[1]);
+    const mois = Number(match[2]);
+    const jour = Number(match[3]);
+    const heure = Number(match[4]);
+    const minute = Number(match[5]);
 
     return {
 
         texte:
-            jour +
+            jour.toString().padStart(2, '0') +
             '/' +
-            mois +
+            mois.toString().padStart(2, '0') +
             '/' +
             annee +
             ' à ' +
-            heure +
+            heure.toString().padStart(2, '0') +
             'h' +
-            minute,
+            minute.toString().padStart(2, '0'),
 
         valeur:
             new Date(
-                Number(annee),
-                Number(mois) - 1,
-                Number(jour),
-                Number(heure),
-                Number(minute)
+                annee,
+                mois - 1,
+                jour,
+                heure,
+                minute
             ).getTime()
 
     };
 
 }
-
 
 /* =========================================================
    AFFICHAGE DES LISTES
@@ -601,7 +602,7 @@ function afficherListes() {
             */
 
             bouton.download =
-                fichier.nom;
+    fichier.nom.replace(/\.map$/i, '') + '-azgaar.github.io_fantasy-map-generator.map';
 
 
             bouton.textContent =
