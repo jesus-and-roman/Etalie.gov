@@ -167,8 +167,6 @@ function analyserDefinition(texte) {
 
     const lignes = texte.split(/\r?\n/);
 
-    let listeActuelle = null;
-
     lignes.forEach(ligneBrute => {
 
         const ligne = ligneBrute.trim();
@@ -177,12 +175,12 @@ function analyserDefinition(texte) {
             return;
         }
 
+        /*
+           Titre de liste :
 
-        /* -----------------------------------------
-           TITRE D'UNE LISTE
-
-           [1] Cartes officielles
-           ----------------------------------------- */
+           [0] Mondes Toutou
+           [1] Cartes politiques
+        */
 
         const titre = ligne.match(
             /^\[(\d+)\]\s*(.+)$/
@@ -206,40 +204,35 @@ function analyserDefinition(texte) {
 
             }
 
-            listeActuelle = numero;
-
             return;
         }
 
 
-        /* -----------------------------------------
-           FICHIER
+        /*
+           Fichier :
 
-           (1)170720231912: Description
-           ----------------------------------------- */
+           (0)Nouveau monde Toutou 2026-07-31-23-52.map: Description
+
+           Tout ce qui est entre ")" et ":" devient
+           le nom EXACT du fichier.
+        */
 
         const fichier = ligne.match(
-            /^\((\d+)\)(\d{12})\s*:\s*(.*)$/
+            /^\((\d+)\)(.*?)\s*:\s*(.*)$/
         );
 
         if (fichier) {
 
             const numero = Number(fichier[1]);
-            const nomFichier = fichier[2];
+
+            const nomFichier = fichier[2].trim();
+
             const description = fichier[3].trim();
 
 
             /*
-               Si la liste n'a pas de titre [numéro],
-               on crée quand même la liste.
-
-               Exemple :
-
-               (4)170720231912: Test
-
-               donnera automatiquement :
-
-               Liste 4
+               Si la liste n'existe pas encore,
+               elle est créée automatiquement.
             */
 
             if (!listesAzgaar[numero]) {
@@ -266,19 +259,52 @@ function analyserDefinition(texte) {
 
 
     /*
-       Classement des fichiers :
-       plus récent → plus ancien.
+       Classement par date contenue dans le nom.
+
+       Exemple :
+
+       Nouveau monde Toutou 2026-07-31-23-52.map
+       Nouveau monde Toutou 2026-07-30-18-20.map
+
+       Le plus récent vient en premier.
     */
 
     Object.values(listesAzgaar).forEach(liste => {
 
-        liste.fichiers.sort(
-            (a, b) => b.nom.localeCompare(a.nom)
-        );
+        liste.fichiers.sort((a, b) => {
+
+            const dateA = extraireDateFichier(a.nom);
+            const dateB = extraireDateFichier(b.nom);
+
+            return dateB - dateA;
+
+        });
 
     });
 
 }
+
+   function extraireDateFichier(nom) {
+
+    const match = nom.match(
+        /(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})\.map$/i
+    );
+
+    if (!match) {
+        return 0;
+    }
+
+    return new Date(
+        Number(match[1]),
+        Number(match[2]) - 1,
+        Number(match[3]),
+        Number(match[4]),
+        Number(match[5])
+    ).getTime();
+
+}
+
+   
 
 
 /* =========================================================
@@ -575,8 +601,7 @@ function afficherListes() {
             */
 
             bouton.download =
-                fichier.nom +
-                '-azgaar.map';
+                fichier.nom;
 
 
             bouton.textContent =
