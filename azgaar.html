@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Provinces &amp; municipalités — Gouvernement d'Étalie</title>
-<meta content="Répertoire officiel des provinces et municipalités d'Étalie." name="description"/>
+<title>Fichiers Azgaar — Gouvernement d'Étalie</title>
+<meta content="Archives des fichiers cartographiques Azgaar d'Étalie." name="description"/>
 <link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
 <link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
 <link href="css/styles.css" rel="stylesheet"/>
 </head>
 
-<body data-page="provinces">
+<body data-page="azgaar">
 
 <div class="bandeau-utilitaire">
 <div class="conteneur">
@@ -29,6 +29,7 @@
 
 <header class="entete">
 <div class="conteneur">
+
 <div class="identite">
 <img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
 <div class="texte-identite">
@@ -49,6 +50,7 @@
 <li><a data-i18n="t014" href="portail-citoyen.html">Portail citoyen</a></li>
 </ul>
 </nav>
+
 </div>
 </header>
 
@@ -74,8 +76,7 @@
 <span class="num-section">Archives</span>
 <h3>Fichiers Azgaar</h3>
 <p>
-Liste automatique des fichiers cartographiques disponibles.
-Les fichiers sont classés du plus récent au plus ancien.
+Archives cartographiques d'Étalie, classées par catégories.
 </p>
 </div>
 </div>
@@ -89,25 +90,12 @@ type="text"
 />
 </div>
 
-<div class="table-wrap">
-<table class="table-donnees" id="table-azgaar">
+<div id="listes-azgaar">
 
-<thead>
-<tr>
-<th>Date</th>
-<th>Description</th>
-<th>Fichier</th>
-<th>Téléchargement</th>
-</tr>
-</thead>
+<div style="padding:30px 0;">
+Chargement des fichiers…
+</div>
 
-<tbody id="liste-azgaar">
-<tr>
-<td colspan="4">Chargement des fichiers…</td>
-</tr>
-</tbody>
-
-</table>
 </div>
 
 </div>
@@ -115,81 +103,43 @@ type="text"
 
 <script>
 
-let fichiersAzgaar = [];
+let listesAzgaar = {};
 
-/*
-    Format de definition.txt :
 
-    170720231912: Mise à jour est la guerre
-    180720231430: Nouvelle carte
-    190720231005: Modification des provinces
-
-    Le nom avant ":" doit correspondre exactement
-    au nom du fichier dans assets/azgaar/.
-*/
+/* =========================================================
+   CHARGEMENT DE DEFINITION.TXT
+   ========================================================= */
 
 async function chargerAzgaar() {
 
-    const liste = document.getElementById('liste-azgaar');
+    const conteneur = document.getElementById('listes-azgaar');
 
     try {
 
-        const reponse = await fetch('assets/azgaar/definition.txt');
+        const reponse = await fetch(
+            'assets/azgaar/definition.txt'
+        );
 
         if (!reponse.ok) {
-            throw new Error('Impossible de charger definition.txt');
+            throw new Error(
+                'Impossible de charger definition.txt'
+            );
         }
 
         const texte = await reponse.text();
 
-        const lignes = texte
-            .split(/\r?\n/)
-            .map(ligne => ligne.trim())
-            .filter(ligne => ligne && ligne.includes(':'));
+        analyserDefinition(texte);
 
-        fichiersAzgaar = lignes.map(ligne => {
-
-            const position = ligne.indexOf(':');
-
-            const nom = ligne
-                .substring(0, position)
-                .trim();
-
-            const description = ligne
-                .substring(position + 1)
-                .trim();
-
-            return {
-                nom: nom,
-                description: description
-            };
-
-        });
-
-        /*
-            Les noms sont au format :
-
-            JJMMYYYYHHMM
-
-            Exemple :
-            170720231912
-            = 17 juillet 2023 à 19h12
-        */
-
-        fichiersAzgaar.sort((a, b) => b.nom.localeCompare(a.nom));
-
-        afficherAzgaar();
+        afficherListes();
 
     } catch (erreur) {
 
         console.error(erreur);
 
-        liste.innerHTML = `
-            <tr>
-                <td colspan="4">
-                    Impossible de charger la liste des fichiers.
-                </td>
-            </tr>
+        conteneur.innerHTML = `
+            <div style="padding:30px 0;">
+                Impossible de charger les archives Azgaar.
+            </div>
         `;
 
     }
@@ -197,14 +147,155 @@ async function chargerAzgaar() {
 }
 
 
+/* =========================================================
+   ANALYSE DU FICHIER
+   =========================================================
+
+   Format :
+
+   [1] Cartes officielles
+   (1)170720231912: Mise à jour
+   (1)180720231430: Nouvelle carte
+
+   [2] Cartes politiques
+   (2)190720231005: Nouvelle carte politique
+*/
+
+function analyserDefinition(texte) {
+
+    listesAzgaar = {};
+
+    const lignes = texte.split(/\r?\n/);
+
+    let listeActuelle = null;
+
+    lignes.forEach(ligneBrute => {
+
+        const ligne = ligneBrute.trim();
+
+        if (!ligne) {
+            return;
+        }
+
+
+        /* -----------------------------------------
+           TITRE D'UNE LISTE
+
+           [1] Cartes officielles
+           ----------------------------------------- */
+
+        const titre = ligne.match(
+            /^\[(\d+)\]\s*(.+)$/
+        );
+
+        if (titre) {
+
+            const numero = Number(titre[1]);
+            const nom = titre[2].trim();
+
+            if (!listesAzgaar[numero]) {
+
+                listesAzgaar[numero] = {
+                    titre: nom,
+                    fichiers: []
+                };
+
+            } else {
+
+                listesAzgaar[numero].titre = nom;
+
+            }
+
+            listeActuelle = numero;
+
+            return;
+        }
+
+
+        /* -----------------------------------------
+           FICHIER
+
+           (1)170720231912: Description
+           ----------------------------------------- */
+
+        const fichier = ligne.match(
+            /^\((\d+)\)(\d{12})\s*:\s*(.*)$/
+        );
+
+        if (fichier) {
+
+            const numero = Number(fichier[1]);
+            const nomFichier = fichier[2];
+            const description = fichier[3].trim();
+
+
+            /*
+               Si la liste n'a pas de titre [numéro],
+               on crée quand même la liste.
+
+               Exemple :
+
+               (4)170720231912: Test
+
+               donnera automatiquement :
+
+               Liste 4
+            */
+
+            if (!listesAzgaar[numero]) {
+
+                listesAzgaar[numero] = {
+                    titre: 'Liste ' + numero,
+                    fichiers: []
+                };
+
+            }
+
+
+            listesAzgaar[numero].fichiers.push({
+
+                nom: nomFichier,
+
+                description: description
+
+            });
+
+        }
+
+    });
+
+
+    /*
+       Classement des fichiers :
+       plus récent → plus ancien.
+    */
+
+    Object.values(listesAzgaar).forEach(liste => {
+
+        liste.fichiers.sort(
+            (a, b) => b.nom.localeCompare(a.nom)
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   DÉCODAGE DE LA DATE
+   ========================================================= */
+
 function decoderDate(nom) {
 
     if (!/^\d{12}$/.test(nom)) {
+
         return {
             texte: nom,
             valeur: 0
         };
+
     }
+
 
     const jour = nom.substring(0, 2);
     const mois = nom.substring(2, 4);
@@ -212,35 +303,42 @@ function decoderDate(nom) {
     const heure = nom.substring(8, 10);
     const minute = nom.substring(10, 12);
 
-    const date = new Date(
-        Number(annee),
-        Number(mois) - 1,
-        Number(jour),
-        Number(heure),
-        Number(minute)
-    );
 
     return {
+
         texte:
-            String(jour).padStart(2, '0') +
+            jour +
             '/' +
-            String(mois).padStart(2, '0') +
+            mois +
             '/' +
             annee +
             ' à ' +
-            String(heure).padStart(2, '0') +
+            heure +
             'h' +
-            String(minute).padStart(2, '0'),
+            minute,
 
-        valeur: date.getTime()
+        valeur:
+            new Date(
+                Number(annee),
+                Number(mois) - 1,
+                Number(jour),
+                Number(heure),
+                Number(minute)
+            ).getTime()
+
     };
 
 }
 
 
-function afficherAzgaar() {
+/* =========================================================
+   AFFICHAGE DES LISTES
+   ========================================================= */
 
-    const tbody = document.getElementById('liste-azgaar');
+function afficherListes() {
+
+    const conteneur =
+        document.getElementById('listes-azgaar');
 
     const recherche =
         document
@@ -249,78 +347,306 @@ function afficherAzgaar() {
             .trim()
             .toLowerCase();
 
-    const fichiers = fichiersAzgaar.filter(fichier => {
 
-        return (
-            fichier.nom.toLowerCase().includes(recherche) ||
-            fichier.description.toLowerCase().includes(recherche)
-        );
+    conteneur.innerHTML = '';
 
-    });
 
-    if (fichiers.length === 0) {
+    /*
+       Les numéros sont triés :
+       1
+       2
+       3
+       4
+       etc.
+    */
 
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4">
-                    Aucun fichier trouvé.
-                </td>
-            </tr>
+    const numeros = Object.keys(listesAzgaar)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+
+    let nombreTotal = 0;
+
+
+    numeros.forEach(numero => {
+
+        const liste = listesAzgaar[numero];
+
+
+        /*
+           Filtre de recherche.
+        */
+
+        const fichiers = liste.fichiers.filter(fichier => {
+
+            return (
+
+                fichier.nom
+                    .toLowerCase()
+                    .includes(recherche)
+
+                ||
+
+                fichier.description
+                    .toLowerCase()
+                    .includes(recherche)
+
+            );
+
+        });
+
+
+        if (
+            fichiers.length === 0 &&
+            recherche !== ''
+        ) {
+
+            return;
+
+        }
+
+
+        nombreTotal += fichiers.length;
+
+
+        /*
+           TITRE DE LA LISTE
+        */
+
+        const section =
+            document.createElement('section');
+
+        section.className = 'section';
+
+        section.style.paddingTop = '0';
+
+
+        const entete =
+            document.createElement('div');
+
+        entete.className = 'entete-section';
+
+
+        const bloc =
+            document.createElement('div');
+
+
+        const numeroTitre =
+            document.createElement('span');
+
+        numeroTitre.className = 'num-section';
+
+        numeroTitre.textContent =
+            'Liste ' + numero;
+
+
+        const titre =
+            document.createElement('h3');
+
+        titre.textContent =
+            liste.titre;
+
+
+        bloc.appendChild(numeroTitre);
+        bloc.appendChild(titre);
+
+        entete.appendChild(bloc);
+
+        section.appendChild(entete);
+
+
+        /*
+           TABLEAU
+        */
+
+        const tableWrap =
+            document.createElement('div');
+
+        tableWrap.className =
+            'table-wrap';
+
+
+        const table =
+            document.createElement('table');
+
+        table.className =
+            'table-donnees';
+
+
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Fichier</th>
+                    <th>Téléchargement</th>
+                </tr>
+            </thead>
         `;
 
-        return;
-    }
 
-    tbody.innerHTML = '';
+        const tbody =
+            document.createElement('tbody');
 
-    fichiers.forEach(fichier => {
 
-        const date = decoderDate(fichier.nom);
+        if (fichiers.length === 0) {
 
-        const ligne = document.createElement('tr');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4">
+                        Aucun fichier dans cette liste.
+                    </td>
+                </tr>
+            `;
 
-        const celluleDate = document.createElement('td');
-        celluleDate.textContent = date.texte;
+        }
 
-        const celluleDescription = document.createElement('td');
-        celluleDescription.textContent = fichier.description;
 
-        const celluleNom = document.createElement('td');
-        celluleNom.textContent = fichier.nom;
+        fichiers.forEach(fichier => {
 
-        const celluleTelechargement = document.createElement('td');
+            const ligne =
+                document.createElement('tr');
 
-        const bouton = document.createElement('a');
 
-        bouton.href =
-            'assets/azgaar/' +
-            encodeURIComponent(fichier.nom);
+            const date =
+                decoderDate(fichier.nom);
 
-        bouton.download = fichier.nom;
-        bouton.textContent = 'Télécharger';
 
-        celluleTelechargement.appendChild(bouton);
+            /*
+               DATE
+            */
 
-        ligne.appendChild(celluleDate);
-        ligne.appendChild(celluleDescription);
-        ligne.appendChild(celluleNom);
-        ligne.appendChild(celluleTelechargement);
+            const celluleDate =
+                document.createElement('td');
 
-        tbody.appendChild(ligne);
+            celluleDate.textContent =
+                date.texte;
+
+
+            /*
+               DESCRIPTION
+            */
+
+            const celluleDescription =
+                document.createElement('td');
+
+            celluleDescription.textContent =
+                fichier.description;
+
+
+            /*
+               NOM DU FICHIER
+            */
+
+            const celluleNom =
+                document.createElement('td');
+
+            celluleNom.textContent =
+                fichier.nom + '.map';
+
+
+            /*
+               TÉLÉCHARGEMENT
+            */
+
+            const celluleTelechargement =
+                document.createElement('td');
+
+
+            const bouton =
+                document.createElement('a');
+
+
+            /*
+               Le fichier réel est :
+
+               assets/azgaar/170720231912.map
+            */
+
+            bouton.href =
+                'assets/azgaar/' +
+                encodeURIComponent(
+                    fichier.nom
+                ) +
+                '.map';
+
+
+            /*
+               Le fichier téléchargé devient :
+
+               170720231912-azgaar.map
+            */
+
+            bouton.download =
+                fichier.nom +
+                '-azgaar.map';
+
+
+            bouton.textContent =
+                'Télécharger';
+
+
+            celluleTelechargement
+                .appendChild(bouton);
+
+
+            ligne.appendChild(celluleDate);
+            ligne.appendChild(celluleDescription);
+            ligne.appendChild(celluleNom);
+            ligne.appendChild(celluleTelechargement);
+
+
+            tbody.appendChild(ligne);
+
+        });
+
+
+        table.appendChild(tbody);
+
+        tableWrap.appendChild(table);
+
+        section.appendChild(tableWrap);
+
+        conteneur.appendChild(section);
 
     });
+
+
+    /*
+       Aucun résultat avec la recherche.
+    */
+
+    if (
+        nombreTotal === 0 &&
+        recherche !== ''
+    ) {
+
+        conteneur.innerHTML = `
+            <div style="padding:30px 0;">
+                Aucun fichier trouvé.
+            </div>
+        `;
+
+    }
 
 }
 
 
+/* =========================================================
+   RECHERCHE
+   ========================================================= */
+
 document
     .getElementById('filtre-azgaar')
-    .addEventListener('input', afficherAzgaar);
+    .addEventListener(
+        'input',
+        afficherListes
+    );
 
 
-/*
-    Chargement initial.
-*/
+/* =========================================================
+   CHARGEMENT INITIAL
+   ========================================================= */
 
 chargerAzgaar();
 
