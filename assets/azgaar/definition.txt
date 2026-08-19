@@ -2,5 +2,6 @@
 (1)Nouveau monde Toutou 2026-08-07-18-15.map:
 (1)Nouveau monde Toutou 2026-07-20-23-45.map:
 (1)Nouveau monde Toutou 2026-06-11-10-12.map:
+(1)Nouveau monde Toutou 2026-08-19-04-19.map: Fix des marketplaces ayant certaines colonies, fixe du style, fixe du nom de Valcourt = Valcos, ajout de certains ports maritimes en Étalie, modification du drapeau, ajout de certains PINS.
 [2] Premier règne
 (2)Nouveau monde Toutou 2026-05-30-22-45.map:
