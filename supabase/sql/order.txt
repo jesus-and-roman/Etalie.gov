@@ -1,0 +1,19 @@
+Voici l'ordre exact, basé sur l'historique de nos échanges (chaque fichier s'appuie sur le précédent) :
+
+schema-portail-citoyen-v2.sql — (saute schema-portail-citoyen.sql sans le "v2" : c'est l'ancienne version, entièrement remplacée par celui-ci, pas besoin de la lancer)
+patch-verification-cas.sql
+patch-fichier-cas.sql
+patch-demandes-cas.sql
+patch-fonctionnalites-avancees.sql
+patch-historique-emprunts-documents.sql
+patch-salaire-taxes-epargne.sql
+patch-du-patch-salaire-taxes-epargne.sql (le correctif du "cannot change return type" — juste après le précédent)
+GRAND-PATCH-1-taxes-epargne-corrections.sql
+GRAND-PATCH-2-virement-considerable-permis.sql
+GRAND-PATCH-3-bareme-tso-tsq-feries.sql
+fix-1-redevance-where.sql
+fix-2-permis-adresse.sql
+
+Un doute de ma part : si patch-du-patch-salaire-taxes-epargne.sql n'est pas le correctif "DROP FUNCTION deposer_revenu_citoyen" dont on avait parlé, ouvre-le et dis-moi ce qu'il contient — je peux confirmer sa place exacte si le nom ne correspond pas à ce que je pense.
+
+Si ta base Supabase a déjà tout ça d'exécuté avant aujourd'hui, tu n'as qu'à relancer dans l'ordre ceux que tu n'es pas sûr d'avoir faits — la plupart utilisent create or replace donc les relancer ne casse rien.
