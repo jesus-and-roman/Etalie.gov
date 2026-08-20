@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Création de document officiel — République d'Étalie</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Times New Roman",Times,serif;background:#f4f1ea;color:#1a1a1a;line-height:1.45}
+.bandeau{background:#0c2340;color:#fff;font-size:13px;padding:6px 0}
+.bandeau .conteneur{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 16px}
+.tricolore{height:4px;display:flex}
+.tricolore span{flex:1}
+.tricolore span:nth-child(1){background:#002395}
+.tricolore span:nth-child(2){background:#fff}
+.tricolore span:nth-child(3){background:#ed2939}
+.entete-doc{background:#fff;border-bottom:2px solid #0c2340;padding:14px 0}
+.entete-doc .conteneur{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 16px}
+.entete-doc .gauche{font-size:18px;font-weight:700;letter-spacing:1px}
+.entete-doc .centre{text-align:center}
+.entete-doc .centre img{height:52px;object-fit:contain}
+.entete-doc .droite{text-align:right;font-size:18px;font-weight:700;letter-spacing:2px;color:#0c2340}
+.conteneur{max-width:1100px;margin:0 auto;padding:0 16px}
+.section{padding:28px 0}
+h2{font-size:22px;margin-bottom:12px;color:#0c2340}
+h3{font-size:17px;margin:18px 0 8px;color:#0c2340}
+label{display:block;font-weight:600;margin:10px 0 4px;font-size:14px}
+input[type=text],input[type=email],textarea,select{width:100%;padding:9px 11px;border:1px solid #8a8a8a;font-family:"Times New Roman",Times,serif;font-size:15px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+.bouton{display:inline-block;padding:10px 18px;border:none;cursor:pointer;font-family:"Times New Roman",Times,serif;font-size:15px;font-weight:600;text-decoration:none}
+.bouton-or{background:#c5a46e;color:#1a1a1a}
+.bouton-or:hover{background:#b08d4f}
+.bouton-contour{background:transparent;border:2px solid #0c2340;color:#0c2340}
+.bouton-rouge{background:#8b1a1a;color:#fff}
+.bouton-gris{background:#555;color:#fff}
+.grille2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.carte{background:#fff;border:1px solid #c8c2b4;padding:18px;margin-bottom:14px}
+.avis{background:#fff8e6;border-left:4px solid #c5a46e;padding:12px 16px;margin:14px 0;font-size:14px}
+.erreur{background:#fde8e8;border-left:4px solid #8b1a1a;padding:12px 16px;margin:14px 0;color:#5a0000}
+.succes{background:#e8f5e9;border-left:4px solid #2e7d32;padding:12px 16px;margin:14px 0}
+.cache{display:none!important}
+.zone-dessin{border:2px dashed #0c2340;background:#fff;touch-action:none;cursor:crosshair}
+.outils-dessin{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.outils-dessin label{margin:0;font-weight:400}
+#preview-pages{margin-top:20px}
+.page-pdf{background:#fff;border:1px solid #999;margin:0 auto 20px;box-shadow:0 2px 8px rgba(0,0,0,.15);position:relative;overflow:hidden}
+.page-pdf .contenu{padding:28px 32px;font-size:13px}
+.page-pdf .en-tete-page{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid #0c2340;padding-bottom:8px;margin-bottom:14px;font-size:12px}
+.page-pdf .en-tete-page .c{text-align:center}
+.page-pdf .en-tete-page .c img{height:36px}
+.page-pdf .en-tete-page .d{text-align:right;font-weight:700}
+.meta{font-size:12px;color:#333;margin:4px 0}
+.countdown{font-size:28px;font-weight:700;color:#8b1a1a;text-align:center;margin:12px 0}
+.cle-box{background:#f0f0f0;border:1px solid #999;padding:10px;font-family:monospace;font-size:12px;word-break:break-all;margin:6px 0}
+.btn-copie{font-size:13px;padding:6px 12px;margin-top:4px}
+footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13px;text-align:center}
+@media(max-width:700px){.grille2{grid-template-columns:1fr}.entete-doc .conteneur{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bandeau">
+  <div class="conteneur">
+    <span>République d'Étalie — Création de document officiel</span>
+    <span id="horloge"></span>
+  </div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+
+<header class="entete-doc">
+  <div class="conteneur">
+    <div class="gauche">Français</div>
+    <div class="centre">
+      <img src="assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div style="display:none;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
+    </div>
+    <div class="droite">Celst</div>
+  </div>
+</header>
+
+<main class="conteneur section">
+
+  <!-- ÉTAPE 0 : CHOIX -->
+  <div id="etape0">
+    <h2>Création / Recherche de document officiel</h2>
+    <div class="grille2">
+      <div class="carte">
+        <h3>Nouveau document</h3>
+        <p style="font-size:14px;margin-bottom:12px">Générer un code de suivi unique et rédiger un document officiel.</p>
+        <button class="bouton bouton-or" onclick="demarrerCreation()">Créer un nouveau document</button>
+      </div>
+      <div class="carte">
+        <h3>Rechercher un document existant</h3>
+        <label>Code de suivi (ex: G-656621709110176310-D)</label>
+        <input type="text" id="recherche-code" placeholder="G-................-D">
+        <button class="bouton bouton-contour" style="margin-top:10px" onclick="rechercherDocument()">Ouvrir le PDF</button>
+        <div id="resultat-recherche" class="cache" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 1 : IDENTITÉ + CODE -->
+  <div id="etape1" class="cache">
+    <h2>1. Identité du demandeur</h2>
+    <div class="avis">Toutes les polices du document final seront en Times New Roman. Le code social et le nom complet seront chiffrés avec BVE-512 (clé publique cosmétique).</div>
+    
+    <label>Nom complet légal du demandeur</label>
+    <input type="text" id="nom-complet" placeholder="Prénom(s) NOM">
+    
+    <label>Code social du demandeur</label>
+    <input type="text" id="code-social" placeholder="Numéro de code social">
+    
+    <div class="grille2" style="margin-top:14px">
+      <div>
+        <label>Date de demande (générée automatiquement)</label>
+        <input type="text" id="date-demande" readonly>
+      </div>
+      <div>
+        <label>Code de suivi (unique)</label>
+        <input type="text" id="code-suivi" readonly>
+      </div>
+    </div>
+
+    <div style="margin-top:18px">
+      <button class="bouton bouton-or" onclick="genererCodeEtContinuer()">Générer le code unique et continuer</button>
+      <button class="bouton bouton-gris" onclick="retourEtape0()" style="margin-left:8px">Retour</button>
+    </div>
+    <div id="msg-code" class="cache"></div>
+  </div>
+
+  <!-- ÉTAPE 2 : MODE DE RÉDACTION -->
+  <div id="etape2" class="cache">
+    <h2>2. Mode de rédaction</h2>
+    <p style="margin-bottom:14px">Choisissez comment vous allez remplir le document. Vous ne pourrez écrire que sur la moitié inférieure / côté gauche (zone française).</p>
+    
+    <div class="grille2">
+      <div class="carte">
+        <h3>À la main</h3>
+        <p style="font-size:13px;margin-bottom:10px">Dessinez avec le doigt ou la souris. Taille de trait et couleur (bleu / rouge / noir). Maximum une demi-page par page.</p>
+        <button class="bouton bouton-or" onclick="choisirMode('main')">Choisir écriture à la main</button>
+      </div>
+      <div class="carte">
+        <h3>Digital</h3>
+        <p style="font-size:13px;margin-bottom:10px">Texte tapé. Police Arial ou Times New Roman. Taille ajustable. Possibilité d’ajouter des pages.</p>
+        <button class="bouton bouton-or" onclick="choisirMode('digital')">Choisir écriture digitale</button>
+      </div>
+    </div>
+    <div class="carte" style="margin-top:12px">
+      <h3>Importer une image <span style="color:#8b1a1a;font-size:13px">(déconseillé — risque de refus)</span></h3>
+      <p style="font-size:13px;margin-bottom:10px">L’image sera compressée pour tenir sur la moitié de la page. Chaque image = une page.</p>
+      <input type="file" id="import-image" accept="image/*" style="margin-bottom:8px">
+      <button class="bouton bouton-contour" onclick="choisirMode('image')">Utiliser l’image importée</button>
+    </div>
+    <button class="bouton bouton-gris" style="margin-top:16px" onclick="retourEtape1()">Retour</button>
+  </div>
+
+  <!-- ÉTAPE 3 : RÉDACTION -->
+  <div id="etape3" class="cache">
+    <h2>3. Rédaction du document</h2>
+    <div class="avis">Zone d’écriture limitée à la moitié inférieure / côté gauche. Les en-têtes (Français + logo + Celst + métadonnées) sont protégés.</div>
+    
+    <div id="zone-main" class="cache">
+      <div class="outils-dessin">
+        <label>Taille trait : <input type="range" id="taille-trait" min="1" max="8" value="2"></label>
+        <label>Couleur :
+          <select id="couleur-trait">
+            <option value="#002395">Bleu</option>
+            <option value="#ed2939">Rouge</option>
+            <option value="#000000">Noir</option>
+          </select>
+        </label>
+        <button class="bouton bouton-gris" onclick="effacerCanvas()">Effacer</button>
+        <button class="bouton bouton-or" onclick="ajouterPageMain()">+ Nouvelle page</button>
+      </div>
+      <canvas id="canvas-main" class="zone-dessin" width="794" height="400"></canvas>
+      <p style="font-size:12px;margin-top:6px">Format A4 (21 × 29,7 cm) — zone d’écriture = moitié inférieure</p>
+    </div>
+
+    <div id="zone-digital" class="cache">
+      <div class="outils-dessin">
+        <label>Police :
+          <select id="police-digital">
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Arial">Arial</option>
+          </select>
+        </label>
+        <label>Taille : <input type="number" id="taille-digital" min="10" max="22" value="14" style="width:60px"></label>
+        <button class="bouton bouton-or" onclick="ajouterPageDigital()">+ Nouvelle page</button>
+      </div>
+      <textarea id="texte-digital" placeholder="Écrivez ici (uniquement dans la zone autorisée)..." style="min-height:220px"></textarea>
+    </div>
+
+    <div id="zone-image" class="cache">
+      <p>Image sélectionnée. Elle sera placée sur une page dédiée (moitié inférieure).</p>
+      <img id="preview-image" style="max-width:100%;max-height:280px;border:1px solid #999;margin-top:8px">
+    </div>
+
+    <div style="margin-top:20px">
+      <button class="bouton bouton-or" onclick="passerSignature()">Continuer vers la signature</button>
+      <button class="bouton bouton-gris" style="margin-left:8px" onclick="retourEtape2()">Retour</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 4 : SIGNATURE -->
+  <div id="etape4" class="cache">
+    <h2>4. Signature manuscrite obligatoire</h2>
+    <p style="margin-bottom:10px">La dernière page du PDF contiendra uniquement les infos du document + votre signature à la main. Signez clairement dans le cadre ci-dessous.</p>
+    <canvas id="canvas-signature" class="zone-dessin" width="600" height="180" style="max-width:100%"></canvas>
+    <div class="outils-dessin">
+      <button class="bouton bouton-gris" onclick="effacerSignature()">Effacer signature</button>
+    </div>
+    <div style="margin-top:18px">
+      <button class="bouton bouton-or" onclick="genererPDF()">Générer et télécharger le PDF</button>
+      <button class="bouton bouton-gris" style="margin-left:8px" onclick="retourEtape3()">Retour</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 5 : TÉLÉCHARGEMENT + COMPTE À REBOURS -->
+  <div id="etape5" class="cache">
+    <h2>Document généré</h2>
+    <div class="succes">
+      Le PDF a été téléchargé. Il ne peut plus être modifié.<br>
+      Vous avez <strong>5 jours</strong> à compter de la date de téléchargement pour transmettre le dossier.
+    </div>
+
+    <div class="carte">
+      <h3>Date de téléchargement</h3>
+      <div id="date-telechargement" class="meta"></div>
+      
+      <h3 style="margin-top:14px">Transmission obligatoire</h3>
+      <p style="font-size:14px">Acheminer ce message à <strong>mazmogetjr@gmail.com</strong> pour l’ajout au site et la traduction officielle.</p>
+      
+      <div class="countdown" id="compte-rebours">60</div>
+      <p style="text-align:center;font-size:13px">Secondes restantes pour copier les clés</p>
+
+      <h3>Clés à joindre obligatoirement à l’email</h3>
+      <label>Seedbox</label>
+      <div class="cle-box" id="affiche-seedbox"></div>
+      <button class="bouton bouton-contour btn-copie" onclick="copierTexte('affiche-seedbox')">Copier seedbox</button>
+
+      <label style="margin-top:10px">Clé privée</label>
+      <div class="cle-box" id="affiche-privee"></div>
+      <button class="bouton bouton-contour btn-copie" onclick="copierTexte('affiche-privee')">Copier clé privée</button>
+
+      <label style="margin-top:10px">Nom + Code social (chiffrés)</label>
+      <div class="cle-box" id="affiche-chiffre"></div>
+      <button class="bouton bouton-contour btn-copie" onclick="copierTexte('affiche-chiffre')">Copier données chiffrées</button>
+
+      <button class="bouton bouton-or" style="margin-top:16px;width:100%" onclick="copierTout()">Tout copier (prêt à coller dans l’email)</button>
+    </div>
+
+    <div class="avis" style="margin-top:16px">
+      <strong>Rappel structure PDF :</strong><br>
+      Page 1 = Règles & avertissements<br>
+      Page 2 = Infos + type de fichier<br>
+      Pages 3+ = Contenu (texte / dessin / image)<br>
+      Dernière page = Infos + signature manuscrite uniquement
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="conteneur">
+    © 2023 – 2026 République d’Étalie — Document officiel — Site fictif à des fins narratives<br>
+    Toutes les polices du document : Times New Roman
+  </div>
+</footer>
+
+<!-- BVE-512 -->
+<script>
+/**
+ * BVE-512 browser (extrait et adapté)
+ */
+const BVE512 = (() => {
+  async function sha256(bytes) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    return new Uint8Array(hashBuffer);
+  }
+  function textToBytes(str) { return new TextEncoder().encode(str); }
+  function bytesToHex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''); }
+  function hexToBytes(hex) {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    return bytes;
+  }
+  function concatBytes(...arrays) {
+    const total = arrays.reduce((sum, a) => sum + a.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const a of arrays) { out.set(a, offset); offset += a.length; }
+    return out;
+  }
+  async function generateSbox(seed) {
+    let state = await sha256(textToBytes(seed));
+    let pos = 0;
+    async function nextByte() {
+      if (pos >= state.length) { state = await sha256(state); pos = 0; }
+      return state[pos++];
+    }
+    const sbox = Array.from({ length: 256 }, (_, i) => i);
+    for (let i = 255; i > 0; i--) {
+      let r, limit = 256 - (256 % (i + 1));
+      do { r = await nextByte(); } while (r >= limit);
+      const j = r % (i + 1);
+      [sbox[i], sbox[j]] = [sbox[j], sbox[i]];
+    }
+    return sbox;
+  }
+  async function condenseKeyTo512Bits(userKey) {
+    let keyMaterial = new Uint8Array(0);
+    let counter = 0;
+    while (keyMaterial.length < 64) {
+      const chunk = await sha256(textToBytes(`${userKey}-${counter}`));
+      keyMaterial = concatBytes(keyMaterial, chunk);
+      counter++;
+    }
+    return keyMaterial.subarray(0, 64);
+  }
+  function rotl32(x, n) { n = n % 32; x = x >>> 0; return ((x << n) | (x >>> (32 - n))) >>> 0; }
+  function subBytesArray(arr, sbox) {
+    const out = new Uint8Array(arr.length);
+    for (let i = 0; i < arr.length; i++) out[i] = sbox[arr[i]];
+    return out;
+  }
+  function subBytes32(val, sbox) {
+    const buf = new Uint8Array(4);
+    new DataView(buf.buffer).setUint32(0, val >>> 0, false);
+    const sub = subBytesArray(buf, sbox);
+    return new DataView(sub.buffer).getUint32(0, false);
+  }
+  function deriveRoundKey(livre, roundNum, sbox) {
+    let val = subBytes32(new DataView(livre.buffer, livre.byteOffset).getUint32(0, false), sbox);
+    const roundMask = (roundNum * 0x9E3779B1) >>> 0;
+    val = (val ^ roundMask) >>> 0;
+    val = subBytes32(val, sbox);
+    val = rotl32(val, roundNum % 32);
+    return val >>> 0;
+  }
+  async function fullKeySchedule(userKey512chars, sbox) {
+    const key512bits = await condenseKeyTo512Bits(userKey512chars);
+    const livres = [];
+    for (let i = 0; i < 16; i++) livres.push(key512bits.subarray(i * 4, i * 4 + 4));
+    const roundKeys = [];
+    for (let i = 1; i <= 32; i++) {
+      const livreIndex = (i - 1) % 16;
+      roundKeys.push(deriveRoundKey(livres[livreIndex], i, sbox));
+    }
+    return roundKeys;
+  }
+  function expandRkTo64(rk32, sbox) {
+    const haut = BigInt(rk32);
+    const bas = BigInt(subBytes32(rk32, sbox) ^ 0xA5A5A5A5) & 0xFFFFFFFFn;
+    return (haut << 32n) | bas;
+  }
+  function diffusion(val) {
+    let b = [];
+    for (let i = 7; i >= 0; i--) b.push(Number((val >> BigInt(i * 8)) & 0xFFn));
+    const offsets = [1, 2, 3, 5];
+    const rotations = [1, 3, 5, 7];
+    for (let k = 0; k < 4; k++) {
+      const offset = offsets[k], rot = rotations[k];
+      const newB = new Array(8);
+      for (let i = 0; i < 8; i++) {
+        const neighbor = b[(i + offset) % 8];
+        const rotated = ((neighbor << rot) | (neighbor >>> (8 - rot))) & 0xFF;
+        newB[i] = b[i] ^ rotated;
+      }
+      b = newB;
+    }
+    let out = 0n;
+    for (let i = 0; i < 8; i++) out = (out << 8n) | BigInt(b[i]);
+    return out;
+  }
+  function subBytes64(val, sbox) {
+    const buf = new Uint8Array(8);
+    for (let i = 7; i >= 0; i--) buf[7 - i] = Number((val >> BigInt(i * 8)) & 0xFFn);
+    const sub = subBytesArray(buf, sbox);
+    let out = 0n;
+    for (let i = 0; i < 8; i++) out = (out << 8n) | BigInt(sub[i]);
+    return out;
+  }
+  function roundFunctionF(droite, rk32, sbox) {
+    const rk64 = expandRkTo64(rk32, sbox);
+    let val = droite ^ rk64;
+    val = subBytes64(val, sbox);
+    val = diffusion(val);
+    val = subBytes64(val, sbox);
+    return val;
+  }
+  const MASK64 = (1n << 64n) - 1n;
+  function encryptBlock(bloc128, roundKeys, sbox) {
+    let gauche = (bloc128 >> 64n) & MASK64;
+    let droite = bloc128 & MASK64;
+    for (let i = 0; i < 32; i++) {
+      const ng = droite;
+      const nd = gauche ^ roundFunctionF(droite, roundKeys[i], sbox);
+      gauche = ng; droite = nd;
+    }
+    return (gauche << 64n) | droite;
+  }
+  function decryptBlock(blocChiffre128, roundKeys, sbox) {
+    let gauche = (blocChiffre128 >> 64n) & MASK64;
+    let droite = blocChiffre128 & MASK64;
+    for (let i = 31; i >= 0; i--) {
+      const nd = gauche;
+      const ng = droite ^ roundFunctionF(gauche, roundKeys[i], sbox);
+      gauche = ng; droite = nd;
+    }
+    return (gauche << 64n) | droite;
+  }
+  function pkcs7Pad(data, blockSize = 16) {
+    const padLen = blockSize - (data.length % blockSize);
+    return concatBytes(data, new Uint8Array(padLen).fill(padLen));
+  }
+  function pkcs7Unpad(data) {
+    const padLen = data[data.length - 1];
+    return data.subarray(0, data.length - padLen);
+  }
+  function xorBytes(a, b) {
+    const out = new Uint8Array(a.length);
+    for (let i = 0; i < a.length; i++) out[i] = a[i] ^ b[i];
+    return out;
+  }
+  function bytesToBigInt(bytes) { return BigInt('0x' + bytesToHex(bytes)); }
+  function bigIntToBytes(val, length = 16) {
+    let hex = val.toString(16).padStart(length * 2, '0');
+    return hexToBytes(hex);
+  }
+  function encryptCBC(message, roundKeys, sbox, iv = null) {
+    if (iv === null) { iv = new Uint8Array(16); crypto.getRandomValues(iv); }
+    const data = pkcs7Pad(textToBytes(message));
+    const nbBlocs = data.length / 16;
+    const blocsChiffres = [];
+    let blocPrecedent = iv;
+    for (let i = 0; i < nbBlocs; i++) {
+      const bloc = data.subarray(i * 16, i * 16 + 16);
+      const bXor = xorBytes(bloc, blocPrecedent);
+      const chiffreInt = encryptBlock(bytesToBigInt(bXor), roundKeys, sbox);
+      const chiffreBytes = bigIntToBytes(chiffreInt);
+      blocsChiffres.push(chiffreBytes);
+      blocPrecedent = chiffreBytes;
+    }
+    return { iv, blocsChiffres };
+  }
+  function decryptCBC(iv, blocsChiffres, roundKeys, sbox) {
+    let data = new Uint8Array(0);
+    let blocPrecedent = iv;
+    for (const c of blocsChiffres) {
+      const dechiffreInt = decryptBlock(bytesToBigInt(c), roundKeys, sbox);
+      const dechiffreBytes = bigIntToBytes(dechiffreInt);
+      const original = xorBytes(dechiffreBytes, blocPrecedent);
+      data = concatBytes(data, original);
+      blocPrecedent = c;
+    }
+    return new TextDecoder().decode(pkcs7Unpad(data));
+  }
+  async function encrypt(message, privateKey512chars, seedbox) {
+    const sbox = await generateSbox(seedbox);
+    const roundKeys = await fullKeySchedule(privateKey512chars, sbox);
+    const { iv, blocsChiffres } = encryptCBC(message, roundKeys, sbox);
+    return bytesToHex(iv) + blocsChiffres.map(bytesToHex).join('');
+  }
+  async function decrypt(hexMessage, privateKey512chars, seedbox) {
+    const sbox = await generateSbox(seedbox);
+    const roundKeys = await fullKeySchedule(privateKey512chars, sbox);
+    const iv = hexToBytes(hexMessage.slice(0, 32));
+    const restHex = hexMessage.slice(32);
+    const blocsChiffres = [];
+    for (let i = 0; i < restHex.length; i += 32) {
+      blocsChiffres.push(hexToBytes(restHex.slice(i, i + 32)));
+    }
+    return decryptCBC(iv, blocsChiffres, roundKeys, sbox);
+  }
+  const CHARSET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const PUBLIC_KEY_MULTIPLIER = 104729n;
+  function generatePrivateKey(length = 512) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    let key = '';
+    for (let i = 0; i < length; i++) key += CHARSET[bytes[i] % CHARSET.length];
+    return key;
+  }
+  function generateSeedbox() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return bytesToHex(bytes);
+  }
+  function privateKeyToPublicKey(privateKey512chars) {
+    const asBytes = textToBytes(privateKey512chars);
+    const asBigInt = bytesToBigInt(asBytes);
+    const publicBigInt = asBigInt * PUBLIC_KEY_MULTIPLIER;
+    return publicBigInt.toString(16);
+  }
+  function publicKeyToPrivateKey(publicKeyHex) {
+    const publicBigInt = BigInt('0x' + publicKeyHex);
+    const privateBigInt = publicBigInt / PUBLIC_KEY_MULTIPLIER;
+    let hex = privateBigInt.toString(16);
+    if (hex.length % 2 !== 0) hex = '0' + hex;
+    return new TextDecoder().decode(hexToBytes(hex));
+  }
+  return { encrypt, decrypt, generatePrivateKey, generateSeedbox, privateKeyToPublicKey, publicKeyToPrivateKey };
+})();
+</script>
+
+<!-- jsPDF CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* ========== ÉTAT GLOBAL ========== */
+const etat = {
+  codeSuivi: null,
+  dateDemande: null,
+  dateTelechargement: null,
+  nomComplet: '',
+  codeSocial: '',
+  mode: null, // main | digital | image
+  seedbox: null,
+  privateKey: null,
+  publicKey: null,
+  nomChiffre: null,
+  casChiffre: null,
+  pagesMain: [], // dataURL des canvas
+  texteDigital: '',
+  imageData: null,
+  signatureData: null,
+  listeCodes: [] // simulé depuis list.txt
+};
+
+/* ========== UTILITAIRES ========== */
+function maintenant() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} - ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function genererCodeAleatoire() {
+  const chars = '0123456789';
+  let s = '';
+  for (let i = 0; i < 18; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `G-${s}-D`;
+}
+
+async function chargerListeCodes() {
+  try {
+    const r = await fetch('assets/docs/list.txt');
+    if (r.ok) {
+      const txt = await r.text();
+      etat.listeCodes = txt.split(/[;\n\r]+/).map(c => c.trim()).filter(Boolean);
+    }
+  } catch (e) {
+    // fallback localStorage
+    const saved = localStorage.getItem('etalie_docs_list');
+    if (saved) etat.listeCodes = JSON.parse(saved);
+  }
+}
+
+function sauvegarderCode(code) {
+  etat.listeCodes.push(code);
+  localStorage.setItem('etalie_docs_list', JSON.stringify(etat.listeCodes));
+}
+
+function codeExiste(code) {
+  return etat.listeCodes.includes(code);
+}
+
+function codeVersNomFichier(code) {
+  // G-656621709110176310-D → G656621709110176310D.pdf
+  return code.replace(/-/g, '') + '.pdf';
+}
+
+/* ========== NAVIGATION ========== */
+function cacherTout() {
+  ['etape0','etape1','etape2','etape3','etape4','etape5'].forEach(id => {
+    document.getElementById(id).classList.add('cache');
+  });
+}
+function demarrerCreation() {
+  cacherTout();
+  document.getElementById('etape1').classList.remove('cache');
+  document.getElementById('date-demande').value = maintenant();
+  etat.dateDemande = document.getElementById('date-demande').value;
+}
+function retourEtape0() { cacherTout(); document.getElementById('etape0').classList.remove('cache'); }
+function retourEtape1() { cacherTout(); document.getElementById('etape1').classList.remove('cache'); }
+function retourEtape2() { cacherTout(); document.getElementById('etape2').classList.remove('cache'); }
+function retourEtape3() { cacherTout(); document.getElementById('etape3').classList.remove('cache'); }
+
+/* ========== GÉNÉRATION CODE + CLÉS ========== */
+async function genererCodeEtContinuer() {
+  const nom = document.getElementById('nom-complet').value.trim();
+  const cas = document.getElementById('code-social').value.trim();
+  if (!nom || !cas) {
+    alert('Nom complet et code social obligatoires.');
+    return;
+  }
+  etat.nomComplet = nom;
+  etat.codeSocial = cas;
+
+  await chargerListeCodes();
+
+  let code, tentatives = 0;
+  do {
+    code = genererCodeAleatoire();
+    tentatives++;
+    if (tentatives > 50) {
+      alert('Impossible de générer un code unique. Réessayez.');
+      return;
+    }
+  } while (codeExiste(code));
+
+  etat.codeSuivi = code;
+  document.getElementById('code-suivi').value = code;
+  document.getElementById('msg-code').className = 'succes';
+  document.getElementById('msg-code').textContent = 'Code unique généré et vérifié.';
+  document.getElementById('msg-code').classList.remove('cache');
+
+  // Clés BVE
+  etat.seedbox = BVE512.generateSeedbox();
+  etat.privateKey = BVE512.generatePrivateKey(64); // plus court pour affichage, toujours fort
+  etat.publicKey = BVE512.privateKeyToPublicKey(etat.privateKey);
+
+  // Chiffrement nom + CAS avec la clé privée + seedbox
+  etat.nomChiffre = await BVE512.encrypt(nom, etat.privateKey, etat.seedbox);
+  etat.casChiffre = await BVE512.encrypt(cas, etat.privateKey, etat.seedbox);
+
+  setTimeout(() => {
+    cacherTout();
+    document.getElementById('etape2').classList.remove('cache');
+  }, 600);
+}
+
+/* ========== MODE ========== */
+function choisirMode(mode) {
+  etat.mode = mode;
+  cacherTout();
+  document.getElementById('etape3').classList.remove('cache');
+  document.getElementById('zone-main').classList.add('cache');
+  document.getElementById('zone-digital').classList.add('cache');
+  document.getElementById('zone-image').classList.add('cache');
+
+  if (mode === 'main') {
+    document.getElementById('zone-main').classList.remove('cache');
+    initCanvasMain();
+  } else if (mode === 'digital') {
+    document.getElementById('zone-digital').classList.remove('cache');
+  } else if (mode === 'image') {
+    const f = document.getElementById('import-image').files[0];
+    if (!f) { alert('Sélectionnez d’abord une image.'); retourEtape2(); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      etat.imageData = e.target.result;
+      document.getElementById('preview-image').src = e.target.result;
+      document.getElementById('zone-image').classList.remove('cache');
+    };
+    reader.readAsDataURL(f);
+  }
+}
+
+/* ========== CANVAS MAIN ========== */
+let dessinEnCours = false;
+function initCanvasMain() {
+  const c = document.getElementById('canvas-main');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = document.getElementById('couleur-trait').value;
+  ctx.lineWidth = document.getElementById('taille-trait').value;
+  ctx.lineCap = 'round';
+
+  function getPos(e) {
+    const r = c.getBoundingClientRect();
+    const scaleX = c.width / r.width;
+    const scaleY = c.height / r.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - r.left) * scaleX, y: (clientY - r.top) * scaleY };
+  }
+
+  c.onmousedown = c.ontouchstart = e => { e.preventDefault(); dessinEnCours = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  c.onmousemove = c.ontouchmove = e => {
+    if (!dessinEnCours) return;
+    e.preventDefault();
+    ctx.strokeStyle = document.getElementById('couleur-trait').value;
+    ctx.lineWidth = document.getElementById('taille-trait').value;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  };
+  c.onmouseup = c.onmouseleave = c.ontouchend = () => { dessinEnCours = false; };
+}
+
+function effacerCanvas() {
+  const c = document.getElementById('canvas-main');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+}
+
+function ajouterPageMain() {
+  const c = document.getElementById('canvas-main');
+  etat.pagesMain.push(c.toDataURL('image/png'));
+  effacerCanvas();
+  alert('Page enregistrée. Vous pouvez dessiner la suivante.');
+}
+
+/* ========== SIGNATURE ========== */
+function initCanvasSignature() {
+  const c = document.getElementById('canvas-signature');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  let dessin = false;
+  function getPos(e) {
+    const r = c.getBoundingClientRect();
+    const scaleX = c.width / r.width;
+    const scaleY = c.height / r.height;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - r.left) * scaleX, y: (clientY - r.top) * scaleY };
+  }
+  c.onmousedown = c.ontouchstart = e => { e.preventDefault(); dessin = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  c.onmousemove = c.ontouchmove = e => {
+    if (!dessin) return; e.preventDefault();
+    const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+  };
+  c.onmouseup = c.onmouseleave = c.ontouchend = () => { dessin = false; };
+}
+function effacerSignature() {
+  const c = document.getElementById('canvas-signature');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, c.width, c.height);
+}
+
+function passerSignature() {
+  if (etat.mode === 'main') {
+    const c = document.getElementById('canvas-main');
+    etat.pagesMain.push(c.toDataURL('image/png'));
+  } else if (etat.mode === 'digital') {
+    etat.texteDigital = document.getElementById('texte-digital').value;
+  }
+  cacherTout();
+  document.getElementById('etape4').classList.remove('cache');
+  initCanvasSignature();
+}
+
+/* ========== GÉNÉRATION PDF ========== */
+async function genererPDF() {
+  const cSig = document.getElementById('canvas-signature');
+  etat.signatureData = cSig.toDataURL('image/png');
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = 210;
+  const pageH = 297;
+  const margin = 18;
+
+  function enTete(doc) {
+    doc.setFont('times', 'normal');
+    doc.setFontSize(11);
+    doc.text('Français', margin, 14);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(13);
+    doc.text('Celst', pageW - margin, 14, { align: 'right' });
+    // logo placeholder
+    doc.setFontSize(9);
+    doc.setFont('times', 'normal');
+    doc.text('République d\'Étalie — Document officiel', pageW / 2, 14, { align: 'center' });
+    doc.setDrawColor(12, 35, 64);
+    doc.setLineWidth(0.4);
+    doc.line(margin, 17, pageW - margin, 17);
+  }
+
+  function pied(doc, num, total) {
+    doc.setFontSize(8);
+    doc.setFont('times', 'normal');
+    doc.text(`Code : ${etat.codeSuivi}  |  Page ${num}/${total}`, pageW / 2, pageH - 8, { align: 'center' });
+  }
+
+  // PAGE 1 — RÈGLES
+  enTete(doc);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(16);
+  doc.text('RÈGLES, AVERTISSEMENTS ET TRANSMISSION', pageW / 2, 30, { align: 'center' });
+  doc.setFont('times', 'normal');
+  doc.setFontSize(11);
+  const regles = [
+    '1. Ce document est un acte officiel de la République d\'Étalie.',
+    '2. Une fois téléchargé, il ne peut plus être modifié.',
+    '3. Vous disposez de 5 jours calendaires à compter de la date de téléchargement pour transmettre le dossier complet.',
+    '4. Transmission obligatoire à : mazmogetjr@gmail.com',
+    '5. Joindre obligatoirement : seedbox + clé privée + données chiffrées (nom + code social).',
+    '6. La signature manuscrite sur la dernière page est obligatoire.',
+    '7. Toute altération ou usage frauduleux expose à des sanctions.',
+    '8. Le côté « Celst » est réservé à l\'autorité destinataire pour publication.'
+  ];
+  let y = 42;
+  regles.forEach(l => { doc.text(l, margin, y, { maxWidth: pageW - 2 * margin }); y += 9; });
+  doc.setFont('times', 'bold');
+  doc.text('Date de demande : ' + etat.dateDemande, margin, y + 8);
+  pied(doc, 1, 0); // total calculé plus tard
+
+  // PAGE 2 — INFOS
+  doc.addPage();
+  enTete(doc);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
+  doc.text('INFORMATIONS DU DOCUMENT', pageW / 2, 30, { align: 'center' });
+  doc.setFont('times', 'normal');
+  doc.setFontSize(11);
+  y = 42;
+  const infos = [
+    ['Code de suivi', etat.codeSuivi],
+    ['Date de demande', etat.dateDemande],
+    ['Type de fichier', etat.mode === 'main' ? 'Écriture à la main' : etat.mode === 'digital' ? 'Écriture digitale' : 'Image importée'],
+    ['Nom complet (chiffré)', etat.nomChiffre.substring(0, 60) + '…'],
+    ['Code social (chiffré)', etat.casChiffre.substring(0, 60) + '…']
+  ];
+  infos.forEach(([lab, val]) => {
+    doc.setFont('times', 'bold');
+    doc.text(lab + ' :', margin, y);
+    doc.setFont('times', 'normal');
+    doc.text(String(val), margin + 55, y, { maxWidth: pageW - margin - 55 });
+    y += 10;
+  });
+  pied(doc, 2, 0);
+
+  // PAGES CONTENU
+  let pageNum = 3;
+  if (etat.mode === 'digital' && etat.texteDigital) {
+    doc.addPage();
+    enTete(doc);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(12);
+    const lines = doc.splitTextToSize(etat.texteDigital, pageW - 2 * margin);
+    doc.text(lines, margin, 32);
+    pied(doc, pageNum++, 0);
+  } else if (etat.mode === 'main') {
+    for (const dataUrl of etat.pagesMain) {
+      doc.addPage();
+      enTete(doc);
+      // image dans la moitié inférieure
+      try {
+        doc.addImage(dataUrl, 'PNG', margin, 110, pageW - 2 * margin, 140);
+      } catch (e) {}
+      pied(doc, pageNum++, 0);
+    }
+  } else if (etat.mode === 'image' && etat.imageData) {
+    doc.addPage();
+    enTete(doc);
+    try {
+      doc.addImage(etat.imageData, 'JPEG', margin, 110, pageW - 2 * margin, 140);
+    } catch (e) {
+      try { doc.addImage(etat.imageData, 'PNG', margin, 110, pageW - 2 * margin, 140); } catch (e2) {}
+    }
+    pied(doc, pageNum++, 0);
+  }
+
+  // DERNIÈRE PAGE — SIGNATURE
+  doc.addPage();
+  enTete(doc);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
+  doc.text('PAGE DE SIGNATURE', pageW / 2, 30, { align: 'center' });
+  doc.setFont('times', 'normal');
+  doc.setFontSize(11);
+  y = 42;
+  doc.text('Code de suivi : ' + etat.codeSuivi, margin, y); y += 8;
+  doc.text('Date de demande : ' + etat.dateDemande, margin, y); y += 8;
+  doc.text('Type : ' + (etat.mode === 'main' ? 'Main' : etat.mode === 'digital' ? 'Digital' : 'Image'), margin, y); y += 14;
+  doc.setFont('times', 'bold');
+  doc.text('Signature manuscrite du demandeur :', margin, y); y += 6;
+  try {
+    doc.addImage(etat.signatureData, 'PNG', margin, y, 90, 35);
+  } catch (e) {}
+  doc.setDrawColor(0);
+  doc.rect(margin, y, 90, 35);
+  pied(doc, pageNum, pageNum);
+
+  // Mettre à jour les numéros de page si besoin (simplifié)
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    // réécrire pied avec total
+  }
+
+  // Téléchargement
+  const nomFichier = codeVersNomFichier(etat.codeSuivi);
+  doc.save(nomFichier);
+
+  // Enregistrement code
+  sauvegarderCode(etat.codeSuivi);
+
+  // Passage à l’étape finale
+  etat.dateTelechargement = maintenant();
+  document.getElementById('date-telechargement').textContent = etat.dateTelechargement;
+  document.getElementById('affiche-seedbox').textContent = etat.seedbox;
+  document.getElementById('affiche-privee').textContent = etat.privateKey;
+  document.getElementById('affiche-chiffre').textContent = 'NOM: ' + etat.nomChiffre + '\nCAS: ' + etat.casChiffre;
+
+  cacherTout();
+  document.getElementById('etape5').classList.remove('cache');
+
+  // Compte à rebours 60 s
+  let sec = 60;
+  const el = document.getElementById('compte-rebours');
+  const timer = setInterval(() => {
+    sec--;
+    el.textContent = sec;
+    if (sec <= 0) {
+      clearInterval(timer);
+      el.textContent = '0 — Copiez maintenant !';
+    }
+  }, 1000);
+}
+
+/* ========== COPIE ========== */
+function copierTexte(id) {
+  const t = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(t).then(() => alert('Copié.')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('Copié.');
+  });
+}
+function copierTout() {
+  const txt = `Code de suivi : ${etat.codeSuivi}
+Date de demande : ${etat.dateDemande}
+Date de téléchargement : ${etat.dateTelechargement}
+Seedbox : ${etat.seedbox}
+Clé privée : ${etat.privateKey}
+Nom chiffré : ${etat.nomChiffre}
+Code social chiffré : ${etat.casChiffre}
+
+À transmettre à mazmogetjr@gmail.com pour ajout officiel et traduction.`;
+  navigator.clipboard.writeText(txt).then(() => alert('Tout copié — collez dans votre email.')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('Tout copié.');
+  });
+}
+
+/* ========== RECHERCHE ========== */
+async function rechercherDocument() {
+  const code = document.getElementById('recherche-code').value.trim();
+  if (!code) return;
+  await chargerListeCodes();
+  const zone = document.getElementById('resultat-recherche');
+  zone.classList.remove('cache');
+  if (!codeExiste(code) && !etat.listeCodes.includes(code)) {
+    zone.className = 'erreur';
+    zone.textContent = 'Code introuvable dans la base (list.txt / local).';
+    return;
+  }
+  const nomFichier = codeVersNomFichier(code);
+  zone.className = 'succes';
+  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>assets/docs/${nomFichier}</strong><br>
+    <a href="assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
+}
+
+/* ========== HORLOGE ========== */
+setInterval(() => {
+  document.getElementById('horloge').textContent = maintenant();
+}, 1000);
+document.getElementById('horloge').textContent = maintenant();
+
+/* Init */
+chargerListeCodes();
+</script>
+</body>
+</html>
