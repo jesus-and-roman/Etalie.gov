@@ -71,7 +71,7 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
   <div class="conteneur">
     <div class="gauche">Français</div>
     <div class="centre">
-      <img src="assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <img src="../assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <div style="display:none;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
     </div>
     <div class="droite">Celst</div>
@@ -543,7 +543,7 @@ function genererCodeAleatoire() {
 
 async function chargerListeCodes() {
   try {
-    const r = await fetch('assets/docs/list.txt');
+    const r = await fetch('../assets/docs/list.txt');
     if (r.ok) {
       const txt = await r.text();
       etat.listeCodes = txt.split(/[;\n\r]+/).map(c => c.trim()).filter(Boolean);
@@ -958,8 +958,8 @@ async function rechercherDocument() {
   }
   const nomFichier = codeVersNomFichier(code);
   zone.className = 'succes';
-  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>assets/docs/${nomFichier}</strong><br>
-    <a href="assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
+  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>../assets/docs/${nomFichier}</strong><br>
+    <a href="../assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
 }
 
 /* ========== HORLOGE ========== */
