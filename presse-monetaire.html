@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Presse monétaire — Gouvernement d'Étalie</title>
+<meta content="Outil interne des banques nationales d'Étalie : impression, livraison et gestion de la masse monétaire." name="description"/>
+<link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
+<style>
+  .pm-carte{ background:var(--blanc); border:1px solid var(--gris-ligne); padding:24px; margin-bottom:20px; }
+  .pm-carte h3{ font-family:var(--police-titre); font-size:1.1rem; color:var(--vert-nuit); margin-bottom:14px; }
+  .pm-grille{ display:grid; grid-template-columns:1.1fr .9fr; gap:20px; }
+  @media (max-width:880px){ .pm-grille{ grid-template-columns:1fr; } }
+  .pm-onglets{ display:flex; gap:0; border-bottom:2px solid var(--gris-ligne); margin-bottom:20px; flex-wrap:wrap; overflow-x:auto; }
+  .pm-onglets button{ background:none; border:none; padding:10px 14px; font-family:var(--police-util); font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; color:var(--gris-ardoise); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
+  .pm-onglets button.actif{ color:var(--vert-nuit); border-bottom-color:var(--or-laiton); font-weight:600; }
+  .pm-masque{ display:none; }
+  .pm-select-banque{ padding:9px 12px; border:1px solid var(--gris-ligne); font-family:var(--police-util); font-size:.82rem; background:var(--blanc); margin-bottom:18px; }
+  .pm-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--gris-ligne); border:1px solid var(--gris-ligne); margin-bottom:16px; }
+  .pm-stat{ background:var(--vert-nuit); color:#fff; padding:16px; text-align:center; }
+  .pm-stat .v{ font-family:var(--police-titre); font-size:1.35rem; color:var(--or-clair); }
+  .pm-stat .e{ font-size:.66rem; color:#C6D2E7; margin-top:2px; text-transform:uppercase; letter-spacing:.04em; }
+  .pm-machine{ background:#0c2116; border:2px solid var(--vert-nuit); border-radius:6px; padding:26px; text-align:center; position:relative; overflow:hidden; min-height:230px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .pm-fente{ width:220px; height:14px; background:#000; border-radius:3px; margin:0 auto 8px; box-shadow:inset 0 3px 6px rgba(0,0,0,.7); }
+  .pm-billet{ width:190px; height:88px; border-radius:4px; position:relative; margin-top:-70px; opacity:0; transition:opacity .25s, transform 2s linear; transform:translateY(-40px); box-shadow:0 6px 18px rgba(0,0,0,.5); }
+  .pm-billet.actif{ opacity:1; transform:translateY(70px); }
+  .pm-billet .motif{ position:absolute; inset:0; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:var(--police-titre); font-weight:700; color:#fff; font-size:1.3rem; }
+  .pm-valeurs{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .pm-valeurs button{ padding:10px 16px; border:2px solid var(--or-laiton); background:var(--blanc); color:var(--vert-nuit); font-family:var(--police-util); font-weight:600; cursor:pointer; border-radius:3px; }
+  .pm-valeurs button.actif{ background:var(--or-laiton); color:#fff; }
+  #pm-bouton-imprimer{ margin-top:18px; padding:14px 30px; font-size:1rem; }
+  .pm-tableau{ width:100%; border-collapse:collapse; font-size:.85rem; }
+  .pm-tableau th, .pm-tableau td{ padding:8px 10px; border-bottom:1px solid var(--gris-ligne); text-align:left; }
+  .pm-tableau th{ font-family:var(--police-util); font-size:.66rem; text-transform:uppercase; letter-spacing:.04em; color:var(--or-laiton); }
+  .pm-tableau td.num{ text-align:right; font-family:var(--police-util); }
+  .pm-badge{ display:inline-block; padding:2px 8px; border-radius:3px; font-size:.68rem; font-family:var(--police-util); }
+  .pm-badge.ok{ background:#e4f4ea; color:var(--vert-institut); }
+  .pm-badge.non{ background:#fbe9ea; color:var(--rouge-etalie); }
+  .pm-erreur{ color:var(--rouge-etalie); font-size:.85rem; margin:10px 0; }
+  .pm-succes{ color:var(--vert-institut); font-size:.85rem; margin:10px 0; }
+  .pm-fleet-item{ border:1px solid var(--gris-ligne); padding:14px 16px; margin-bottom:10px; }
+  .pm-fleet-item .entete{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .pm-mini{ font-size:.72rem; color:var(--gris-ardoise); }
+  .pm-champ{ margin-bottom:12px; }
+  .pm-champ label{ display:block; font-family:var(--police-util); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--or-laiton); margin-bottom:4px; }
+  .pm-champ input, .pm-champ select{ width:100%; padding:8px 10px; border:1px solid var(--gris-ligne); font-size:.88rem; }
+</style>
+</head>
+<body data-page="presse-monetaire">
+<div class="bandeau-utilitaire">
+<div class="conteneur">
+<span><span class="puce"></span><span data-i18n="t001">République d'Étalie — Site officiel du gouvernement</span></span>
+<div class="liens-util">
+<a data-i18n="t002" href="roie.html">Notre Roîe</a>
+<a data-no-i18n="1" href="javascript:void(0)" onclick="basculerLangue()">Alterner le langage/пaщuj iзтeб</a>
+<a data-i18n="t003" href="portail-citoyen.html">Mon espace citoyen</a>
+<a data-i18n="t004" href="contact.html">Nous joindre</a>
+</div>
+</div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+<header class="entete">
+<div class="conteneur">
+<div class="identite">
+<img alt="Blason d'Étalie" height="58" src="assets/blason-etalie.png" style="object-fit:contain;" width="44"/>
+<div class="texte-identite">
+<span class="surtitre" data-i18n="t005">République d'Étalie</span>
+<h1 data-i18n="t006">Gouvernement d'Étalie</h1>
+</div>
+</div>
+<nav aria-label="Navigation principale" class="principale">
+<ul>
+<li><a href="index.html">Accueil</a></li>
+<li><a href="gouvernement.html">Gouvernement</a></li>
+<li><a href="taxes.html">Taxes</a></li>
+<li><a aria-current="page" href="presse-monetaire.html">Presse monétaire</a></li>
+<li><a href="portail-citoyen.html">Portail citoyen</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="entete-page">
+<div class="conteneur">
+<span class="surtitre">Banques nationales — accès restreint</span>
+<h2>Presse monétaire</h2>
+</div>
+</div>
+<div class="conteneur">
+<p class="fil-ariane"><a href="index.html">Accueil</a> / <a href="portail-citoyen.html">Portail citoyen</a> / Presse monétaire</p>
+</div>
+<section class="section" style="padding-top:12px;">
+<div class="conteneur" id="app" style="max-width:980px;">
+<p style="color:var(--gris-ardoise);">Chargement…</p>
+</div>
+</section>
+<footer>
+<div class="conteneur">
+<div class="pied-grille" style="grid-template-columns:1.1fr repeat(4,1fr);">
+<div>
+<h5>Gouvernement d'Étalie</h5>
+<p style="max-width:30ch; font-size:.88rem;">Site officiel de la République d'Étalie.</p>
+</div>
+</div>
+</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://voomgxyfozebpztmiavv.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
+const CLE_SOUVENIR = 'etalie_rester_connecte';
+function seSouvenir() { return localStorage.getItem(CLE_SOUVENIR) === '1'; }
+const stockageSession = {
+  getItem: (k) => (seSouvenir() ? localStorage : sessionStorage).getItem(k),
+  setItem: (k, v) => (seSouvenir() ? localStorage : sessionStorage).setItem(k, v),
+  removeItem: (k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); },
+};
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { storage: stockageSession, persistSession: true, autoRefreshToken: true }
+});
+
+const NOMS_BANQUES = {
+  H: "Banque Nationale de Newhouse", P: "Banque Nationale Fleury",
+  C: "Banque Nationale de la Capitale", L: "Banque Nationale de Lataylon",
+  N: "Banque Nationale Nopolitaine", M: "Banque Nationale du Maréchal"
+};
+const NOMS_VEHICULES = {
+  petit_camion:"Petit camion", camion_moyen:"Camion moyen", gros_camion:"Gros camion",
+  camion_industriel:"Camion industriel", petit_camion_blinde:"Petit camion blindé",
+  camion_moyen_blinde:"Camion moyen blindé", gros_camion_blinde:"Gros camion blindé",
+  camion_industriel_blinde:"Camion industriel blindé", bateau:"Bateau de transport", avion:"Avion cargo"
+};
+const app = document.getElementById('app');
+let citoyen = null, mesAcces = [], banqueActive = null, valeurChoisie = 5, minuterieAuto = null;
+
+/* ---------------------------------------------------------------
+   SONS — synthétisés (Web Audio), aucun fichier externe nécessaire
+   --------------------------------------------------------------- */
+let ctxAudio = null;
+function obtenirAudio() { if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); return ctxAudio; }
+function bruitPresse(duree) {
+  const ctx = obtenirAudio();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * duree, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.18 * (1 - i / data.length * 0.3);
+  const src = ctx.createBufferSource(); src.buffer = buffer;
+  const filtre = ctx.createBiquadFilter(); filtre.type = 'bandpass'; filtre.frequency.value = 420;
+  const osc = ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = 60;
+  const gainOsc = ctx.createGain(); gainOsc.gain.value = 0.04;
+  osc.connect(gainOsc); gainOsc.connect(ctx.destination);
+  src.connect(filtre); filtre.connect(ctx.destination);
+  src.start(); osc.start(); osc.stop(ctx.currentTime + duree); src.stop(ctx.currentTime + duree);
+}
+function bruitPapier() {
+  const ctx = obtenirAudio();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / data.length * 4) * 0.3;
+  const src = ctx.createBufferSource(); src.buffer = buffer;
+  const filtre = ctx.createBiquadFilter(); filtre.type = 'highpass'; filtre.frequency.value = 2200;
+  src.connect(filtre); filtre.connect(ctx.destination); src.start();
+}
+function sonDing() {
+  const ctx = obtenirAudio();
+  const osc = ctx.createOscillator(); const gain = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = 1400;
+  gain.gain.setValueAtTime(0.2, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime + 0.6);
+}
+
+/* ---------------------------------------------------------------
+   DÉMARRAGE
+   --------------------------------------------------------------- */
+async function demarrer() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    app.innerHTML = `<div class="pm-carte"><h3>Connexion requise</h3><p>Vous devez être connecté à votre <a href="portail-citoyen.html">portail citoyen</a> pour accéder à la presse monétaire.</p></div>`;
+    return;
+  }
+  const { data: c } = await sb.from('citoyens').select('*').eq('id', session.user.id).single();
+  if (!c) { app.innerHTML = `<div class="pm-carte"><p class="pm-erreur">Dossier citoyen introuvable.</p></div>`; return; }
+  citoyen = c;
+
+  const { data: acces, error: erreurAcces } = await sb.rpc('mon_personnel_banque');
+  if (erreurAcces) { app.innerHTML = `<div class="pm-carte"><p class="pm-erreur">${erreurAcces.message}</p></div>`; return; }
+  mesAcces = acces || [];
+
+  let tags;
+  if (citoyen.est_admin) {
+    const { data: toutes } = await sb.from('banques_nationales').select('tag');
+    tags = (toutes || []).map(b => b.tag);
+  } else {
+    tags = mesAcces.map(a => a.banque_tag);
+  }
+  if (tags.length === 0) {
+    app.innerHTML = `<div class="pm-carte"><h3>Accès refusé</h3><p>Ce module est réservé au personnel des banques nationales. Si vous croyez que c'est une erreur, contactez le gouvernement pour être assigné à une banque.</p></div>`;
+    return;
+  }
+  banqueActive = tags[0];
+  await afficherApp(tags);
+}
+
+function monRole(tag) {
+  if (citoyen.est_admin) return 'administrateur';
+  const a = mesAcces.find(x => x.banque_tag === tag);
+  return a ? a.role : null;
+}
+
+async function afficherApp(tags) {
+  app.innerHTML = `
+    <div class="pm-carte" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <span style="font-family:var(--police-util); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--or-laiton);">Personnel de banque</span>
+        <h3 style="margin-top:4px;">${citoyen.prenom} ${citoyen.nom} <span style="color:var(--gris-ardoise); font-weight:400;">(@${citoyen.username})</span></h3>
+      </div>
+      <select class="pm-select-banque" id="pm-choix-banque">
+        ${tags.map(t => `<option value="${t}">${NOMS_BANQUES[t]} (${t})</option>`).join('')}
+      </select>
+    </div>
+    <div id="pm-corps"></div>
+  `;
+  document.getElementById('pm-choix-banque').onchange = (e) => { banqueActive = e.target.value; rendreOnglets(); };
+  rendreOnglets();
+}
+
+function rendreOnglets() {
+  const role = monRole(banqueActive);
+  const corps = document.getElementById('pm-corps');
+  corps.innerHTML = `
+    <div class="pm-onglets">
+      <button class="actif" data-o="presse">Presse à billets</button>
+      <button data-o="automatisation">Automatisation</button>
+      <button data-o="flotte">Flotte &amp; livraisons</button>
+      ${role === 'administrateur' ? '<button data-o="destruction">Destruction</button>' : ''}
+      <button data-o="tableau">Tableau de bord</button>
+    </div>
+    <div id="pm-onglet-presse"></div>
+    <div id="pm-onglet-automatisation" class="pm-masque"></div>
+    <div id="pm-onglet-flotte" class="pm-masque"></div>
+    <div id="pm-onglet-destruction" class="pm-masque"></div>
+    <div id="pm-onglet-tableau" class="pm-masque"></div>
+  `;
+  corps.querySelectorAll('.pm-onglets button').forEach(b => {
+    b.onclick = () => {
+      corps.querySelectorAll('.pm-onglets button').forEach(x => x.classList.remove('actif'));
+      b.classList.add('actif');
+      ['presse','automatisation','flotte','destruction','tableau'].forEach(o =>
+        document.getElementById('pm-onglet-' + o).classList.toggle('pm-masque', o !== b.dataset.o));
+      if (b.dataset.o === 'automatisation') rendreAutomatisation();
+      if (b.dataset.o === 'flotte') rendreFlotte();
+      if (b.dataset.o === 'destruction') rendreDestruction();
+      if (b.dataset.o === 'tableau') rendreTableau();
+    };
+  });
+  rendrePresse();
+  if (minuterieAuto) clearInterval(minuterieAuto);
+  minuterieAuto = setInterval(() => { sb.rpc('traiter_cycle_automatisation', { p_banque_tag: banqueActive }); }, 4000);
+}
+
+/* ---------------------------------------------------------------
+   ONGLET — PRESSE À BILLETS
+   --------------------------------------------------------------- */
+async function rendrePresse() {
+  const zone = document.getElementById('pm-onglet-presse');
+  const { data: roiyal } = await sb.from('roiyal_etat').select('*').eq('id', 1).single();
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', banqueActive).single();
+  const inflation = roiyal ? (100 - Number(roiyal.valeur_r)) : 0;
+  const prixImpression = roiyal ? (0.23 * (100 / Number(roiyal.valeur_r))) : 0.23;
+  const prixEssence = roiyal ? (4.2 * (100 / Number(roiyal.valeur_r))) : 4.2;
+
+  zone.innerHTML = `
+    <div class="pm-grille">
+      <div>
+        <div class="pm-carte">
+          <h3>🖨️ Imprimer un billet — ${NOMS_BANQUES[banqueActive]}</h3>
+          <div class="pm-valeurs" id="pm-valeurs">
+            ${[0.5,1,5,50,500].map(v => `<button data-v="${v}" class="${v === valeurChoisie ? 'actif' : ''}">${v} R$</button>`).join('')}
+          </div>
+          <div class="pm-machine">
+            <div class="pm-fente"></div>
+            <div class="pm-billet" id="pm-billet"><div class="motif" id="pm-motif"></div></div>
+          </div>
+          <div style="text-align:center;">
+            <button class="bouton bouton-or" id="pm-bouton-imprimer" style="border:none; cursor:pointer;">🖨️ Imprimer un billet</button>
+          </div>
+          <div id="pm-msg-impression" style="text-align:center; margin-top:10px;"></div>
+          <p class="pm-mini" style="text-align:center; margin-top:10px;">
+            Coût d'impression actuel : <strong>${prixImpression.toFixed(10)} R$</strong> / billet ×
+            production par clic (${banque ? banque.niveau_clic : 1})
+          </p>
+        </div>
+
+        <div class="pm-carte">
+          <h3>⚙️ Production par clic</h3>
+          <p style="font-size:.88rem;">Actuellement : <strong>${banque ? banque.niveau_clic : 1} billet(s)</strong> par clic manuel ou cycle automatique.</p>
+          <p class="pm-mini" id="pm-prix-amelioration">Chargement du prix…</p>
+          <button class="bouton bouton-contour" id="pm-bouton-ameliorer" style="border-color:var(--vert-nuit); color:var(--vert-nuit); cursor:pointer;">Améliorer (+1 billet/clic)</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="pm-carte">
+          <h3>💹 Le Roiyal</h3>
+          <table class="pm-tableau">
+            <tr><td>Valeur du Roiyal (R)</td><td class="num">${roiyal ? Number(roiyal.valeur_r).toFixed(4) : '—'} %</td></tr>
+            <tr><td>${inflation >= 0 ? 'Inflation' : 'Déflation'}</td><td class="num">${Math.abs(inflation).toFixed(4)} %</td></tr>
+            <tr><td>⛽ Prix du gaz</td><td class="num">${prixEssence.toFixed(4)} R$/L</td></tr>
+            <tr><td>Coût carburant</td><td class="num">${(prixEssence/15).toFixed(6)} R$/km</td></tr>
+          </table>
+        </div>
+        <div class="pm-carte">
+          <h3>💰 Trésorerie de la banque</h3>
+          <p style="font-family:var(--police-titre); font-size:1.6rem; color:var(--vert-nuit);">${banque ? Number(banque.tresorerie).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'} R$</p>
+          <p class="pm-mini">Coffre d'impression en attente de livraison (par camion) :</p>
+          <table class="pm-tableau">
+            ${banque ? Object.entries(banque.billets_en_attente || {}).map(([v,q]) =>
+              `<tr><td>${v} R$</td><td class="num">${Number(q).toLocaleString('fr-FR')} billet(s)</td></tr>`).join('') || '<tr><td colspan="2">Coffre vide</td></tr>' : ''}
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  zone.querySelectorAll('#pm-valeurs button').forEach(b => {
+    b.onclick = () => { valeurChoisie = Number(b.dataset.v); rendrePresse(); };
+  });
+
+  const { data: prixNext } = await sb.rpc('prix_prochaine_amelioration_clic', { p_banque_tag: banqueActive });
+  const elPrix = document.getElementById('pm-prix-amelioration');
+  if (elPrix) elPrix.textContent = `Prochaine amélioration : ${Number(prixNext).toFixed(2)} R$`;
+
+  document.getElementById('pm-bouton-ameliorer').onclick = async () => {
+    const { error } = await sb.rpc('ameliorer_production_clic', { p_banque_tag: banqueActive });
+    if (error) { alert(error.message); return; }
+    rendrePresse();
+  };
+
+  document.getElementById('pm-bouton-imprimer').onclick = lancerImpression;
+}
+
+async function lancerImpression() {
+  const bouton = document.getElementById('pm-bouton-imprimer');
+  const billet = document.getElementById('pm-billet');
+  const motif = document.getElementById('pm-motif');
+  const msg = document.getElementById('pm-msg-impression');
+  const couleurs = { 0.5:'#8a8f99', 1:'#4a7c59', 5:'#2f6fa8', 50:'#8a4a2f', 500:'#6a2f7d' };
+
+  bouton.disabled = true; bouton.textContent = 'Impression...'; bouton.style.opacity = '.6';
+  msg.innerHTML = '';
+  billet.style.background = couleurs[valeurChoisie] + '22';
+  billet.style.border = `2px solid ${couleurs[valeurChoisie]}`;
+  motif.textContent = `${valeurChoisie} R$`;
+  motif.style.color = couleurs[valeurChoisie];
+  billet.classList.remove('actif');
+  bruitPresse(2);
+  void billet.offsetWidth;
+  billet.classList.add('actif');
+
+  setTimeout(async () => {
+    bruitPapier();
+    const { data, error } = await sb.rpc('imprimer_billet', { p_banque_tag: banqueActive, p_valeur: valeurChoisie });
+    bouton.disabled = false; bouton.textContent = '🖨️ Imprimer un billet'; bouton.style.opacity = '1';
+    billet.classList.remove('actif');
+    if (error) { msg.innerHTML = `<p class="pm-erreur">${error.message}</p>`; return; }
+    sonDing();
+    msg.innerHTML = `<p class="pm-succes">+${data.quantite} billet(s) de ${data.valeur_unitaire} R$ imprimés (coût: ${Number(data.cout_impression).toFixed(6)} R$). Roiyal: ${Number(data.nouveau_r).toFixed(4)} %</p>`;
+    rendrePresse();
+  }, 2000);
+}
+
+/* ---------------------------------------------------------------
+   ONGLET — AUTOMATISATION
+   --------------------------------------------------------------- */
+async function rendreAutomatisation() {
+  const zone = document.getElementById('pm-onglet-automatisation');
+  const { data: auto } = await sb.from('automatisation_banque').select('*').eq('banque_tag', banqueActive).single();
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', banqueActive).single();
+  const role = monRole(banqueActive);
+
+  zone.innerHTML = `
+    <div class="pm-carte">
+      <h3>🤖 Automatisation — ${NOMS_BANQUES[banqueActive]}</h3>
+      <p>Statut : ${auto && auto.actif ? '<span class="pm-badge ok">En marche</span>' : '<span class="pm-badge non">Arrêtée</span>'}
+        ${auto && auto.en_panne ? ' <span class="pm-badge non">EN PANNE</span>' : ''}</p>
+      <p class="pm-mini">Coût : 30 R$/heure d'électricité${banque && banque.employe_anti_bug ? " + 12,5 R$/heure d'employé de maintenance" : ''}. 0,1 % de chance de bug par cycle de 4 secondes (0 % si un employé de maintenance est embauché).</p>
+      <div class="pm-champ">
+        <label>Valeurs autorisées en automatique</label>
+        <div class="pm-valeurs" id="pm-auto-valeurs">
+          ${[0.5,1,5,50,500].map(v => `<button data-v="${v}" class="${auto && (auto.valeurs_autorisees||[]).includes(v) ? 'actif' : ''}">${v} R$</button>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="bouton bouton-or" id="pm-auto-demarrer" style="border:none; cursor:pointer;">Démarrer</button>
+        <button class="bouton bouton-contour" id="pm-auto-arreter" style="cursor:pointer;">Arrêter</button>
+        ${auto && auto.en_panne ? '<button class="bouton bouton-contour" id="pm-auto-reparer" style="cursor:pointer;">🔧 Réparer</button>' : ''}
+        ${role === 'administrateur' ? `<button class="bouton bouton-contour" id="pm-auto-employe" style="cursor:pointer;">${banque && banque.employe_anti_bug ? 'Renvoyer' : 'Embaucher'} l'employé de maintenance (12,5 R$/h)</button>` : ''}
+      </div>
+      <div id="pm-auto-msg" style="margin-top:10px;"></div>
+    </div>
+  `;
+  let selection = new Set(auto ? (auto.valeurs_autorisees || []) : []);
+  zone.querySelectorAll('#pm-auto-valeurs button').forEach(b => {
+    b.onclick = () => {
+      const v = Number(b.dataset.v);
+      if (selection.has(v)) { selection.delete(v); b.classList.remove('actif'); }
+      else { selection.add(v); b.classList.add('actif'); }
+    };
+  });
+  document.getElementById('pm-auto-demarrer').onclick = async () => {
+    const { error } = await sb.rpc('demarrer_automatisation', { p_banque_tag: banqueActive, p_valeurs: Array.from(selection) });
+    document.getElementById('pm-auto-msg').innerHTML = error ? `<p class="pm-erreur">${error.message}</p>` : '<p class="pm-succes">Automatisation démarrée.</p>';
+    rendreAutomatisation();
+  };
+  document.getElementById('pm-auto-arreter').onclick = async () => {
+    await sb.rpc('arreter_automatisation', { p_banque_tag: banqueActive }); rendreAutomatisation();
+  };
+  const boutonReparer = document.getElementById('pm-auto-reparer');
+  if (boutonReparer) boutonReparer.onclick = async () => { await sb.rpc('reparer_automatisation', { p_banque_tag: banqueActive }); rendreAutomatisation(); };
+  const boutonEmploye = document.getElementById('pm-auto-employe');
+  if (boutonEmploye) boutonEmploye.onclick = async () => {
+    await sb.rpc('embaucher_employe_maintenance', { p_banque_tag: banqueActive, p_actif: !(banque && banque.employe_anti_bug) });
+    rendreAutomatisation();
+  };
+}
+
+/* ---------------------------------------------------------------
+   ONGLET — FLOTTE & LIVRAISONS
+   --------------------------------------------------------------- */
+async function rendreFlotte() {
+  const zone = document.getElementById('pm-onglet-flotte');
+  const role = monRole(banqueActive);
+  const { data: vehicules } = await sb.from('vehicules').select('*').eq('banque_tag', banqueActive).neq('statut','hors_service').order('cree_le', { ascending: false });
+  const { data: types } = await sb.from('types_vehicules').select('*').order('prix_achat');
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', banqueActive).single();
+  const { data: offresJohn } = await sb.rpc('obtenir_offres_john', { p_banque_tag: banqueActive });
+
+  zone.innerHTML = `
+    ${role === 'administrateur' ? `
+    <div class="pm-carte">
+      <h3>🚚 Acheter un véhicule (flotte permanente de la banque)</h3>
+      <table class="pm-tableau">
+        <thead><tr><th>Véhicule</th><th>Capacité</th><th>Braquage</th><th>Prix</th><th></th></tr></thead>
+        <tbody>
+          ${(types||[]).map(t => `<tr>
+            <td>${NOMS_VEHICULES[t.type]}${t.blinde?' 🛡️':''}</td>
+            <td class="num">${Number(t.capacite_billets).toLocaleString('fr-FR')}</td>
+            <td class="num">${t.chance_braquage}%</td>
+            <td class="num">${Number(t.prix_achat).toLocaleString('fr-FR')} R$</td>
+            <td><button class="pc-lien" data-type="${t.type}">Acheter</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="pm-mini">Flotte actuelle — camions : ${(vehicules||[]).filter(v=>v.achete && !v.type.includes('bateau')&&!v.type.includes('avion')).length}/${banque?banque.camions_max:'—'},
+        bateaux : ${(vehicules||[]).filter(v=>v.type==='bateau'&&v.achete).length}/${banque?banque.bateaux_max:'—'},
+        avions : ${(vehicules||[]).filter(v=>v.type==='avion'&&v.achete).length}/${banque?banque.avions_max:'—'}</p>
+    </div>` : ''}
+
+    <div class="pm-carte">
+      <h3>👤 John « Le Routier » vous propose (offres renouvelées toutes les 396h)</h3>
+      <p class="pm-mini">Transporteur indépendant, 42 ans. Ses véhicules disparaissent après une seule livraison et n'ont pas droit à l'escorte policière.</p>
+      ${(offresJohn||[]).map((o,i) => `
+        <div class="pm-fleet-item"><div class="entete">
+          <div><strong>${NOMS_VEHICULES[o.type]}</strong> — ${Number(o.km_compteur).toLocaleString('fr-FR')} km au compteur — risque ${Number(o.risque).toFixed(2)}%</div>
+          <div>${Number(o.prix_heure).toFixed(2)} R$/h <button class="bouton bouton-contour" data-louer="${i}" style="cursor:pointer; margin-left:8px;">Louer</button></div>
+        </div></div>`).join('') || '<p>Aucune offre pour le moment.</p>'}
+    </div>
+
+    <div class="pm-carte">
+      <h3>🚛 Ma flotte</h3>
+      <div id="pm-flotte-liste">
+        ${(vehicules||[]).length ? (vehicules||[]).map(v => rendreVehiculeHTML(v)).join('') : '<p>Aucun véhicule.</p>'}
+      </div>
+    </div>
+  `;
+
+  zone.querySelectorAll('[data-type]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('acheter_vehicule', { p_banque_tag: banqueActive, p_type: b.dataset.type });
+    if (error) alert(error.message); else rendreFlotte();
+  });
+  zone.querySelectorAll('[data-louer]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('louer_vehicule_john', { p_banque_tag: banqueActive, p_index: Number(b.dataset.louer) });
+    if (error) alert(error.message); else rendreFlotte();
+  });
+  zone.querySelectorAll('[data-charger]').forEach(b => b.onclick = () => ouvrirChargement(b.dataset.charger));
+  zone.querySelectorAll('[data-livrer]').forEach(b => b.onclick = () => ouvrirLivraison(b.dataset.livrer));
+  zone.querySelectorAll('[data-ameliorer]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('ameliorer_vehicule', { p_vehicule_id: b.dataset.ameliorer, p_amelioration: b.dataset.type2 });
+    if (error) alert(error.message); else rendreFlotte();
+  });
+}
+
+function rendreVehiculeHTML(v) {
+  const am = v.ameliorations || {};
+  const badges = Object.entries({moteur:'⚙️',blindage:'🛡️',coffre:'🔒',gps:'📡',chauffeur:'👨‍✈️'})
+    .filter(([k]) => am[k]).map(([,e]) => e).join(' ');
+  return `<div class="pm-fleet-item">
+    <div class="entete">
+      <div><strong>${NOMS_VEHICULES[v.type]}</strong> ${v.loue ? '(loué)' : ''} ${badges}
+        <div class="pm-mini">Statut : ${v.statut} — ${Number(v.km_parcourus).toLocaleString('fr-FR')} km parcourus</div>
+      </div>
+      <div>
+        ${v.statut === 'disponible' ? `<button class="pc-lien" data-charger="${v.id}">Charger</button>` : ''}
+        ${v.statut === 'charge' ? `<button class="pc-lien" data-livrer="${v.id}">Livrer</button>` : ''}
+        ${v.achete ? `<select data-ameliorer2="${v.id}" style="font-size:.7rem;">
+          <option value="">+ Amélioration…</option>
+          ${['moteur','blindage','coffre','gps','chauffeur'].filter(k => !am[k]).map(k=>`<option value="${k}">${k}</option>`).join('')}
+        </select>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function ouvrirChargement(vehiculeId) {
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', banqueActive).single();
+  const pending = banque.billets_en_attente || {};
+  const valeurs = Object.keys(pending);
+  if (!valeurs.length) { alert('Le coffre d\'attente de la banque est vide — imprimez des billets d\'abord.'); return; }
+  const composition = {};
+  for (const v of valeurs) {
+    const q = prompt(`Combien de billets de ${v} R$ charger ? (disponible: ${pending[v]})`, '0');
+    if (q && Number(q) > 0) composition[v] = Number(q);
+  }
+  if (!Object.keys(composition).length) return;
+  const { error } = await sb.rpc('charger_camion', { p_vehicule_id: vehiculeId, p_composition: composition });
+  if (error) alert(error.message); else rendreFlotte();
+}
+
+async function ouvrirLivraison(vehiculeId) {
+  const escorte = prompt("Escorte policière ? Laissez vide pour aucune, ou tapez : standard / renforcee / speciale");
+  const { data, error } = await sb.rpc('livrer_camion', { p_vehicule_id: vehiculeId, p_escorte: escorte ? escorte.trim() : null });
+  if (error) { alert(error.message); return; }
+  alert(`Résultat : ${data.statut}${data.type_accident ? ' ('+data.type_accident+')' : ''}\nMontant livré : ${Number(data.montant_livre).toFixed(2)} R$ / ${Number(data.montant_total).toFixed(2)} R$\nDistance : ${Number(data.distance_km).toFixed(0)} km — Durée estimée : ${data.duree_h} h`);
+  rendreFlotte();
+}
+document.addEventListener('change', (e) => {
+  if (e.target.matches('[data-ameliorer2]')) {
+    const id = e.target.getAttribute('data-ameliorer2');
+    const type = e.target.value;
+    if (!type) return;
+    sb.rpc('ameliorer_vehicule', { p_vehicule_id: id, p_amelioration: type }).then(({ error }) => {
+      if (error) alert(error.message); else rendreFlotte();
+    });
+  }
+});
+
+/* ---------------------------------------------------------------
+   ONGLET — DESTRUCTION (administrateurs de banque seulement)
+   --------------------------------------------------------------- */
+async function rendreDestruction() {
+  const zone = document.getElementById('pm-onglet-destruction');
+  zone.innerHTML = `
+    <div class="pm-carte">
+      <h3>🔥 Détruire des billets</h3>
+      <p class="pm-mini">Réservé aux administrateurs de la banque. Coûte 0,02 R$/billet ; augmente la valeur du Roiyal.</p>
+      <div class="pm-champ"><label>Valeur du billet</label>
+        <select id="pm-destr-valeur">${[0.5,1,5,50,500].map(v=>`<option value="${v}">${v} R$</option>`).join('')}</select>
+      </div>
+      <div class="pm-champ"><label>Quantité à détruire</label><input type="number" id="pm-destr-qte" min="1" value="1"></div>
+      <button class="bouton bouton-or" id="pm-destr-bouton" style="border:none; cursor:pointer;">Détruire</button>
+      <div id="pm-destr-msg" style="margin-top:10px;"></div>
+    </div>
+  `;
+  document.getElementById('pm-destr-bouton').onclick = async () => {
+    const v = Number(document.getElementById('pm-destr-valeur').value);
+    const q = Number(document.getElementById('pm-destr-qte').value);
+    const { data, error } = await sb.rpc('detruire_billets', { p_banque_tag: banqueActive, p_valeur: v, p_quantite: q });
+    const msg = document.getElementById('pm-destr-msg');
+    msg.innerHTML = error ? `<p class="pm-erreur">${error.message}</p>` : `<p class="pm-succes">Roiyal remonté à ${Number(data.nouveau_r).toFixed(4)} % (coût: ${Number(data.cout).toFixed(2)} R$).</p>`;
+  };
+}
+
+/* ---------------------------------------------------------------
+   ONGLET — TABLEAU DE BORD
+   --------------------------------------------------------------- */
+async function rendreTableau() {
+  const zone = document.getElementById('pm-onglet-tableau');
+  const { data: jour } = await sb.from('stats_banque_jour').select('*').eq('banque_tag', banqueActive).eq('jour', new Date().toISOString().slice(0,10)).maybeSingle();
+  const { data: total } = await sb.from('stats_banque_total').select('*').eq('banque_tag', banqueActive).single();
+  const ligne = (s) => s ? `
+    <tr><td>Billets imprimés</td><td class="num">${Number(s.billets_imprimes||0).toLocaleString('fr-FR')}</td></tr>
+    <tr><td>Valeur imprimée</td><td class="num">${Number(s.valeur_imprimee||0).toFixed(2)} R$</td></tr>
+    <tr><td>Camions envoyés</td><td class="num">${s.camions_envoyes||0}</td></tr>
+    <tr><td>Braquages</td><td class="num">${s.braquages||0}</td></tr>
+    <tr><td>Accidents</td><td class="num">${s.accidents||0}</td></tr>
+    <tr><td>Pannes</td><td class="num">${s.pannes||0}</td></tr>
+    <tr><td>Inflation causée</td><td class="num">${Number(s.inflation_causee||0).toFixed(4)} pts</td></tr>
+  ` : '<tr><td colspan="2">Aucune donnée</td></tr>';
+  zone.innerHTML = `
+    <div class="pm-grille">
+      <div class="pm-carte"><h3>Aujourd'hui</h3><table class="pm-tableau">${ligne(jour)}</table></div>
+      <div class="pm-carte"><h3>Tous les temps</h3><table class="pm-tableau">${ligne(total)}</table></div>
+    </div>
+  `;
+}
+
+demarrer();
+</script>
+<script defer src="assets/i18n.js"></script>
+</body>
+</html>

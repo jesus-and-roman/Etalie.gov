@@ -243,6 +243,16 @@ async function trouverDansRegistreCAS(codeEncrypte, forcerRechargement) {
 }
 
 
+// Provinces de résidence — déterminent quelle Banque Nationale paie le
+// salaire du citoyen (voir supabase/sql/patch-presse-monetaire.sql).
+const PROVINCES_RESIDENCE = [
+  "Isulae","Balques","Vénésie","Bushard Bay","Tonawa","Pruxe-Slamique",
+  "Talon-Andrien","Talon-Étalien","Ombrie","Itênnes",
+  "Brien","Romagna","Grande-Capitale","Marcio","Baxe",
+  "Côte-Anglaise","Jance","Alanbie","Aloies","Côte d'Avoigne","Vénéz","Hors-Grande-Vénésie","Alonse","Chagne",
+  "Fleury","Milela-Cale","Prisonia","Quoueta-Et-Milenniar-Étalois","Île Saint-Étienne","Gibaltage","Grâdes","North Milela","Tivainne"
+];
+
 const CIBLES_CONTACT = [
   "Gouvernement (général)", "Association",
   "Ministère des Relations intérieures", "Ministère des Relations extérieures",
@@ -338,6 +348,12 @@ function afficherConnexion(messageErreur) {
           <input type="date" id="i-naissance">
         </div>
         <div class="pc-champ">
+          <label for="i-province">Province de résidence</label>
+          <select id="i-province">
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+        <div class="pc-champ">
           <label for="i-mdp">Mot de passe</label>
           <input type="password" id="i-mdp" autocomplete="new-password">
         </div>
@@ -356,6 +372,7 @@ function afficherConnexion(messageErreur) {
   document.getElementById('onglet-demande-cas').onclick = () => basculerOnglet('demande-cas');
   document.getElementById('c-valider').onclick = tenterConnexion;
   document.getElementById('i-valider').onclick = tenterInscription;
+  document.getElementById('i-province').innerHTML += PROVINCES_RESIDENCE.map(p => `<option value="${p}">${p}</option>`).join('');
   initialiserFormulaireDemandeCas();
 
   if (messageErreur) {
@@ -585,10 +602,11 @@ async function tenterInscription() {
   const username = document.getElementById('i-username').value.trim();
   const email = document.getElementById('i-email').value.trim();
   const naissance = document.getElementById('i-naissance').value;
+  const province = document.getElementById('i-province').value;
   const mdp = document.getElementById('i-mdp').value;
   const msg = document.getElementById('i-message');
 
-  if (!casEntre || !nom || !prenom || !username || !email || !naissance || !mdp) {
+  if (!casEntre || !nom || !prenom || !username || !email || !naissance || !province || !mdp) {
     msg.innerHTML = '<p class="pc-erreur">Tous les champs sont obligatoires.</p>';
     return;
   }
@@ -635,7 +653,7 @@ async function tenterInscription() {
     //    même si la page a été fermée entre-temps.
     const { data: inscription, error: erreurAuth } = await sb.auth.signUp({
       email, password: mdp,
-      options: { data: { username, prenom, nom, code_social_encrypte: codeEncrypte, date_naissance: naissance, protege_gouvernement: enregistrement.protege_gouvernement, police: enregistrement.police, salaire: enregistrement.salaire } }
+      options: { data: { username, prenom, nom, code_social_encrypte: codeEncrypte, date_naissance: naissance, protege_gouvernement: enregistrement.protege_gouvernement, police: enregistrement.police, salaire: enregistrement.salaire, province } }
     });
     if (erreurAuth) throw erreurAuth;
     if (!inscription.session) {
@@ -650,7 +668,8 @@ async function tenterInscription() {
       p_code_social_encrypte: codeEncrypte, p_date_naissance: naissance,
       p_protege_gouvernement: enregistrement.protege_gouvernement,
       p_police: enregistrement.police,
-      p_salaire: enregistrement.salaire
+      p_salaire: enregistrement.salaire,
+      p_province: province
     });
     if (erreurRpc) throw erreurRpc;
 
@@ -704,7 +723,8 @@ async function chargerTableauDeBord(utilisateur) {
         p_code_social_encrypte: meta.code_social_encrypte, p_date_naissance: meta.date_naissance,
         p_protege_gouvernement: meta.protege_gouvernement || false,
         p_police: meta.police || false,
-        p_salaire: meta.salaire || 12.5
+        p_salaire: meta.salaire || 12.5,
+        p_province: meta.province || null
       });
       if (erreurRpc) {
         await sb.auth.signOut();
@@ -756,6 +776,10 @@ async function chargerTableauDeBord(utilisateur) {
       <button class="pc-lien" id="deconnexion">Se déconnecter</button>
     </div>
 
+    <div style="margin-bottom:10px;">
+      <a class="pc-lien" href="presse-monetaire.html">🏦 Presse monétaire (accès banques nationales)</a>
+    </div>
+
     <div style="margin-bottom:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
       <span id="bandeau-travail" class="pc-tag-avert" style="display:none;"></span>
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); font-size:.82rem; padding:8px 16px;" id="declencher-tso">Déclencher 8 minutes de TSO (125%)</button>
@@ -793,6 +817,7 @@ async function chargerTableauDeBord(utilisateur) {
             <tr><td>Date de naissance</td><td>${citoyen.date_naissance}</td></tr>
             <tr><td>Âge toutouïen à l'inscription</td><td>${Number(citoyen.age_toutouien_inscription).toFixed(2)} ans</td></tr>
             <tr><td>Dossier créé le</td><td>${new Date(citoyen.cree_le).toLocaleDateString('fr-FR')}</td></tr>
+            <tr><td>Province de résidence</td><td>${citoyen.province_residence || '—'}</td></tr>
             <tr><td>Expiration du CAS</td><td>${monStatut ? monStatut.date_expiration : '—'}</td></tr>
             <tr><td>CAS à renouvellement protégé (service gouvernemental)</td><td>${monStatut && monStatut.protege_gouvernement ? 'Oui' : 'Non'}</td></tr>
             <tr><td>Agent de la paix</td><td>${citoyen.est_agent_paix ? 'Oui' : 'Non'}</td></tr>
