@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Création de document officiel — République d'Étalie</title>
+<title>Création de document officiel v2 — République d'Étalie</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -71,7 +71,7 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
   <div class="conteneur">
     <div class="gauche">Français</div>
     <div class="centre">
-      <img src="../assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <img src="assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <div style="display:none;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
     </div>
     <div class="droite">Celst</div>
@@ -104,11 +104,13 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
     <h2>1. Identité du demandeur</h2>
     <div class="avis">Toutes les polices du document final seront en Times New Roman. Le code social et le nom complet seront chiffrés avec BVE-512 (clé publique cosmétique).</div>
     
-    <label>Nom complet légal du demandeur</label>
-    <input type="text" id="nom-complet" placeholder="Prénom(s) NOM">
+    <label>Nom complet légal du demandeur <span style="font-weight:400;font-size:12px">(minimum 2 mots)</span></label>
+    <input type="text" id="nom-complet" placeholder="Prénom NOM" autocomplete="off">
+    <div id="err-nom" class="erreur cache" style="margin-top:4px;padding:6px 10px;font-size:13px"></div>
     
-    <label>Code social du demandeur</label>
-    <input type="text" id="code-social" placeholder="Numéro de code social">
+    <label>Code social du demandeur <span style="font-weight:400;font-size:12px">(format CCC-CCC-CCC ou CCC CCC CCC)</span></label>
+    <input type="text" id="code-social" placeholder="123-456-789" autocomplete="off" maxlength="11">
+    <div id="err-cas" class="erreur cache" style="margin-top:4px;padding:6px 10px;font-size:13px"></div>
     
     <div class="grille2" style="margin-top:14px">
       <div>
@@ -157,7 +159,7 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
   <!-- ÉTAPE 3 : RÉDACTION -->
   <div id="etape3" class="cache">
     <h2>3. Rédaction du document</h2>
-    <div class="avis">Zone d’écriture limitée à la moitié inférieure / côté gauche. Les en-têtes (Français + logo + Celst + métadonnées) sont protégés.</div>
+    <div class="avis">Tu vois exactement où tu écris. La zone grisée en haut est protégée (Français + logo + Celst + métadonnées). Tu ne peux écrire que dans la zone blanche inférieure.</div>
     
     <div id="zone-main" class="cache">
       <div class="outils-dessin">
@@ -172,27 +174,68 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
         <button class="bouton bouton-gris" onclick="effacerCanvas()">Effacer</button>
         <button class="bouton bouton-or" onclick="ajouterPageMain()">+ Nouvelle page</button>
       </div>
-      <canvas id="canvas-main" class="zone-dessin" width="794" height="400"></canvas>
-      <p style="font-size:12px;margin-top:6px">Format A4 (21 × 29,7 cm) — zone d’écriture = moitié inférieure</p>
+
+      <!-- Aperçu page A4 avec zone visible -->
+      <div class="page-pdf" style="width:100%;max-width:794px;height:auto;aspect-ratio:210/297;margin:0 auto;">
+        <div class="en-tete-page" style="background:#e8eef5;padding:10px 14px;pointer-events:none;user-select:none;">
+          <div style="font-weight:700">Français</div>
+          <div class="c" style="font-size:11px;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
+          <div class="d">Celst</div>
+        </div>
+        <div style="padding:8px 14px;background:#f0f4f8;font-size:11px;border-bottom:1px dashed #999;pointer-events:none;">
+          <span id="preview-code-main">Code : —</span> &nbsp;|&nbsp; <span id="preview-date-main">Date demande : —</span>
+        </div>
+        <div style="position:relative;background:#fff;">
+          <div style="position:absolute;top:6px;left:10px;font-size:10px;color:#888;pointer-events:none;">ZONE D’ÉCRITURE (moitié inférieure)</div>
+          <canvas id="canvas-main" class="zone-dessin" width="794" height="520" style="width:100%;height:auto;border:none;border-top:2px solid #0c2340;display:block;"></canvas>
+        </div>
+      </div>
+      <p style="font-size:12px;margin-top:8px;text-align:center">Format A4 (21 × 29,7 cm) — tu dessines uniquement dans la zone blanche</p>
     </div>
 
     <div id="zone-digital" class="cache">
       <div class="outils-dessin">
         <label>Police :
-          <select id="police-digital">
+          <select id="police-digital" onchange="majPoliceDigital()">
             <option value="Times New Roman">Times New Roman</option>
             <option value="Arial">Arial</option>
           </select>
         </label>
-        <label>Taille : <input type="number" id="taille-digital" min="10" max="22" value="14" style="width:60px"></label>
+        <label>Taille : <input type="number" id="taille-digital" min="10" max="22" value="14" style="width:60px" onchange="majPoliceDigital()" oninput="majPoliceDigital()"></label>
         <button class="bouton bouton-or" onclick="ajouterPageDigital()">+ Nouvelle page</button>
       </div>
-      <textarea id="texte-digital" placeholder="Écrivez ici (uniquement dans la zone autorisée)..." style="min-height:220px"></textarea>
+
+      <div class="page-pdf" style="width:100%;max-width:794px;margin:0 auto;">
+        <div class="en-tete-page" style="background:#e8eef5;padding:10px 14px;pointer-events:none;user-select:none;">
+          <div style="font-weight:700">Français</div>
+          <div class="c" style="font-size:11px;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
+          <div class="d">Celst</div>
+        </div>
+        <div style="padding:8px 14px;background:#f0f4f8;font-size:11px;border-bottom:1px dashed #999;pointer-events:none;">
+          <span id="preview-code-digital">Code : —</span> &nbsp;|&nbsp; <span id="preview-date-digital">Date demande : —</span>
+        </div>
+        <div style="padding:10px 14px;background:#fff;border-top:2px solid #0c2340;">
+          <div style="font-size:10px;color:#888;margin-bottom:6px;">ZONE D’ÉCRITURE (moitié inférieure / côté français)</div>
+          <textarea id="texte-digital" placeholder="Écrivez ici uniquement dans cette zone..." style="min-height:280px;border:1px dashed #0c2340;width:100%;font-family:Times New Roman,serif;"></textarea>
+        </div>
+      </div>
     </div>
 
     <div id="zone-image" class="cache">
-      <p>Image sélectionnée. Elle sera placée sur une page dédiée (moitié inférieure).</p>
-      <img id="preview-image" style="max-width:100%;max-height:280px;border:1px solid #999;margin-top:8px">
+      <p>Image sélectionnée. Elle sera placée sur une page dédiée (moitié inférieure uniquement).</p>
+      <div class="page-pdf" style="width:100%;max-width:794px;margin:0 auto;">
+        <div class="en-tete-page" style="background:#e8eef5;padding:10px 14px;">
+          <div style="font-weight:700">Français</div>
+          <div class="c" style="font-size:11px;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
+          <div class="d">Celst</div>
+        </div>
+        <div style="padding:8px 14px;background:#f0f4f8;font-size:11px;border-bottom:1px dashed #999;">
+          Zone image (moitié inférieure)
+        </div>
+        <div style="padding:12px;background:#fff;text-align:center;">
+          <img id="preview-image" style="max-width:100%;max-height:320px;border:1px solid #999;">
+        </div>
+      </div>
     </div>
 
     <div style="margin-top:20px">
@@ -543,7 +586,7 @@ function genererCodeAleatoire() {
 
 async function chargerListeCodes() {
   try {
-    const r = await fetch('../assets/docs/list.txt');
+    const r = await fetch('assets/docs/list.txt');
     if (r.ok) {
       const txt = await r.text();
       etat.listeCodes = txt.split(/[;\n\r]+/).map(c => c.trim()).filter(Boolean);
@@ -569,6 +612,15 @@ function codeVersNomFichier(code) {
   return code.replace(/-/g, '') + '.pdf';
 }
 
+function majPoliceDigital() {
+  const ta = document.getElementById('texte-digital');
+  if (!ta) return;
+  const police = document.getElementById('police-digital').value;
+  const taille = document.getElementById('taille-digital').value || 14;
+  ta.style.fontFamily = police + ', serif';
+  ta.style.fontSize = taille + 'px';
+}
+
 /* ========== NAVIGATION ========== */
 function cacherTout() {
   ['etape0','etape1','etape2','etape3','etape4','etape5'].forEach(id => {
@@ -587,13 +639,39 @@ function retourEtape2() { cacherTout(); document.getElementById('etape2').classL
 function retourEtape3() { cacherTout(); document.getElementById('etape3').classList.remove('cache'); }
 
 /* ========== GÉNÉRATION CODE + CLÉS ========== */
+function validerNom(nom) {
+  const mots = nom.trim().split(/\s+/).filter(m => m.length >= 1);
+  return mots.length >= 2;
+}
+function validerCodeSocial(cas) {
+  // Accepte uniquement CCC-CCC-CCC ou CCC CCC CCC (chiffres seulement)
+  const clean = cas.trim();
+  const reTiret = /^\d{3}-\d{3}-\d{3}$/;
+  const reEspace = /^\d{3}\s\d{3}\s\d{3}$/;
+  return reTiret.test(clean) || reEspace.test(clean);
+}
+
 async function genererCodeEtContinuer() {
   const nom = document.getElementById('nom-complet').value.trim();
   const cas = document.getElementById('code-social').value.trim();
-  if (!nom || !cas) {
-    alert('Nom complet et code social obligatoires.');
-    return;
+  const errNom = document.getElementById('err-nom');
+  const errCas = document.getElementById('err-cas');
+  errNom.classList.add('cache');
+  errCas.classList.add('cache');
+
+  let ok = true;
+  if (!validerNom(nom)) {
+    errNom.textContent = 'Le nom légal doit contenir au minimum deux mots (ex: Jean Tremblay).';
+    errNom.classList.remove('cache');
+    ok = false;
   }
+  if (!validerCodeSocial(cas)) {
+    errCas.textContent = 'Code social invalide. Format accepté uniquement : 123-456-789 ou 123 456 789 (chiffres seulement).';
+    errCas.classList.remove('cache');
+    ok = false;
+  }
+  if (!ok) return;
+
   etat.nomComplet = nom;
   etat.codeSocial = cas;
 
@@ -617,10 +695,10 @@ async function genererCodeEtContinuer() {
 
   // Clés BVE
   etat.seedbox = BVE512.generateSeedbox();
-  etat.privateKey = BVE512.generatePrivateKey(64); // plus court pour affichage, toujours fort
+  etat.privateKey = BVE512.generatePrivateKey(64);
   etat.publicKey = BVE512.privateKeyToPublicKey(etat.privateKey);
 
-  // Chiffrement nom + CAS avec la clé privée + seedbox
+  // Chiffrement nom + CAS
   etat.nomChiffre = await BVE512.encrypt(nom, etat.privateKey, etat.seedbox);
   etat.casChiffre = await BVE512.encrypt(cas, etat.privateKey, etat.seedbox);
 
@@ -637,6 +715,18 @@ function choisirMode(mode) {
   document.getElementById('etape3').classList.remove('cache');
   document.getElementById('zone-main').classList.add('cache');
   document.getElementById('zone-digital').classList.add('cache');
+
+  // Afficher le code et la date dans l’aperçu de page
+  const codeTxt = 'Code : ' + (etat.codeSuivi || '—');
+  const dateTxt = 'Date demande : ' + (etat.dateDemande || '—');
+  ['preview-code-main','preview-code-digital'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = codeTxt;
+  });
+  ['preview-date-main','preview-date-digital'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = dateTxt;
+  });
   document.getElementById('zone-image').classList.add('cache');
 
   if (mode === 'main') {
@@ -958,8 +1048,8 @@ async function rechercherDocument() {
   }
   const nomFichier = codeVersNomFichier(code);
   zone.className = 'succes';
-  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>../assets/docs/${nomFichier}</strong><br>
-    <a href="../assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
+  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>assets/docs/${nomFichier}</strong><br>
+    <a href="assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
 }
 
 /* ========== HORLOGE ========== */
