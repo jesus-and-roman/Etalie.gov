@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Création de document officiel v2 — République d'Étalie</title>
+<title>Création de document officiel — République d'Étalie</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -71,7 +71,7 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
   <div class="conteneur">
     <div class="gauche">Français</div>
     <div class="centre">
-      <img src="../assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <img src="assets/blason-etalie-docs.png" alt="Blason Étalie Docs" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
       <div style="display:none;font-weight:700;color:#0c2340">ÉTALIE DOCS</div>
     </div>
     <div class="droite">Celst</div>
@@ -222,7 +222,15 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
     </div>
 
     <div id="zone-image" class="cache">
-      <p>Image sélectionnée. Elle sera placée sur une page dédiée (moitié inférieure uniquement).</p>
+      <p style="margin-bottom:10px">Chaque image = <strong>1 page</strong>. Tu peux en ajouter plusieurs. Tu redimensionnes avant d’ajouter.</p>
+      <div class="outils-dessin" style="margin-bottom:12px">
+        <input type="file" id="import-image-extra" accept="image/*" style="max-width:220px">
+        <label>Largeur (mm) : <input type="number" id="img-w" min="40" max="174" value="170" style="width:70px" oninput="majPreviewImage()"></label>
+        <label>Hauteur (mm) : <input type="number" id="img-h" min="30" max="150" value="120" style="width:70px" oninput="majPreviewImage()"></label>
+        <button class="bouton bouton-or" onclick="ajouterPageImage()">+ Ajouter cette image (nouvelle page)</button>
+      </div>
+      <div id="liste-images-ajoutees" style="font-size:13px;margin-bottom:10px"></div>
+
       <div class="page-pdf" style="width:100%;max-width:794px;margin:0 auto;">
         <div class="en-tete-page" style="background:#e8eef5;padding:10px 14px;">
           <div style="font-weight:700">Français</div>
@@ -230,10 +238,10 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
           <div class="d">Celst</div>
         </div>
         <div style="padding:8px 14px;background:#f0f4f8;font-size:11px;border-bottom:1px dashed #999;">
-          Zone image (moitié inférieure)
+          Aperçu dimensions dans le document : <span id="preview-dim">170 × 120 mm</span> (zone inférieure)
         </div>
-        <div style="padding:12px;background:#fff;text-align:center;">
-          <img id="preview-image" style="max-width:100%;max-height:320px;border:1px solid #999;">
+        <div style="padding:12px;background:#fff;text-align:center;min-height:200px">
+          <img id="preview-image" style="max-width:100%;border:1px solid #999;object-fit:contain;">
         </div>
       </div>
     </div>
@@ -248,6 +256,19 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
   <div id="etape4" class="cache">
     <h2>4. Signature manuscrite obligatoire</h2>
     <p style="margin-bottom:10px">La dernière page du PDF contiendra uniquement les infos du document + votre signature à la main. Signez clairement dans le cadre ci-dessous.</p>
+    
+    <div class="carte" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+        <input type="checkbox" id="check-anonyme" style="width:auto">
+        Me rendre anonyme
+      </label>
+      <p style="font-size:13px;margin-top:6px;color:#444">
+        Si coché : le nom légal apparaîtra en clair dans le document (non chiffré). 
+        C’est <strong>celui qui traite le fichier</strong> qui mettra un bloc noir sur le nom. 
+        Le code social reste toujours chiffré.
+      </p>
+    </div>
+
     <canvas id="canvas-signature" class="zone-dessin" width="600" height="180" style="max-width:100%"></canvas>
     <div class="outils-dessin">
       <button class="bouton bouton-gris" onclick="effacerSignature()">Effacer signature</button>
@@ -564,8 +585,13 @@ const etat = {
   nomChiffre: null,
   casChiffre: null,
   pagesMain: [], // dataURL des canvas
+  pagesDigital: [], // textes des pages digitales
   texteDigital: '',
+  pagesImage: [], // {dataUrl, widthMm, heightMm}
   imageData: null,
+  imageWidthMm: 170,
+  imageHeightMm: 120,
+  anonyme: false,
   signatureData: null,
   listeCodes: [] // simulé depuis list.txt
 };
@@ -586,7 +612,7 @@ function genererCodeAleatoire() {
 
 async function chargerListeCodes() {
   try {
-    const r = await fetch('../assets/docs/list.txt');
+    const r = await fetch('assets/docs/list.txt');
     if (r.ok) {
       const txt = await r.text();
       etat.listeCodes = txt.split(/[;\n\r]+/).map(c => c.trim()).filter(Boolean);
@@ -734,16 +760,25 @@ function choisirMode(mode) {
     initCanvasMain();
   } else if (mode === 'digital') {
     document.getElementById('zone-digital').classList.remove('cache');
+    majPoliceDigital();
   } else if (mode === 'image') {
-    const f = document.getElementById('import-image').files[0];
-    if (!f) { alert('Sélectionnez d’abord une image.'); retourEtape2(); return; }
-    const reader = new FileReader();
-    reader.onload = e => {
-      etat.imageData = e.target.result;
-      document.getElementById('preview-image').src = e.target.result;
-      document.getElementById('zone-image').classList.remove('cache');
-    };
-    reader.readAsDataURL(f);
+    // reset des pages image
+    etat.pagesImage = [];
+    etat.imageData = null;
+    document.getElementById('zone-image').classList.remove('cache');
+    const liste = document.getElementById('liste-images-ajoutees');
+    if (liste) liste.innerHTML = '';
+    // si une image était déjà choisie dans l’étape 2
+    const f = document.getElementById('import-image') && document.getElementById('import-image').files[0];
+    if (f) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        etat.imageData = e.target.result;
+        document.getElementById('preview-image').src = e.target.result;
+        majPreviewImage();
+      };
+      reader.readAsDataURL(f);
+    }
   }
 }
 
@@ -794,6 +829,77 @@ function ajouterPageMain() {
   alert('Page enregistrée. Vous pouvez dessiner la suivante.');
 }
 
+function ajouterPageDigital() {
+  const ta = document.getElementById('texte-digital');
+  const txt = (ta.value || '').trim();
+  if (!txt) {
+    alert('Écris quelque chose avant d’ajouter une nouvelle page.');
+    return;
+  }
+  etat.pagesDigital.push({
+    texte: txt,
+    police: document.getElementById('police-digital').value,
+    taille: document.getElementById('taille-digital').value || 14
+  });
+  ta.value = '';
+  alert('Page digitale enregistrée. Tu peux écrire la suivante.');
+}
+
+function majPreviewImage() {
+  const w = parseFloat(document.getElementById('img-w').value) || 170;
+  const h = parseFloat(document.getElementById('img-h').value) || 120;
+  etat.imageWidthMm = Math.min(174, Math.max(40, w));
+  etat.imageHeightMm = Math.min(150, Math.max(30, h));
+  document.getElementById('img-w').value = etat.imageWidthMm;
+  document.getElementById('img-h').value = etat.imageHeightMm;
+  const dim = document.getElementById('preview-dim');
+  if (dim) dim.textContent = etat.imageWidthMm + ' × ' + etat.imageHeightMm + ' mm';
+  const img = document.getElementById('preview-image');
+  if (img && img.src) {
+    // échelle visuelle approximative (1mm ≈ 3.78px à 96dpi, mais on reste simple)
+    const maxW = 500;
+    const scale = Math.min(maxW / etat.imageWidthMm, 280 / etat.imageHeightMm);
+    img.style.width = (etat.imageWidthMm * scale) + 'px';
+    img.style.height = (etat.imageHeightMm * scale) + 'px';
+  }
+}
+
+function ajouterPageImage() {
+  const input = document.getElementById('import-image-extra') || document.getElementById('import-image');
+  const file = input && input.files && input.files[0];
+  if (!file && !etat.imageData) {
+    alert('Choisis d’abord une image.');
+    return;
+  }
+  const w = etat.imageWidthMm || 170;
+  const h = etat.imageHeightMm || 120;
+
+  function pushImage(dataUrl) {
+    etat.pagesImage.push({ dataUrl, widthMm: w, heightMm: h });
+    const liste = document.getElementById('liste-images-ajoutees');
+    if (liste) {
+      liste.innerHTML = etat.pagesImage.map((p, i) => 
+        `Page image ${i+1} : ${p.widthMm}×${p.heightMm} mm`
+      ).join('<br>');
+    }
+    alert('Image ajoutée comme nouvelle page (' + w + '×' + h + ' mm).');
+    if (input) input.value = '';
+  }
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      etat.imageData = e.target.result;
+      document.getElementById('preview-image').src = e.target.result;
+      majPreviewImage();
+      pushImage(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else if (etat.imageData) {
+    pushImage(etat.imageData);
+  }
+}
+
 /* ========== SIGNATURE ========== */
 function initCanvasSignature() {
   const c = document.getElementById('canvas-signature');
@@ -829,9 +935,34 @@ function effacerSignature() {
 function passerSignature() {
   if (etat.mode === 'main') {
     const c = document.getElementById('canvas-main');
+    // n’ajouter que s’il y a du contenu (ou forcer la page courante)
     etat.pagesMain.push(c.toDataURL('image/png'));
   } else if (etat.mode === 'digital') {
-    etat.texteDigital = document.getElementById('texte-digital').value;
+    const txt = (document.getElementById('texte-digital').value || '').trim();
+    if (txt) {
+      etat.pagesDigital.push({
+        texte: txt,
+        police: document.getElementById('police-digital').value,
+        taille: document.getElementById('taille-digital').value || 14
+      });
+    }
+    if (etat.pagesDigital.length === 0) {
+      alert('Ajoute au moins une page de texte.');
+      return;
+    }
+  } else if (etat.mode === 'image') {
+    // si une image est en preview mais pas encore ajoutée, l’ajouter
+    if (etat.imageData && etat.pagesImage.length === 0) {
+      etat.pagesImage.push({
+        dataUrl: etat.imageData,
+        widthMm: etat.imageWidthMm || 170,
+        heightMm: etat.imageHeightMm || 120
+      });
+    }
+    if (etat.pagesImage.length === 0) {
+      alert('Ajoute au moins une image.');
+      return;
+    }
   }
   cacherTout();
   document.getElementById('etape4').classList.remove('cache');
@@ -842,6 +973,7 @@ function passerSignature() {
 async function genererPDF() {
   const cSig = document.getElementById('canvas-signature');
   etat.signatureData = cSig.toDataURL('image/png');
+  etat.anonyme = document.getElementById('check-anonyme').checked;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -856,7 +988,6 @@ async function genererPDF() {
     doc.setFont('times', 'bold');
     doc.setFontSize(13);
     doc.text('Celst', pageW - margin, 14, { align: 'right' });
-    // logo placeholder
     doc.setFontSize(9);
     doc.setFont('times', 'normal');
     doc.text('République d\'Étalie — Document officiel', pageW / 2, 14, { align: 'center' });
@@ -883,16 +1014,17 @@ async function genererPDF() {
     '2. Une fois téléchargé, il ne peut plus être modifié.',
     '3. Vous disposez de 5 jours calendaires à compter de la date de téléchargement pour transmettre le dossier complet.',
     '4. Transmission obligatoire à : mazmogetjr@gmail.com',
-    '5. Joindre obligatoirement : seedbox + clé privée + données chiffrées (nom + code social).',
+    '5. Joindre obligatoirement : seedbox + clé privée + données chiffrées (code social' + (etat.anonyme ? '' : ' + nom') + ').',
     '6. La signature manuscrite sur la dernière page est obligatoire.',
     '7. Toute altération ou usage frauduleux expose à des sanctions.',
-    '8. Le côté « Celst » est réservé à l\'autorité destinataire pour publication.'
+    '8. Le côté « Celst » est réservé à l\'autorité destinataire pour publication.',
+    etat.anonyme ? '9. Mode anonyme demandé : le destinataire devra masquer le nom légal par un bloc noir.' : '9. Nom légal chiffré (non anonyme).'
   ];
   let y = 42;
   regles.forEach(l => { doc.text(l, margin, y, { maxWidth: pageW - 2 * margin }); y += 9; });
   doc.setFont('times', 'bold');
   doc.text('Date de demande : ' + etat.dateDemande, margin, y + 8);
-  pied(doc, 1, 0); // total calculé plus tard
+  pied(doc, 1, 0);
 
   // PAGE 2 — INFOS
   doc.addPage();
@@ -903,51 +1035,67 @@ async function genererPDF() {
   doc.setFont('times', 'normal');
   doc.setFontSize(11);
   y = 42;
+
+  // Nom : public si anonyme, sinon chiffré
+  const nomAffiche = etat.anonyme
+    ? etat.nomComplet + '  [ANONYME — destinataire doit masquer]'
+    : (etat.nomChiffre.substring(0, 70) + '…');
+  const labelNom = etat.anonyme ? 'Nom complet (public / à masquer)' : 'Nom complet (chiffré)';
+
   const infos = [
     ['Code de suivi', etat.codeSuivi],
     ['Date de demande', etat.dateDemande],
     ['Type de fichier', etat.mode === 'main' ? 'Écriture à la main' : etat.mode === 'digital' ? 'Écriture digitale' : 'Image importée'],
-    ['Nom complet (chiffré)', etat.nomChiffre.substring(0, 60) + '…'],
-    ['Code social (chiffré)', etat.casChiffre.substring(0, 60) + '…']
+    ['Mode anonyme', etat.anonyme ? 'OUI — destinataire met bloc noir sur le nom' : 'NON'],
+    [labelNom, nomAffiche],
+    ['Code social (chiffré)', etat.casChiffre.substring(0, 70) + '…']
   ];
   infos.forEach(([lab, val]) => {
     doc.setFont('times', 'bold');
     doc.text(lab + ' :', margin, y);
     doc.setFont('times', 'normal');
-    doc.text(String(val), margin + 55, y, { maxWidth: pageW - margin - 55 });
-    y += 10;
+    doc.text(String(val), margin + 58, y, { maxWidth: pageW - margin - 58 });
+    y += 11;
   });
   pied(doc, 2, 0);
 
   // PAGES CONTENU
   let pageNum = 3;
-  if (etat.mode === 'digital' && etat.texteDigital) {
-    doc.addPage();
-    enTete(doc);
-    doc.setFont('times', 'normal');
-    doc.setFontSize(12);
-    const lines = doc.splitTextToSize(etat.texteDigital, pageW - 2 * margin);
-    doc.text(lines, margin, 32);
-    pied(doc, pageNum++, 0);
+
+  if (etat.mode === 'digital' && etat.pagesDigital.length) {
+    for (const page of etat.pagesDigital) {
+      doc.addPage();
+      enTete(doc);
+      const font = (page.police || 'Times New Roman').toLowerCase().includes('arial') ? 'helvetica' : 'times';
+      doc.setFont(font, 'normal');
+      doc.setFontSize(parseInt(page.taille) || 12);
+      const lines = doc.splitTextToSize(page.texte, pageW - 2 * margin);
+      doc.text(lines, margin, 32);
+      pied(doc, pageNum++, 0);
+    }
   } else if (etat.mode === 'main') {
     for (const dataUrl of etat.pagesMain) {
       doc.addPage();
       enTete(doc);
-      // image dans la moitié inférieure
       try {
         doc.addImage(dataUrl, 'PNG', margin, 110, pageW - 2 * margin, 140);
       } catch (e) {}
       pied(doc, pageNum++, 0);
     }
-  } else if (etat.mode === 'image' && etat.imageData) {
-    doc.addPage();
-    enTete(doc);
-    try {
-      doc.addImage(etat.imageData, 'JPEG', margin, 110, pageW - 2 * margin, 140);
-    } catch (e) {
-      try { doc.addImage(etat.imageData, 'PNG', margin, 110, pageW - 2 * margin, 140); } catch (e2) {}
+  } else if (etat.mode === 'image' && etat.pagesImage.length) {
+    for (const img of etat.pagesImage) {
+      doc.addPage();
+      enTete(doc);
+      const w = Math.min(img.widthMm || 170, pageW - 2 * margin);
+      const h = Math.min(img.heightMm || 120, 150);
+      const x = margin + ((pageW - 2 * margin) - w) / 2;
+      try {
+        doc.addImage(img.dataUrl, 'JPEG', x, 110, w, h);
+      } catch (e) {
+        try { doc.addImage(img.dataUrl, 'PNG', x, 110, w, h); } catch (e2) {}
+      }
+      pied(doc, pageNum++, 0);
     }
-    pied(doc, pageNum++, 0);
   }
 
   // DERNIÈRE PAGE — SIGNATURE
@@ -961,7 +1109,12 @@ async function genererPDF() {
   y = 42;
   doc.text('Code de suivi : ' + etat.codeSuivi, margin, y); y += 8;
   doc.text('Date de demande : ' + etat.dateDemande, margin, y); y += 8;
-  doc.text('Type : ' + (etat.mode === 'main' ? 'Main' : etat.mode === 'digital' ? 'Digital' : 'Image'), margin, y); y += 14;
+  doc.text('Type : ' + (etat.mode === 'main' ? 'Main' : etat.mode === 'digital' ? 'Digital' : 'Image'), margin, y); y += 8;
+  doc.text('Anonyme : ' + (etat.anonyme ? 'OUI' : 'NON'), margin, y); y += 14;
+  if (etat.anonyme) {
+    doc.setFont('times', 'bold');
+    doc.text('Nom légal (à masquer par le destinataire) : ' + etat.nomComplet, margin, y); y += 10;
+  }
   doc.setFont('times', 'bold');
   doc.text('Signature manuscrite du demandeur :', margin, y); y += 6;
   try {
@@ -971,12 +1124,7 @@ async function genererPDF() {
   doc.rect(margin, y, 90, 35);
   pied(doc, pageNum, pageNum);
 
-  // Mettre à jour les numéros de page si besoin (simplifié)
   const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    // réécrire pied avec total
-  }
 
   // Téléchargement
   const nomFichier = codeVersNomFichier(etat.codeSuivi);
@@ -990,7 +1138,14 @@ async function genererPDF() {
   document.getElementById('date-telechargement').textContent = etat.dateTelechargement;
   document.getElementById('affiche-seedbox').textContent = etat.seedbox;
   document.getElementById('affiche-privee').textContent = etat.privateKey;
-  document.getElementById('affiche-chiffre').textContent = 'NOM: ' + etat.nomChiffre + '\nCAS: ' + etat.casChiffre;
+
+  let texteChiffre = 'CAS (chiffré) : ' + etat.casChiffre;
+  if (!etat.anonyme) {
+    texteChiffre = 'NOM (chiffré) : ' + etat.nomChiffre + '\n' + texteChiffre;
+  } else {
+    texteChiffre = 'NOM (public / anonyme) : ' + etat.nomComplet + '\n' + texteChiffre;
+  }
+  document.getElementById('affiche-chiffre').textContent = texteChiffre;
 
   cacherTout();
   document.getElementById('etape5').classList.remove('cache');
@@ -1018,12 +1173,16 @@ function copierTexte(id) {
   });
 }
 function copierTout() {
+  let nomLigne = etat.anonyme
+    ? `Nom (public / anonyme) : ${etat.nomComplet}`
+    : `Nom chiffré : ${etat.nomChiffre}`;
   const txt = `Code de suivi : ${etat.codeSuivi}
 Date de demande : ${etat.dateDemande}
 Date de téléchargement : ${etat.dateTelechargement}
+Anonyme : ${etat.anonyme ? 'OUI' : 'NON'}
 Seedbox : ${etat.seedbox}
 Clé privée : ${etat.privateKey}
-Nom chiffré : ${etat.nomChiffre}
+${nomLigne}
 Code social chiffré : ${etat.casChiffre}
 
 À transmettre à mazmogetjr@gmail.com pour ajout officiel et traduction.`;
@@ -1048,8 +1207,8 @@ async function rechercherDocument() {
   }
   const nomFichier = codeVersNomFichier(code);
   zone.className = 'succes';
-  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>../assets/docs/${nomFichier}</strong><br>
-    <a href="../assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
+  zone.innerHTML = `Document trouvé. Fichier attendu : <strong>assets/docs/${nomFichier}</strong><br>
+    <a href="assets/docs/${nomFichier}" target="_blank" class="bouton bouton-or" style="margin-top:8px;display:inline-block">Ouvrir / Télécharger le PDF</a>`;
 }
 
 /* ========== HORLOGE ========== */
