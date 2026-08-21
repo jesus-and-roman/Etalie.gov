@@ -214,9 +214,14 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
         <div style="padding:8px 14px;background:#f0f4f8;font-size:11px;border-bottom:1px dashed #999;pointer-events:none;">
           <span id="preview-code-digital">Code : —</span> &nbsp;|&nbsp; <span id="preview-date-digital">Date demande : —</span>
         </div>
-        <div style="padding:10px 14px;background:#fff;border-top:2px solid #0c2340;">
-          <div style="font-size:10px;color:#888;margin-bottom:6px;">ZONE D’ÉCRITURE (moitié inférieure / côté français)</div>
-          <textarea id="texte-digital" placeholder="Écrivez ici uniquement dans cette zone..." style="min-height:280px;border:1px dashed #0c2340;width:100%;font-family:Times New Roman,serif;"></textarea>
+        <div style="padding:10px 14px;background:#fff;border-top:2px solid #0c2340;display:flex;">
+          <div style="width:50%;padding-right:8px;">
+            <div style="font-size:10px;color:#888;margin-bottom:6px;">ZONE D’ÉCRITURE — côté français (gauche) seulement</div>
+            <textarea id="texte-digital" placeholder="Écrivez ici — moitié gauche uniquement..." style="min-height:280px;border:1px dashed #0c2340;width:100%;font-family:Times New Roman,serif;"></textarea>
+          </div>
+          <div style="width:50%;background:#f0f0f0;border-left:2px dashed #999;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;padding:10px;">
+            Zone interdite<br>(côté Celst)<br>Ne pas écrire ici
+          </div>
         </div>
       </div>
     </div>
@@ -225,8 +230,8 @@ footer{background:#0c2340;color:#ccc;padding:18px 0;margin-top:40px;font-size:13
       <p style="margin-bottom:10px">Chaque image = <strong>1 page</strong>. Tu peux en ajouter plusieurs. Tu redimensionnes avant d’ajouter.</p>
       <div class="outils-dessin" style="margin-bottom:12px">
         <input type="file" id="import-image-extra" accept="image/*" style="max-width:220px">
-        <label>Largeur (mm) : <input type="number" id="img-w" min="40" max="174" value="170" style="width:70px" oninput="majPreviewImage()"></label>
-        <label>Hauteur (mm) : <input type="number" id="img-h" min="30" max="150" value="120" style="width:70px" oninput="majPreviewImage()"></label>
+        <label>Largeur (mm) : <input type="number" id="img-w" min="30" max="87" value="80" style="width:70px" oninput="majPreviewImage()"></label>
+        <label>Hauteur (mm) : <input type="number" id="img-h" min="30" max="140" value="100" style="width:70px" oninput="majPreviewImage()"></label>
         <button class="bouton bouton-or" onclick="ajouterPageImage()">+ Ajouter cette image (nouvelle page)</button>
       </div>
       <div id="liste-images-ajoutees" style="font-size:13px;margin-bottom:10px"></div>
@@ -589,8 +594,8 @@ const etat = {
   texteDigital: '',
   pagesImage: [], // {dataUrl, widthMm, heightMm}
   imageData: null,
-  imageWidthMm: 170,
-  imageHeightMm: 120,
+  imageWidthMm: 80,
+  imageHeightMm: 100,
   anonyme: false,
   signatureData: null,
   listeCodes: [] // simulé depuis list.txt
@@ -846,19 +851,19 @@ function ajouterPageDigital() {
 }
 
 function majPreviewImage() {
-  const w = parseFloat(document.getElementById('img-w').value) || 170;
-  const h = parseFloat(document.getElementById('img-h').value) || 120;
-  etat.imageWidthMm = Math.min(174, Math.max(40, w));
-  etat.imageHeightMm = Math.min(150, Math.max(30, h));
+  const w = parseFloat(document.getElementById('img-w').value) || 80;
+  const h = parseFloat(document.getElementById('img-h').value) || 100;
+  // Maximum = moitié de page (≈ 87 mm de large)
+  etat.imageWidthMm = Math.min(87, Math.max(30, w));
+  etat.imageHeightMm = Math.min(140, Math.max(30, h));
   document.getElementById('img-w').value = etat.imageWidthMm;
   document.getElementById('img-h').value = etat.imageHeightMm;
   const dim = document.getElementById('preview-dim');
-  if (dim) dim.textContent = etat.imageWidthMm + ' × ' + etat.imageHeightMm + ' mm';
+  if (dim) dim.textContent = etat.imageWidthMm + ' × ' + etat.imageHeightMm + ' mm (moitié max)';
   const img = document.getElementById('preview-image');
   if (img && img.src) {
-    // échelle visuelle approximative (1mm ≈ 3.78px à 96dpi, mais on reste simple)
-    const maxW = 500;
-    const scale = Math.min(maxW / etat.imageWidthMm, 280 / etat.imageHeightMm);
+    const maxW = 320;
+    const scale = Math.min(maxW / etat.imageWidthMm, 260 / etat.imageHeightMm);
     img.style.width = (etat.imageWidthMm * scale) + 'px';
     img.style.height = (etat.imageHeightMm * scale) + 'px';
   }
@@ -955,8 +960,8 @@ function passerSignature() {
     if (etat.imageData && etat.pagesImage.length === 0) {
       etat.pagesImage.push({
         dataUrl: etat.imageData,
-        widthMm: etat.imageWidthMm || 170,
-        heightMm: etat.imageHeightMm || 120
+        widthMm: etat.imageWidthMm || 80,
+        heightMm: etat.imageHeightMm || 100
       });
     }
     if (etat.pagesImage.length === 0) {
@@ -1059,26 +1064,45 @@ async function genererPDF() {
   });
   pied(doc, 2, 0);
 
-  // PAGES CONTENU
+  // PAGES CONTENU — TOUT limité à la MOITIÉ (côté gauche / zone inférieure)
+  // Largeur max autorisée = moitié de la page utile ≈ 87 mm
+  const demiLargeur = (pageW - 2 * margin) / 2; // ~87 mm
+  const zoneY = 110; // début de la moitié inférieure
+  const zoneH = 140; // hauteur max de la zone d’écriture
+
   let pageNum = 3;
 
   if (etat.mode === 'digital' && etat.pagesDigital.length) {
     for (const page of etat.pagesDigital) {
       doc.addPage();
       enTete(doc);
+      // Ligne verticale pour marquer la limite du côté français (gauche)
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.2);
+      doc.line(margin + demiLargeur, 22, margin + demiLargeur, pageH - 15);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text('Zone française uniquement →', margin, 28);
+      doc.setTextColor(0);
+
       const font = (page.police || 'Times New Roman').toLowerCase().includes('arial') ? 'helvetica' : 'times';
       doc.setFont(font, 'normal');
       doc.setFontSize(parseInt(page.taille) || 12);
-      const lines = doc.splitTextToSize(page.texte, pageW - 2 * margin);
-      doc.text(lines, margin, 32);
+      // Texte forcé dans la moitié gauche seulement
+      const lines = doc.splitTextToSize(page.texte, demiLargeur - 4);
+      doc.text(lines, margin, 36);
       pied(doc, pageNum++, 0);
     }
   } else if (etat.mode === 'main') {
     for (const dataUrl of etat.pagesMain) {
       doc.addPage();
       enTete(doc);
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.2);
+      doc.line(margin + demiLargeur, 22, margin + demiLargeur, pageH - 15);
       try {
-        doc.addImage(dataUrl, 'PNG', margin, 110, pageW - 2 * margin, 140);
+        // Dessin placé uniquement dans la moitié gauche + moitié inférieure
+        doc.addImage(dataUrl, 'PNG', margin, zoneY, demiLargeur, zoneH);
       } catch (e) {}
       pied(doc, pageNum++, 0);
     }
@@ -1086,13 +1110,16 @@ async function genererPDF() {
     for (const img of etat.pagesImage) {
       doc.addPage();
       enTete(doc);
-      const w = Math.min(img.widthMm || 170, pageW - 2 * margin);
-      const h = Math.min(img.heightMm || 120, 150);
-      const x = margin + ((pageW - 2 * margin) - w) / 2;
+      doc.setDrawColor(180);
+      doc.setLineWidth(0.2);
+      doc.line(margin + demiLargeur, 22, margin + demiLargeur, pageH - 15);
+      // Image forcée dans la moitié (max demiLargeur)
+      let w = Math.min(img.widthMm || 80, demiLargeur);
+      let h = Math.min(img.heightMm || 100, zoneH);
       try {
-        doc.addImage(img.dataUrl, 'JPEG', x, 110, w, h);
+        doc.addImage(img.dataUrl, 'JPEG', margin, zoneY, w, h);
       } catch (e) {
-        try { doc.addImage(img.dataUrl, 'PNG', x, 110, w, h); } catch (e2) {}
+        try { doc.addImage(img.dataUrl, 'PNG', margin, zoneY, w, h); } catch (e2) {}
       }
       pied(doc, pageNum++, 0);
     }
