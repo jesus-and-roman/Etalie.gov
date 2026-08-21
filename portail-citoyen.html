@@ -44,6 +44,43 @@
   .pc-onglets button.actif{ color:var(--vert-nuit); border-bottom-color:var(--or-laiton); font-weight:600; }
   .pc-masque{ display:none; }
   .pc-badge-admin{ background:var(--rouge-etalie); color:#fff; font-family:var(--police-util); font-size:.65rem; padding:2px 8px; border-radius:2px; margin-left:8px; }
+
+  /* Presse monétaire (onglet banques nationales) */
+  .pm-onglets{ display:flex; gap:0; border-bottom:2px solid var(--gris-ligne); margin-bottom:20px; flex-wrap:wrap; overflow-x:auto; }
+  .pm-onglets button{ background:none; border:none; padding:10px 14px; font-family:var(--police-util); font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; color:var(--gris-ardoise); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
+  .pm-onglets button.actif{ color:var(--vert-nuit); border-bottom-color:var(--or-laiton); font-weight:600; }
+  .pm-masque{ display:none; }
+  .pm-select-banque{ padding:9px 12px; border:1px solid var(--gris-ligne); font-family:var(--police-util); font-size:.82rem; background:var(--blanc); margin-bottom:18px; }
+  .pm-grille{ display:grid; grid-template-columns:1.1fr .9fr; gap:20px; }
+  @media (max-width:880px){ .pm-grille{ grid-template-columns:1fr; } }
+  .pm-machine{ background:#0c2116; border:2px solid var(--vert-nuit); border-radius:6px; padding:26px; text-align:center; position:relative; overflow:hidden; min-height:250px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .pm-fente{ width:230px; height:16px; background:#000; border-radius:3px; margin:0 auto 10px; box-shadow:inset 0 3px 6px rgba(0,0,0,.7); position:relative; z-index:2; }
+  .pm-billet-zone{ width:230px; height:110px; margin-top:-16px; position:relative; overflow:visible; }
+  .pm-billet{ width:100%; height:100%; position:absolute; top:-100px; left:0; border-radius:3px; box-shadow:0 8px 22px rgba(0,0,0,.55); overflow:hidden; opacity:0; }
+  .pm-billet img{ width:100%; height:100%; object-fit:contain; display:block; background:#fff; }
+  .pm-billet .pm-voile{ position:absolute; inset:0; background:#1a1a1a; transform-origin:top; }
+  .pm-valeurs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .pm-valeurs button{ padding:8px 14px; border:2px solid var(--or-laiton); background:var(--blanc); color:var(--vert-nuit); font-family:var(--police-util); font-weight:600; cursor:pointer; border-radius:3px; font-size:.82rem; }
+  .pm-valeurs button.actif{ background:var(--or-laiton); color:#fff; }
+  .pm-badge{ display:inline-block; padding:2px 8px; border-radius:3px; font-size:.68rem; font-family:var(--police-util); }
+  .pm-badge.ok{ background:#e4f4ea; color:var(--vert-institut); }
+  .pm-badge.non{ background:#fbe9ea; color:var(--rouge-etalie); }
+  .pm-badge.attente{ background:#fdf3d9; color:var(--or-laiton); }
+  .pm-fleet-item{ border:1px solid var(--gris-ligne); padding:14px 16px; margin-bottom:10px; }
+  .pm-fleet-item .entete{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .pm-mini{ font-size:.72rem; color:var(--gris-ardoise); }
+  .pm-ligne-boutons{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .pm-form-chargement{ border:1px dashed var(--gris-ligne); padding:14px; margin-top:10px; background:var(--blanc-casse); }
+  .pm-form-chargement .rangee{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .pm-form-chargement .rangee label{ width:120px; font-size:.82rem; }
+  .pm-form-chargement .rangee input{ width:120px; padding:6px 8px; border:1px solid var(--gris-ligne); }
+  .pm-form-chargement .rangee .dispo{ font-size:.7rem; color:var(--gris-ardoise); }
+  .pm-progress-barre{ height:8px; background:var(--gris-ligne); border-radius:4px; overflow:hidden; margin:8px 0; }
+  .pm-progress-remplissage{ height:100%; background:var(--vert-institut); transition:width .5s; }
+  .pm-suivi{ border:1px solid var(--gris-ligne); padding:16px; margin-bottom:14px; background:var(--blanc-casse); }
+  .pm-suivi-legs{ font-size:.78rem; margin-top:10px; }
+  .pm-suivi-legs table{ width:100%; border-collapse:collapse; }
+  .pm-suivi-legs th, .pm-suivi-legs td{ padding:5px 8px; border-bottom:1px solid var(--gris-ligne); text-align:left; }
 </style>
 </head>
 <body data-page="portail-citoyen">
@@ -764,6 +801,9 @@ async function chargerTableauDeBord(utilisateur) {
 
   compteurLocal = Number(citoyen.tresorerie);
 
+  const { data: mesAccesBanques } = await sb.rpc('mon_personnel_banque');
+  const banquesAccessibles = citoyen.est_admin ? ['H','P','C','L','N','M'] : (mesAccesBanques || []).map(a => a.banque_tag);
+
   const { data: parametresFiscaux } = await sb.from('parametres_fiscaux').select('taux_preventif').eq('id', 1).single();
   const tauxPreventifActuel = parametresFiscaux ? Number(parametresFiscaux.taux_preventif) : 0;
 
@@ -774,10 +814,6 @@ async function chargerTableauDeBord(utilisateur) {
         <h3 style="margin-top:4px;">${citoyen.prenom} ${citoyen.nom} <span style="color:var(--gris-ardoise); font-weight:400;">(@${citoyen.username})</span>${citoyen.est_admin ? '<span class="pc-badge-admin">ADMIN</span>' : ''}</h3>
       </div>
       <button class="pc-lien" id="deconnexion">Se déconnecter</button>
-    </div>
-
-    <div style="margin-bottom:10px;">
-      <a class="pc-lien" href="presse-monetaire.html">🏦 Presse monétaire (accès banques nationales)</a>
     </div>
 
     <div style="margin-bottom:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
@@ -802,6 +838,7 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="signatures">Signatures</button>
       <button data-onglet="documents">Documents</button>
       <button data-onglet="contacter">Contacter</button>
+      ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
     </div>
@@ -1067,6 +1104,7 @@ async function chargerTableauDeBord(utilisateur) {
       </div>
     </div>
 
+    ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
   `;
@@ -1084,7 +1122,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1108,6 +1146,7 @@ async function chargerTableauDeBord(utilisateur) {
 
   if (citoyen.est_agent_paix) initialiserPanneauAgent();
   if (citoyen.est_admin) initialiserPanneauAdmin();
+  if (banquesAccessibles.length) initialiserPanneauPresse();
 
   demarrerTicker(utilisateur.id, citoyen);
 }
@@ -2347,6 +2386,615 @@ function initialiserPanneauAdmin() {
     const { data, error } = await sb.rpc('admin_envoyer_message', params);
     msgEnvoi.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">${data} message(s) envoyé(s).</p>`;
   };
+}
+
+/* =====================================================================
+   PRESSE MONÉTAIRE (onglet — personnel des banques nationales)
+   ===================================================================== */
+const PM_NOMS_BANQUES = {
+  H: "Banque Nationale de Newhouse", P: "Banque Nationale Fleury",
+  C: "Banque Nationale de la Capitale", L: "Banque Nationale de Lataylon",
+  N: "Banque Nationale Nopolitaine", M: "Banque Nationale du Maréchal"
+};
+const PM_NOMS_VEHICULES = {
+  petit_camion:"Petit camion", camion_moyen:"Camion moyen", gros_camion:"Gros camion",
+  camion_industriel:"Camion industriel", petit_camion_blinde:"Petit camion blindé",
+  camion_moyen_blinde:"Camion moyen blindé", gros_camion_blinde:"Gros camion blindé",
+  camion_industriel_blinde:"Camion industriel blindé", bateau:"Bateau de transport", avion:"Avion cargo"
+};
+const PM_DENOMINATIONS = [0.01, 0.5, 1, 5, 25, 50, 275, 500];
+const PM_IMAGE_BILLET = {
+  0.01: 'assets/money/001.png', 0.5: 'assets/money/05.png', 1: 'assets/money/1.png',
+  5: 'assets/money/5.png', 25: 'assets/money/25.png', 50: 'assets/money/50.png',
+  275: 'assets/money/275.png', 500: 'assets/money/500.png'
+};
+const PM_COULEUR_BILLET = {
+  0.01:'#9aa0aa', 0.5:'#8a8f99', 1:'#4a7c59', 5:'#2f6fa8', 25:'#b3892f', 50:'#8a4a2f', 275:'#5a5a9e', 500:'#6a2f7d'
+};
+function pmFormaterR(v) { return Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function pmAfficherErreur(el, err) { if (el) el.innerHTML = err ? `<p class="pc-erreur">${err.message || err}</p>` : ''; }
+
+let pmCitoyen = null, pmMesAcces = [], pmBanqueActive = null, pmValeurChoisie = 5;
+let pmMinuterieAuto = null, pmMinuterieLivraisons = null;
+
+let pmCtxAudio = null;
+function pmObtenirAudio() { if (!pmCtxAudio) pmCtxAudio = new (window.AudioContext || window.webkitAudioContext)(); return pmCtxAudio; }
+function pmBruitPresse(duree) {
+  const ctx = pmObtenirAudio();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * duree, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.16 * (1 - i / data.length * 0.3);
+  const src = ctx.createBufferSource(); src.buffer = buffer;
+  const filtre = ctx.createBiquadFilter(); filtre.type = 'bandpass'; filtre.frequency.value = 420;
+  const osc = ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = 58;
+  const gainOsc = ctx.createGain(); gainOsc.gain.value = 0.035;
+  osc.connect(gainOsc); gainOsc.connect(ctx.destination);
+  src.connect(filtre); filtre.connect(ctx.destination);
+  src.start(); osc.start(); osc.stop(ctx.currentTime + duree); src.stop(ctx.currentTime + duree);
+}
+function pmBruitPapier() {
+  const ctx = pmObtenirAudio();
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / data.length * 4) * 0.28;
+  const src = ctx.createBufferSource(); src.buffer = buffer;
+  const filtre = ctx.createBiquadFilter(); filtre.type = 'highpass'; filtre.frequency.value = 2200;
+  src.connect(filtre); filtre.connect(ctx.destination); src.start();
+}
+function pmSonDing() {
+  const ctx = pmObtenirAudio();
+  const osc = ctx.createOscillator(); const gain = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = 1400;
+  gain.gain.setValueAtTime(0.18, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime + 0.6);
+}
+
+function panneauPresseHTML() {
+  return `
+    <div id="onglet-presse" class="pc-masque">
+      <div class="pc-carte" id="pm-app"><p style="color:var(--gris-ardoise);">Chargement…</p></div>
+    </div>
+  `;
+}
+
+async function initialiserPanneauPresse() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data: c } = await sb.from('citoyens').select('*').eq('id', session.user.id).single();
+  if (!c) return;
+  pmCitoyen = c;
+
+  const { data: acces } = await sb.rpc('mon_personnel_banque');
+  pmMesAcces = acces || [];
+
+  let tags;
+  if (pmCitoyen.est_admin) {
+    const { data: toutes } = await sb.from('banques_nationales').select('tag');
+    tags = (toutes || []).map(b => b.tag);
+  } else {
+    tags = pmMesAcces.map(a => a.banque_tag);
+  }
+  const app = document.getElementById('pm-app');
+  if (!app) return;
+  if (tags.length === 0) {
+    app.innerHTML = `<p>Accès refusé.</p>`;
+    return;
+  }
+  pmBanqueActive = tags[0];
+  app.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+      <h3 style="margin:0;">Presse monétaire</h3>
+      <select class="pm-select-banque" id="pm-choix-banque" style="margin-bottom:0;">
+        ${tags.map(t => `<option value="${t}">${PM_NOMS_BANQUES[t]} (${t})</option>`).join('')}
+      </select>
+    </div>
+    <div id="pm-corps"></div>
+  `;
+  document.getElementById('pm-choix-banque').onchange = (e) => { pmBanqueActive = e.target.value; pmRendreOnglets(); };
+  pmRendreOnglets();
+}
+
+function pmMonRole(tag) {
+  if (pmCitoyen.est_admin) return 'administrateur';
+  const a = pmMesAcces.find(x => x.banque_tag === tag);
+  return a ? a.role : null;
+}
+
+function pmRendreOnglets() {
+  const role = pmMonRole(pmBanqueActive);
+  const corps = document.getElementById('pm-corps');
+  corps.innerHTML = `
+    <div class="pm-onglets">
+      <button class="actif" data-po="billets">Presse à billets</button>
+      <button data-po="automatisation">Automatisation</button>
+      <button data-po="flotte">Flotte et livraisons</button>
+      ${role === 'administrateur' ? '<button data-po="destruction">Destruction</button>' : ''}
+      <button data-po="tableau">Tableau de bord</button>
+    </div>
+    <div id="pm-onglet-billets"></div>
+    <div id="pm-onglet-automatisation" class="pm-masque"></div>
+    <div id="pm-onglet-flotte" class="pm-masque"></div>
+    <div id="pm-onglet-destruction" class="pm-masque"></div>
+    <div id="pm-onglet-tableau" class="pm-masque"></div>
+  `;
+  corps.querySelectorAll('.pm-onglets button[data-po]').forEach(b => {
+    b.onclick = () => {
+      corps.querySelectorAll('.pm-onglets button[data-po]').forEach(x => x.classList.remove('actif'));
+      b.classList.add('actif');
+      ['billets','automatisation','flotte','destruction','tableau'].forEach(o => {
+        const zone = document.getElementById('pm-onglet-' + o);
+        if (zone) zone.classList.toggle('pm-masque', o !== b.dataset.po);
+      });
+      if (b.dataset.po === 'automatisation') pmRendreAutomatisation();
+      if (b.dataset.po === 'flotte') pmRendreFlotte();
+      if (b.dataset.po === 'destruction') pmRendreDestruction();
+      if (b.dataset.po === 'tableau') pmRendreTableau();
+    };
+  });
+  pmRendrePresse();
+
+  if (pmMinuterieAuto) clearInterval(pmMinuterieAuto);
+  pmMinuterieAuto = setInterval(() => { sb.rpc('traiter_cycle_automatisation', { p_banque_tag: pmBanqueActive }); }, 4000);
+
+  if (pmMinuterieLivraisons) clearInterval(pmMinuterieLivraisons);
+  pmMinuterieLivraisons = setInterval(() => {
+    const zoneFlotte = document.getElementById('pm-onglet-flotte');
+    if (zoneFlotte && !zoneFlotte.classList.contains('pm-masque')) pmRendreSuiviLivraisons();
+  }, 3000);
+}
+
+async function pmRendrePresse() {
+  const zone = document.getElementById('pm-onglet-billets');
+  if (!zone) return;
+  const { data: roiyal } = await sb.from('roiyal_etat').select('*').eq('id', 1).single();
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
+  const inflation = roiyal ? (100 - Number(roiyal.valeur_r)) : 0;
+  const prixImpression = roiyal ? (0.23 * (100 / Number(roiyal.valeur_r))) : 0.23;
+  const prixEssence = roiyal ? (4.2 * (100 / Number(roiyal.valeur_r))) : 4.2;
+
+  zone.innerHTML = `
+    <div class="pm-grille">
+      <div>
+        <div class="pc-carte">
+          <h3>Imprimer un billet — ${PM_NOMS_BANQUES[pmBanqueActive]}</h3>
+          <div class="pm-valeurs" id="pm-valeurs">
+            ${PM_DENOMINATIONS.map(v => `<button data-v="${v}" class="${v === pmValeurChoisie ? 'actif' : ''}">${pmFormaterR(v)} R$</button>`).join('')}
+          </div>
+          <div class="pm-machine">
+            <div class="pm-fente"></div>
+            <div class="pm-billet-zone"><div class="pm-billet" id="pm-billet"><img id="pm-billet-img" alt="Billet"/><div class="pm-voile" id="pm-voile"></div></div></div>
+          </div>
+          <div style="text-align:center;">
+            <button class="bouton bouton-or" id="pm-bouton-imprimer" style="border:none; cursor:pointer;">Imprimer un billet</button>
+          </div>
+          <div id="pm-msg-impression" style="text-align:center; margin-top:10px;"></div>
+          <p class="pm-mini" style="text-align:center; margin-top:10px;">
+            Coût d'impression actuel : <strong>${prixImpression.toFixed(10)} R$</strong> par billet — production par clic : ${banque ? banque.niveau_clic : 1}
+          </p>
+        </div>
+
+        <div class="pc-carte">
+          <h3>Production par clic</h3>
+          <p style="font-size:.88rem;">Actuellement : <strong>${banque ? banque.niveau_clic : 1} billet(s)</strong> par clic manuel ou cycle automatique.</p>
+          <p class="pm-mini" id="pm-prix-amelioration">Chargement du prix…</p>
+          <div class="pm-ligne-boutons">
+            <button class="bouton bouton-or" id="pm-bouton-ameliorer" style="border:none; cursor:pointer;">Améliorer (+1 billet/clic)</button>
+            <button class="bouton bouton-contour" id="pm-bouton-retirer" style="cursor:pointer;">Retirer un niveau (rembourse 50%)</button>
+          </div>
+          <div id="pm-msg-amelioration" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pc-carte">
+          <h3>Le Roiyal</h3>
+          <table class="table-donnees">
+            <tr><td>Valeur du Roiyal (R)</td><td class="num">${roiyal ? Number(roiyal.valeur_r).toFixed(4) : '—'} %</td></tr>
+            <tr><td>${inflation >= 0 ? 'Inflation' : 'Déflation'}</td><td class="num">${Math.abs(inflation).toFixed(4)} %</td></tr>
+            <tr><td>Prix du gaz</td><td class="num">${prixEssence.toFixed(4)} R$/L</td></tr>
+            <tr><td>Coût carburant</td><td class="num">${(prixEssence/15).toFixed(6)} R$/km</td></tr>
+          </table>
+        </div>
+        <div class="pc-carte">
+          <h3>Trésorerie de la banque</h3>
+          <p style="font-family:var(--police-titre); font-size:1.6rem; color:var(--vert-nuit);">${banque ? pmFormaterR(banque.tresorerie) : '—'} R$</p>
+          <p class="pm-mini">Coffre d'impression en attente de livraison (par camion) :</p>
+          <table class="table-donnees">
+            ${banque && Object.keys(banque.billets_en_attente || {}).length ? Object.entries(banque.billets_en_attente).sort((a,b)=>Number(a[0])-Number(b[0])).map(([v,q]) =>
+              `<tr><td>${Number(v).toFixed(2)} R$</td><td class="num">${Number(q).toLocaleString('fr-FR')} billet(s)</td></tr>`).join('') : '<tr><td colspan="2">Coffre vide</td></tr>'}
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  zone.querySelectorAll('#pm-valeurs button').forEach(b => {
+    b.onclick = () => { pmValeurChoisie = Number(b.dataset.v); pmRendrePresse(); };
+  });
+
+  const { data: prixNext } = await sb.rpc('prix_prochaine_amelioration_clic', { p_banque_tag: pmBanqueActive });
+  const elPrix = document.getElementById('pm-prix-amelioration');
+  if (elPrix) elPrix.textContent = `Prochaine amélioration : ${Number(prixNext).toFixed(2)} R$`;
+
+  document.getElementById('pm-bouton-ameliorer').onclick = async () => {
+    const { error } = await sb.rpc('ameliorer_production_clic', { p_banque_tag: pmBanqueActive });
+    pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
+    if (!error) pmRendrePresse();
+  };
+  document.getElementById('pm-bouton-retirer').onclick = async () => {
+    const { error } = await sb.rpc('retirer_amelioration_production_clic', { p_banque_tag: pmBanqueActive });
+    pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
+    if (!error) pmRendrePresse();
+  };
+
+  document.getElementById('pm-bouton-imprimer').onclick = pmLancerImpression;
+}
+
+async function pmLancerImpression() {
+  const bouton = document.getElementById('pm-bouton-imprimer');
+  const billet = document.getElementById('pm-billet');
+  const img = document.getElementById('pm-billet-img');
+  const voile = document.getElementById('pm-voile');
+  const msg = document.getElementById('pm-msg-impression');
+
+  bouton.disabled = true; bouton.textContent = 'Impression...'; bouton.style.opacity = '.6';
+  msg.innerHTML = '';
+
+  img.src = PM_IMAGE_BILLET[pmValeurChoisie] || '';
+  billet.style.boxShadow = `0 8px 22px ${PM_COULEUR_BILLET[pmValeurChoisie]}55`;
+  billet.style.opacity = '1';
+  billet.style.top = '-100px';
+  voile.style.transform = 'scaleY(1)';
+  voile.style.transition = 'none';
+
+  pmBruitPresse(2);
+
+  requestAnimationFrame(() => {
+    billet.style.transition = 'top 2s cubic-bezier(.2,.6,.3,1)';
+    billet.style.top = '10px';
+    voile.style.transition = 'transform 1.4s steps(24)';
+    voile.style.transform = 'scaleY(0)';
+  });
+
+  setTimeout(() => { pmBruitPapier(); }, 1600);
+
+  setTimeout(async () => {
+    const { data, error } = await sb.rpc('imprimer_billet', { p_banque_tag: pmBanqueActive, p_valeur: pmValeurChoisie });
+    bouton.disabled = false; bouton.textContent = 'Imprimer un billet'; bouton.style.opacity = '1';
+    billet.style.transition = 'opacity .3s';
+    billet.style.opacity = '0';
+    if (error) { msg.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+    pmSonDing();
+    msg.innerHTML = `<p class="pc-succes">+${data.quantite} billet(s) de ${Number(data.valeur_unitaire).toFixed(2)} R$ imprimés (coût : ${Number(data.cout_impression).toFixed(6)} R$). Roiyal : ${Number(data.nouveau_r).toFixed(4)} %</p>`;
+    pmRendrePresse();
+  }, 2000);
+}
+
+async function pmRendreAutomatisation() {
+  const zone = document.getElementById('pm-onglet-automatisation');
+  const { data: auto } = await sb.from('automatisation_banque').select('*').eq('banque_tag', pmBanqueActive).single();
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
+  const role = pmMonRole(pmBanqueActive);
+
+  zone.innerHTML = `
+    <div class="pc-carte">
+      <h3>Automatisation — ${PM_NOMS_BANQUES[pmBanqueActive]}</h3>
+      <p>Statut : ${auto && auto.actif ? '<span class="pm-badge ok">En marche</span>' : '<span class="pm-badge non">Arrêtée</span>'}
+        ${auto && auto.en_panne ? ' <span class="pm-badge non">En panne</span>' : ''}</p>
+      <p class="pm-mini">Coût : 30 R$/heure d'électricité${banque && banque.employe_anti_bug ? " + 12,5 R$/heure d'employé de maintenance" : ''}. 0,1 % de chance de bug par cycle de 4 secondes (0 % si un employé de maintenance est embauché).</p>
+      <div class="pc-champ">
+        <label>Valeurs autorisées en automatique</label>
+        <div class="pm-valeurs" id="pm-auto-valeurs">
+          ${PM_DENOMINATIONS.map(v => `<button data-v="${v}" class="${auto && (auto.valeurs_autorisees||[]).map(Number).includes(v) ? 'actif' : ''}">${pmFormaterR(v)} R$</button>`).join('')}
+        </div>
+      </div>
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" id="pm-auto-demarrer" style="border:none; cursor:pointer;">Démarrer</button>
+        <button class="bouton bouton-contour" id="pm-auto-arreter" style="cursor:pointer;">Arrêter</button>
+        ${auto && auto.en_panne ? '<button class="bouton bouton-contour" id="pm-auto-reparer" style="cursor:pointer;">Réparer</button>' : ''}
+        ${role === 'administrateur' ? `<button class="bouton bouton-contour" id="pm-auto-employe" style="cursor:pointer;">${banque && banque.employe_anti_bug ? 'Renvoyer' : 'Embaucher'} l'employé de maintenance (12,5 R$/h)</button>` : ''}
+      </div>
+      <div id="pm-auto-msg" style="margin-top:10px;"></div>
+    </div>
+  `;
+  let selection = new Set((auto ? (auto.valeurs_autorisees || []) : []).map(Number));
+  zone.querySelectorAll('#pm-auto-valeurs button').forEach(b => {
+    b.onclick = () => {
+      const v = Number(b.dataset.v);
+      if (selection.has(v)) { selection.delete(v); b.classList.remove('actif'); }
+      else { selection.add(v); b.classList.add('actif'); }
+    };
+  });
+  document.getElementById('pm-auto-demarrer').onclick = async () => {
+    const { error } = await sb.rpc('demarrer_automatisation', { p_banque_tag: pmBanqueActive, p_valeurs: Array.from(selection) });
+    pmAfficherErreur(document.getElementById('pm-auto-msg'), error);
+    if (!error) pmRendreAutomatisation();
+  };
+  document.getElementById('pm-auto-arreter').onclick = async () => {
+    await sb.rpc('arreter_automatisation', { p_banque_tag: pmBanqueActive }); pmRendreAutomatisation();
+  };
+  const boutonReparer = document.getElementById('pm-auto-reparer');
+  if (boutonReparer) boutonReparer.onclick = async () => { await sb.rpc('reparer_automatisation', { p_banque_tag: pmBanqueActive }); pmRendreAutomatisation(); };
+  const boutonEmploye = document.getElementById('pm-auto-employe');
+  if (boutonEmploye) boutonEmploye.onclick = async () => {
+    await sb.rpc('embaucher_employe_maintenance', { p_banque_tag: pmBanqueActive, p_actif: !(banque && banque.employe_anti_bug) });
+    pmRendreAutomatisation();
+  };
+}
+
+async function pmRendreFlotte() {
+  const zone = document.getElementById('pm-onglet-flotte');
+  const role = pmMonRole(pmBanqueActive);
+  const { data: vehicules } = await sb.from('vehicules').select('*').eq('banque_tag', pmBanqueActive).neq('statut','hors_service').order('cree_le', { ascending: false });
+  const { data: types } = await sb.from('types_vehicules').select('*').order('prix_achat');
+  const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
+  const { data: offresJohn, error: erreurJohn } = await sb.rpc('obtenir_offres_john', { p_banque_tag: pmBanqueActive });
+
+  zone.innerHTML = `
+    <div id="pm-suivi-zone"></div>
+
+    ${role === 'administrateur' ? `
+    <div class="pc-carte">
+      <h3>Acheter un véhicule (flotte permanente de la banque)</h3>
+      <table class="table-donnees">
+        <thead><tr><th>Véhicule</th><th>Capacité</th><th>Braquage</th><th>Prix</th><th></th></tr></thead>
+        <tbody>
+          ${(types||[]).map(t => `<tr>
+            <td>${PM_NOMS_VEHICULES[t.type]}${t.blinde?' (blindé)':''}</td>
+            <td class="num">${Number(t.capacite_billets).toLocaleString('fr-FR')}</td>
+            <td class="num">${t.chance_braquage}%</td>
+            <td class="num">${Number(t.prix_achat).toLocaleString('fr-FR')} R$</td>
+            <td><button class="pc-lien" data-type="${t.type}">Acheter</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <p class="pm-mini">Flotte actuelle — camions : ${(vehicules||[]).filter(v=>v.achete && v.type!=='bateau' && v.type!=='avion').length}/${banque?banque.camions_max:'—'},
+        bateaux : ${(vehicules||[]).filter(v=>v.type==='bateau'&&v.achete).length}/${banque?banque.bateaux_max:'—'},
+        avions : ${(vehicules||[]).filter(v=>v.type==='avion'&&v.achete).length}/${banque?banque.avions_max:'—'}</p>
+    </div>` : ''}
+
+    <div class="pc-carte">
+      <h3>John « Le Routier » propose (offres renouvelées toutes les 396 heures)</h3>
+      <p class="pm-mini">Transporteur indépendant, 42 ans. Ses véhicules disparaissent après une seule livraison et n'ont pas droit à l'escorte policière.</p>
+      ${erreurJohn ? `<p class="pc-erreur">${erreurJohn.message}</p>` : (offresJohn||[]).map((o,i) => `
+        <div class="pm-fleet-item"><div class="entete">
+          <div><strong>${PM_NOMS_VEHICULES[o.type]}</strong> — ${Number(o.km_compteur).toLocaleString('fr-FR')} km au compteur — risque ${Number(o.risque).toFixed(2)}%</div>
+          <div>${Number(o.prix_heure).toFixed(2)} R$/h <button class="bouton bouton-contour" data-louer="${i}" style="cursor:pointer; margin-left:8px;">Louer</button></div>
+        </div></div>`).join('')}
+    </div>
+
+    <div class="pc-carte">
+      <h3>Ma flotte</h3>
+      <div id="pm-flotte-liste">
+        ${(vehicules||[]).length ? (vehicules||[]).map(v => pmRendreVehiculeHTML(v)).join('') : '<p>Aucun véhicule.</p>'}
+      </div>
+    </div>
+  `;
+
+  zone.querySelectorAll('[data-type]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('acheter_vehicule', { p_banque_tag: pmBanqueActive, p_type: b.dataset.type });
+    if (error) alert(error.message); else pmRendreFlotte();
+  });
+  zone.querySelectorAll('[data-louer]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('louer_vehicule_john', { p_banque_tag: pmBanqueActive, p_index: Number(b.dataset.louer) });
+    if (error) alert(error.message); else pmRendreFlotte();
+  });
+  zone.querySelectorAll('[data-charger]').forEach(b => b.onclick = () => pmAfficherFormulaireChargement(b.dataset.charger));
+  zone.querySelectorAll('[data-livrer]').forEach(b => b.onclick = () => pmAfficherFormulaireLivraison(b.dataset.livrer));
+  zone.querySelectorAll('[data-ameliorer2]').forEach(sel => sel.onchange = async (e) => {
+    const type = e.target.value; if (!type) return;
+    const { error } = await sb.rpc('ameliorer_vehicule', { p_vehicule_id: e.target.dataset.ameliorer2, p_amelioration: type });
+    if (error) alert(error.message); else pmRendreFlotte();
+  });
+
+  await pmRendreSuiviLivraisons();
+}
+
+function pmRendreVehiculeHTML(v) {
+  const am = v.ameliorations || {};
+  const badges = Object.entries({moteur:'Moteur',blindage:'Blindage',coffre:'Coffre',gps:'GPS',chauffeur:'Chauffeur'})
+    .filter(([k]) => am[k]).map(([,e]) => e).join(', ');
+  return `<div class="pm-fleet-item" data-vehicule-item="${v.id}">
+    <div class="entete">
+      <div><strong>${PM_NOMS_VEHICULES[v.type]}</strong> ${v.loue ? '(loué)' : ''}
+        <div class="pm-mini">Statut : ${v.statut} — ${Number(v.km_parcourus).toLocaleString('fr-FR')} km parcourus${badges ? ' — Améliorations : ' + badges : ''}</div>
+      </div>
+      <div class="pm-ligne-boutons" style="margin-top:0;">
+        ${v.statut === 'disponible' ? `<button class="bouton bouton-or" style="border:none; cursor:pointer;" data-charger="${v.id}">Charger</button>` : ''}
+        ${v.statut === 'charge' ? `<button class="bouton bouton-or" style="border:none; cursor:pointer;" data-livrer="${v.id}">Démarrer la livraison</button>` : ''}
+        ${v.achete ? `<select data-ameliorer2="${v.id}" style="font-size:.72rem; padding:6px;">
+          <option value="">Ajouter une amélioration…</option>
+          ${['moteur','blindage','coffre','gps','chauffeur'].filter(k => !am[k]).map(k=>`<option value="${k}">${k}</option>`).join('')}
+        </select>` : ''}
+      </div>
+    </div>
+    <div data-formulaire="${v.id}"></div>
+  </div>`;
+}
+
+async function pmAfficherFormulaireChargement(vehiculeId) {
+  const conteneur = document.querySelector(`[data-formulaire="${vehiculeId}"]`);
+  const { data: banque } = await sb.from('banques_nationales').select('billets_en_attente').eq('tag', pmBanqueActive).single();
+  const pending = banque.billets_en_attente || {};
+  const disponibles = Object.entries(pending).filter(([,q]) => Number(q) > 0).sort((a,b)=>Number(a[0])-Number(b[0]));
+  if (!disponibles.length) {
+    conteneur.innerHTML = `<p class="pc-erreur">Le coffre d'attente de la banque est vide — imprimez des billets d'abord.</p>`;
+    return;
+  }
+  conteneur.innerHTML = `
+    <div class="pm-form-chargement">
+      ${disponibles.map(([v,q]) => `
+        <div class="rangee">
+          <label>${Number(v).toFixed(2)} R$</label>
+          <input type="number" min="0" max="${q}" step="1" value="0" data-denom="${v}">
+          <span class="dispo">disponible : ${Number(q).toLocaleString('fr-FR')}</span>
+        </div>
+      `).join('')}
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" id="pm-confirmer-chargement-${vehiculeId}" style="border:none; cursor:pointer;">Charger le véhicule</button>
+        <button class="bouton bouton-contour" id="pm-annuler-chargement-${vehiculeId}" style="cursor:pointer;">Annuler</button>
+      </div>
+      <div id="pm-msg-chargement-${vehiculeId}" style="margin-top:8px;"></div>
+    </div>
+  `;
+  document.getElementById(`pm-annuler-chargement-${vehiculeId}`).onclick = () => { conteneur.innerHTML = ''; };
+  document.getElementById(`pm-confirmer-chargement-${vehiculeId}`).onclick = async () => {
+    const composition = {};
+    conteneur.querySelectorAll('[data-denom]').forEach(inp => {
+      const q = Number(inp.value);
+      if (q > 0) composition[Number(inp.dataset.denom).toFixed(2)] = q;
+    });
+    if (!Object.keys(composition).length) {
+      pmAfficherErreur(document.getElementById(`pm-msg-chargement-${vehiculeId}`), 'Choisissez au moins un billet.');
+      return;
+    }
+    const { error } = await sb.rpc('charger_camion', { p_vehicule_id: vehiculeId, p_composition: composition });
+    if (error) { pmAfficherErreur(document.getElementById(`pm-msg-chargement-${vehiculeId}`), error); return; }
+    pmRendreFlotte();
+  };
+}
+
+async function pmAfficherFormulaireLivraison(vehiculeId) {
+  const conteneur = document.querySelector(`[data-formulaire="${vehiculeId}"]`);
+  const { data: vehicule } = await sb.from('vehicules').select('*').eq('id', vehiculeId).single();
+
+  conteneur.innerHTML = `
+    <div class="pm-form-chargement">
+      <div class="pc-champ">
+        <label>Escorte policière (optionnelle)</label>
+        <select id="pm-escorte-${vehiculeId}">
+          <option value="">Aucune escorte</option>
+          <option value="standard">Police standard — 500 R$ + 80 R$/h</option>
+          <option value="renforcee">Police renforcée — 1500 R$ + 200 R$/h</option>
+          <option value="speciale">Police spéciale — 5000 R$ + 600 R$/h</option>
+        </select>
+      </div>
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" id="pm-confirmer-livraison-${vehiculeId}" style="border:none; cursor:pointer;">Confirmer le départ</button>
+        <button class="bouton bouton-contour" id="pm-annuler-livraison-${vehiculeId}" style="cursor:pointer;">Annuler</button>
+      </div>
+      <div id="pm-msg-livraison-${vehiculeId}" style="margin-top:8px;"></div>
+    </div>
+  `;
+  document.getElementById(`pm-annuler-livraison-${vehiculeId}`).onclick = () => { conteneur.innerHTML = ''; };
+  document.getElementById(`pm-confirmer-livraison-${vehiculeId}`).onclick = async () => {
+    const escorte = document.getElementById(`pm-escorte-${vehiculeId}`).value || null;
+    const { error } = await sb.rpc('demarrer_livraison', { p_vehicule_id: vehiculeId, p_escorte: escorte });
+    if (error) { pmAfficherErreur(document.getElementById(`pm-msg-livraison-${vehiculeId}`), error); return; }
+    conteneur.innerHTML = '';
+    pmRendreFlotte();
+  };
+}
+
+async function pmRendreSuiviLivraisons() {
+  const conteneur = document.getElementById('pm-suivi-zone');
+  if (!conteneur) return;
+  const { data: livraisons, error } = await sb.rpc('livraisons_actives', { p_banque_tag: pmBanqueActive });
+  if (error || !livraisons || !livraisons.length) { conteneur.innerHTML = ''; return; }
+
+  conteneur.innerHTML = `
+    <div class="pc-carte">
+      <h3>Livraisons en cours</h3>
+      ${livraisons.map(pmRendreSuiviUneLivraison).join('')}
+    </div>
+  `;
+}
+
+function pmRendreSuiviUneLivraison(l) {
+  const depuis = Math.max(0, (Date.now() - new Date(l.depart_le).getTime()) / 1000);
+  const heures = Math.floor(depuis / 3600), minutes = Math.floor((depuis % 3600) / 60), secondes = Math.floor(depuis % 60);
+  const dureeTexte = `${heures}h ${String(minutes).padStart(2,'0')}m ${String(secondes).padStart(2,'0')}s`;
+  const lignes = l.legs.map(leg => {
+    if (leg.traite) {
+      const badge = leg.statut_reel === 'ok' ? '<span class="pm-badge ok">Livré</span>'
+        : leg.statut_reel === 'braquee' ? '<span class="pm-badge non">Braqué</span>'
+        : leg.statut_reel === 'bris_total' ? '<span class="pm-badge non">Bris total</span>'
+        : `<span class="pm-badge non">Accident (${leg.type_accident || ''})</span>`;
+      return `<tr><td>${leg.province}</td><td>${badge}</td><td class="num">${Number(leg.montant_livre).toFixed(2)} R$</td></tr>`;
+    }
+    return `<tr><td>${leg.province}</td><td><span class="pm-badge attente">En route</span></td><td class="num">—</td></tr>`;
+  }).join('');
+
+  return `
+    <div class="pm-suivi">
+      <div class="entete" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <strong>${l.province_actuelle ? 'En direction de ' + l.province_actuelle : 'Retour à la banque'}</strong>
+        <span class="pm-mini">Démarré depuis ${dureeTexte}</span>
+      </div>
+      <div class="pm-progress-barre"><div class="pm-progress-remplissage" style="width:${l.progress_pct}%;"></div></div>
+      <p class="pm-mini">
+        ${Number(l.km_parcourus).toLocaleString('fr-FR')} / ${Number(l.distance_totale_km).toLocaleString('fr-FR')} km parcourus
+        — Accidents : ${l.accidents} — Braquages : ${l.braquages}
+        — Livré jusqu'ici : ${Number(l.montant_livre).toFixed(2)} / ${Number(l.montant_total).toFixed(2)} R$
+      </p>
+      <div class="pm-suivi-legs">
+        <table>
+          <thead><tr><th>Province</th><th>Statut</th><th>Montant</th></tr></thead>
+          <tbody>${lignes}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function pmRendreDestruction() {
+  const zone = document.getElementById('pm-onglet-destruction');
+  const { data: banque } = await sb.from('banques_nationales').select('billets_en_attente').eq('tag', pmBanqueActive).single();
+  const disponibles = Object.entries(banque.billets_en_attente || {}).filter(([,q]) => Number(q) > 0).sort((a,b)=>Number(a[0])-Number(b[0]));
+
+  zone.innerHTML = `
+    <div class="pc-carte">
+      <h3>Détruire des billets</h3>
+      <p class="pm-mini">Réservé aux administrateurs de la banque. Coûte 0,02 R$/billet et augmente la valeur du Roiyal. On ne peut détruire que des billets réellement présents dans le coffre de la banque.</p>
+      <table class="table-donnees" style="margin-bottom:14px;">
+        <thead><tr><th>Valeur</th><th>Billets disponibles</th></tr></thead>
+        <tbody>
+          ${disponibles.length ? disponibles.map(([v,q]) => `<tr><td>${Number(v).toFixed(2)} R$</td><td class="num">${Number(q).toLocaleString('fr-FR')}</td></tr>`).join('') : '<tr><td colspan="2">Coffre vide — rien à détruire</td></tr>'}
+        </tbody>
+      </table>
+      ${disponibles.length ? `
+      <div class="pc-champ"><label>Valeur du billet</label>
+        <select id="pm-destr-valeur">${disponibles.map(([v]) => `<option value="${v}">${Number(v).toFixed(2)} R$</option>`).join('')}</select>
+      </div>
+      <div class="pc-champ"><label>Quantité à détruire</label><input type="number" id="pm-destr-qte" min="1" value="1"></div>
+      <button class="bouton bouton-or" id="pm-destr-bouton" style="border:none; cursor:pointer;">Détruire</button>
+      <div id="pm-destr-msg" style="margin-top:10px;"></div>
+      ` : ''}
+    </div>
+  `;
+  const bouton = document.getElementById('pm-destr-bouton');
+  if (bouton) bouton.onclick = async () => {
+    const v = Number(document.getElementById('pm-destr-valeur').value);
+    const q = Number(document.getElementById('pm-destr-qte').value);
+    const { data, error } = await sb.rpc('detruire_billets', { p_banque_tag: pmBanqueActive, p_valeur: v, p_quantite: q });
+    const msg = document.getElementById('pm-destr-msg');
+    if (error) { pmAfficherErreur(msg, error); return; }
+    msg.innerHTML = `<p class="pc-succes">Roiyal remonté à ${Number(data.nouveau_r).toFixed(4)} % (coût : ${Number(data.cout).toFixed(2)} R$).</p>`;
+    pmRendreDestruction();
+  };
+}
+
+async function pmRendreTableau() {
+  const zone = document.getElementById('pm-onglet-tableau');
+  const { data: jour } = await sb.from('stats_banque_jour').select('*').eq('banque_tag', pmBanqueActive).eq('jour', new Date().toISOString().slice(0,10)).maybeSingle();
+  const { data: total } = await sb.from('stats_banque_total').select('*').eq('banque_tag', pmBanqueActive).single();
+  const ligne = (s) => s ? `
+    <tr><td>Billets imprimés</td><td class="num">${Number(s.billets_imprimes||0).toLocaleString('fr-FR')}</td></tr>
+    <tr><td>Valeur imprimée</td><td class="num">${Number(s.valeur_imprimee||0).toFixed(2)} R$</td></tr>
+    <tr><td>Camions envoyés</td><td class="num">${s.camions_envoyes||0}</td></tr>
+    <tr><td>Braquages</td><td class="num">${s.braquages||0}</td></tr>
+    <tr><td>Accidents</td><td class="num">${s.accidents||0}</td></tr>
+    <tr><td>Pannes</td><td class="num">${s.pannes||0}</td></tr>
+    <tr><td>Inflation causée</td><td class="num">${Number(s.inflation_causee||0).toFixed(4)} pts</td></tr>
+  ` : '<tr><td colspan="2">Aucune donnée</td></tr>';
+  zone.innerHTML = `
+    <div class="pm-grille">
+      <div class="pc-carte"><h3>Aujourd'hui</h3><table class="table-donnees">${ligne(jour)}</table></div>
+      <div class="pc-carte"><h3>Tous les temps</h3><table class="table-donnees">${ligne(total)}</table></div>
+    </div>
+  `;
 }
 
 demarrer();
