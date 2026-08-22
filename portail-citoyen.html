@@ -838,6 +838,7 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="signatures">Signatures</button>
       <button data-onglet="documents">Documents</button>
       <button data-onglet="contacter">Contacter</button>
+      <button data-onglet="tableaubord">Tableau de bord</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1104,6 +1105,7 @@ async function chargerTableauDeBord(utilisateur) {
       </div>
     </div>
 
+    ${panneauTableauBordHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1122,7 +1124,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1147,6 +1149,7 @@ async function chargerTableauDeBord(utilisateur) {
   if (citoyen.est_agent_paix) initialiserPanneauAgent();
   if (citoyen.est_admin) initialiserPanneauAdmin();
   if (banquesAccessibles.length) initialiserPanneauPresse();
+  initialiserPanneauTableauBord();
 
   demarrerTicker(utilisateur.id, citoyen);
 }
@@ -2496,47 +2499,58 @@ async function initialiserPanneauPresse() {
   pmRendreOnglets();
 }
 
-function pmMonRole(tag) {
-  if (pmCitoyen.est_admin) return 'administrateur';
+function pmMonNiveau(tag) {
+  if (pmCitoyen.est_admin) return 3;
   const a = pmMesAcces.find(x => x.banque_tag === tag);
-  return a ? a.role : null;
+  return a ? a.niveau : 0;
 }
 
 function pmRendreOnglets() {
-  const role = pmMonRole(pmBanqueActive);
+  const niveau = pmMonNiveau(pmBanqueActive);
   const corps = document.getElementById('pm-corps');
   corps.innerHTML = `
     <div class="pm-onglets">
       <button class="actif" data-po="billets">Presse à billets</button>
-      <button data-po="automatisation">Automatisation</button>
-      <button data-po="flotte">Flotte et livraisons</button>
-      ${role === 'administrateur' ? '<button data-po="destruction">Destruction</button>' : ''}
-      <button data-po="tableau">Tableau de bord</button>
+      ${niveau >= 2 ? '<button data-po="automatisation">Automatisation</button>' : ''}
+      ${niveau >= 2 ? '<button data-po="flotte">Flotte et livraisons</button>' : ''}
+      ${niveau >= 2 ? '<button data-po="tableau">Statistiques de la banque</button>' : ''}
+      ${pmCitoyen.est_admin ? '<button data-po="destruction">Destruction</button>' : ''}
+      ${pmCitoyen.est_admin ? '<button data-po="personnel">Personnel</button>' : ''}
     </div>
     <div id="pm-onglet-billets"></div>
     <div id="pm-onglet-automatisation" class="pm-masque"></div>
     <div id="pm-onglet-flotte" class="pm-masque"></div>
     <div id="pm-onglet-destruction" class="pm-masque"></div>
     <div id="pm-onglet-tableau" class="pm-masque"></div>
+    <div id="pm-onglet-personnel" class="pm-masque"></div>
   `;
   corps.querySelectorAll('.pm-onglets button[data-po]').forEach(b => {
     b.onclick = () => {
       corps.querySelectorAll('.pm-onglets button[data-po]').forEach(x => x.classList.remove('actif'));
       b.classList.add('actif');
-      ['billets','automatisation','flotte','destruction','tableau'].forEach(o => {
+      ['billets','automatisation','flotte','destruction','tableau','personnel'].forEach(o => {
         const zone = document.getElementById('pm-onglet-' + o);
         if (zone) zone.classList.toggle('pm-masque', o !== b.dataset.po);
       });
+      if (b.dataset.po === 'billets') pmRendrePresse();
       if (b.dataset.po === 'automatisation') pmRendreAutomatisation();
       if (b.dataset.po === 'flotte') pmRendreFlotte();
       if (b.dataset.po === 'destruction') pmRendreDestruction();
       if (b.dataset.po === 'tableau') pmRendreTableau();
+      if (b.dataset.po === 'personnel') pmRendrePersonnel();
     };
   });
   pmRendrePresse();
 
   if (pmMinuterieAuto) clearInterval(pmMinuterieAuto);
-  pmMinuterieAuto = setInterval(() => { sb.rpc('traiter_cycle_automatisation', { p_banque_tag: pmBanqueActive }); }, 4000);
+  pmMinuterieAuto = setInterval(async () => {
+    const { data } = await sb.rpc('traiter_cycle_automatisation', { p_banque_tag: pmBanqueActive });
+    if (data && data.cycles > 0) {
+      pmRafraichirTresorerie();
+      const zoneAuto = document.getElementById('pm-onglet-automatisation');
+      if (zoneAuto && !zoneAuto.classList.contains('pm-masque')) pmRendreAutomatisation();
+    }
+  }, 4000);
 
   if (pmMinuterieLivraisons) clearInterval(pmMinuterieLivraisons);
   pmMinuterieLivraisons = setInterval(() => {
@@ -2548,6 +2562,7 @@ function pmRendreOnglets() {
 async function pmRendrePresse() {
   const zone = document.getElementById('pm-onglet-billets');
   if (!zone) return;
+  const niveau = pmMonNiveau(pmBanqueActive);
   const { data: roiyal } = await sb.from('roiyal_etat').select('*').eq('id', 1).single();
   const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
   const inflation = roiyal ? (100 - Number(roiyal.valeur_r)) : 0;
@@ -2578,12 +2593,14 @@ async function pmRendrePresse() {
         <div class="pc-carte">
           <h3>Production par clic</h3>
           <p style="font-size:.88rem;">Actuellement : <strong>${banque ? banque.niveau_clic : 1} billet(s)</strong> par clic manuel ou cycle automatique.</p>
+          ${niveau >= 2 ? `
           <p class="pm-mini" id="pm-prix-amelioration">Chargement du prix…</p>
           <div class="pm-ligne-boutons">
             <button class="bouton bouton-or" id="pm-bouton-ameliorer" style="border:none; cursor:pointer;">Améliorer (+1 billet/clic)</button>
             <button class="bouton bouton-contour" id="pm-bouton-retirer" style="cursor:pointer;">Retirer un niveau (rembourse 50%)</button>
           </div>
           <div id="pm-msg-amelioration" style="margin-top:8px;"></div>
+          ` : `<p class="pm-mini">Réservé aux managers et dirigeants de la banque.</p>`}
         </div>
       </div>
 
@@ -2599,9 +2616,9 @@ async function pmRendrePresse() {
         </div>
         <div class="pc-carte">
           <h3>Trésorerie de la banque</h3>
-          <p style="font-family:var(--police-titre); font-size:1.6rem; color:var(--vert-nuit);">${banque ? pmFormaterR(banque.tresorerie) : '—'} R$</p>
+          <p style="font-family:var(--police-titre); font-size:1.6rem; color:var(--vert-nuit);" id="pm-tresorerie-banque">${banque ? pmFormaterR(banque.tresorerie) : '—'} R$</p>
           <p class="pm-mini">Coffre d'impression en attente de livraison (par camion) :</p>
-          <table class="table-donnees">
+          <table class="table-donnees" id="pm-coffre-attente">
             ${banque && Object.keys(banque.billets_en_attente || {}).length ? Object.entries(banque.billets_en_attente).sort((a,b)=>Number(a[0])-Number(b[0])).map(([v,q]) =>
               `<tr><td>${Number(v).toFixed(2)} R$</td><td class="num">${Number(q).toLocaleString('fr-FR')} billet(s)</td></tr>`).join('') : '<tr><td colspan="2">Coffre vide</td></tr>'}
           </table>
@@ -2614,22 +2631,41 @@ async function pmRendrePresse() {
     b.onclick = () => { pmValeurChoisie = Number(b.dataset.v); pmRendrePresse(); };
   });
 
-  const { data: prixNext } = await sb.rpc('prix_prochaine_amelioration_clic', { p_banque_tag: pmBanqueActive });
-  const elPrix = document.getElementById('pm-prix-amelioration');
-  if (elPrix) elPrix.textContent = `Prochaine amélioration : ${Number(prixNext).toFixed(2)} R$`;
+  if (niveau >= 2) {
+    const { data: prixNext } = await sb.rpc('prix_prochaine_amelioration_clic', { p_banque_tag: pmBanqueActive });
+    const elPrix = document.getElementById('pm-prix-amelioration');
+    if (elPrix) elPrix.textContent = `Prochaine amélioration : ${Number(prixNext).toFixed(2)} R$`;
 
-  document.getElementById('pm-bouton-ameliorer').onclick = async () => {
-    const { error } = await sb.rpc('ameliorer_production_clic', { p_banque_tag: pmBanqueActive });
-    pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
-    if (!error) pmRendrePresse();
-  };
-  document.getElementById('pm-bouton-retirer').onclick = async () => {
-    const { error } = await sb.rpc('retirer_amelioration_production_clic', { p_banque_tag: pmBanqueActive });
-    pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
-    if (!error) pmRendrePresse();
-  };
+    document.getElementById('pm-bouton-ameliorer').onclick = async () => {
+      const { error } = await sb.rpc('ameliorer_production_clic', { p_banque_tag: pmBanqueActive });
+      pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
+      if (!error) pmRendrePresse();
+    };
+    document.getElementById('pm-bouton-retirer').onclick = async () => {
+      const { error } = await sb.rpc('retirer_amelioration_production_clic', { p_banque_tag: pmBanqueActive });
+      pmAfficherErreur(document.getElementById('pm-msg-amelioration'), error);
+      if (!error) pmRendrePresse();
+    };
+  }
 
   document.getElementById('pm-bouton-imprimer').onclick = pmLancerImpression;
+}
+
+// Rafraîchit juste la trésorerie/coffre affichés dans l'onglet "Presse à
+// billets", sans tout re-render — appelé après CHAQUE action qui touche
+// la trésorerie de la banque (achat, amélioration, location, automatisation…)
+// pour que ça change à l'écran sans avoir à cliquer sur actualiser.
+async function pmRafraichirTresorerie() {
+  const { data: banque } = await sb.from('banques_nationales').select('tresorerie, billets_en_attente').eq('tag', pmBanqueActive).single();
+  if (!banque) return;
+  const elTresor = document.getElementById('pm-tresorerie-banque');
+  if (elTresor) elTresor.textContent = pmFormaterR(banque.tresorerie) + ' R$';
+  const elCoffre = document.getElementById('pm-coffre-attente');
+  if (elCoffre) {
+    const entries = Object.entries(banque.billets_en_attente || {}).sort((a,b)=>Number(a[0])-Number(b[0]));
+    elCoffre.innerHTML = entries.length ? entries.map(([v,q]) =>
+      `<tr><td>${Number(v).toFixed(2)} R$</td><td class="num">${Number(q).toLocaleString('fr-FR')} billet(s)</td></tr>`).join('') : '<tr><td colspan="2">Coffre vide</td></tr>';
+  }
 }
 
 async function pmLancerImpression() {
@@ -2676,7 +2712,7 @@ async function pmRendreAutomatisation() {
   const zone = document.getElementById('pm-onglet-automatisation');
   const { data: auto } = await sb.from('automatisation_banque').select('*').eq('banque_tag', pmBanqueActive).single();
   const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
-  const role = pmMonRole(pmBanqueActive);
+  const niveau = pmMonNiveau(pmBanqueActive);
 
   zone.innerHTML = `
     <div class="pc-carte">
@@ -2690,11 +2726,15 @@ async function pmRendreAutomatisation() {
           ${PM_DENOMINATIONS.map(v => `<button data-v="${v}" class="${auto && (auto.valeurs_autorisees||[]).map(Number).includes(v) ? 'actif' : ''}">${pmFormaterR(v)} R$</button>`).join('')}
         </div>
       </div>
+      <div class="pc-champ" style="max-width:220px;">
+        <label>Quantité de billets par cycle (4 secondes)</label>
+        <input type="number" id="pm-auto-quantite" min="1" step="1" value="${auto && auto.quantite_par_cycle ? auto.quantite_par_cycle : 1}">
+      </div>
       <div class="pm-ligne-boutons">
         <button class="bouton bouton-or" id="pm-auto-demarrer" style="border:none; cursor:pointer;">Démarrer</button>
         <button class="bouton bouton-contour" id="pm-auto-arreter" style="cursor:pointer;">Arrêter</button>
         ${auto && auto.en_panne ? '<button class="bouton bouton-contour" id="pm-auto-reparer" style="cursor:pointer;">Réparer</button>' : ''}
-        ${role === 'administrateur' ? `<button class="bouton bouton-contour" id="pm-auto-employe" style="cursor:pointer;">${banque && banque.employe_anti_bug ? 'Renvoyer' : 'Embaucher'} l'employé de maintenance (12,5 R$/h)</button>` : ''}
+        ${niveau >= 2 ? `<button class="bouton bouton-contour" id="pm-auto-employe" style="cursor:pointer;">${banque && banque.employe_anti_bug ? 'Renvoyer' : 'Embaucher'} l'employé de maintenance (12,5 R$/h)</button>` : ''}
       </div>
       <div id="pm-auto-msg" style="margin-top:10px;"></div>
     </div>
@@ -2708,7 +2748,8 @@ async function pmRendreAutomatisation() {
     };
   });
   document.getElementById('pm-auto-demarrer').onclick = async () => {
-    const { error } = await sb.rpc('demarrer_automatisation', { p_banque_tag: pmBanqueActive, p_valeurs: Array.from(selection) });
+    const quantite = Math.max(1, Number(document.getElementById('pm-auto-quantite').value) || 1);
+    const { error } = await sb.rpc('demarrer_automatisation', { p_banque_tag: pmBanqueActive, p_valeurs: Array.from(selection), p_quantite_par_cycle: quantite });
     pmAfficherErreur(document.getElementById('pm-auto-msg'), error);
     if (!error) pmRendreAutomatisation();
   };
@@ -2721,12 +2762,13 @@ async function pmRendreAutomatisation() {
   if (boutonEmploye) boutonEmploye.onclick = async () => {
     await sb.rpc('embaucher_employe_maintenance', { p_banque_tag: pmBanqueActive, p_actif: !(banque && banque.employe_anti_bug) });
     pmRendreAutomatisation();
+    pmRafraichirTresorerie();
   };
 }
 
 async function pmRendreFlotte() {
   const zone = document.getElementById('pm-onglet-flotte');
-  const role = pmMonRole(pmBanqueActive);
+  const niveau = pmMonNiveau(pmBanqueActive);
   const { data: vehicules } = await sb.from('vehicules').select('*').eq('banque_tag', pmBanqueActive).neq('statut','hors_service').order('cree_le', { ascending: false });
   const { data: types } = await sb.from('types_vehicules').select('*').order('prix_achat');
   const { data: banque } = await sb.from('banques_nationales').select('*').eq('tag', pmBanqueActive).single();
@@ -2735,7 +2777,7 @@ async function pmRendreFlotte() {
   zone.innerHTML = `
     <div id="pm-suivi-zone"></div>
 
-    ${role === 'administrateur' ? `
+    ${niveau >= 2 ? `
     <div class="pc-carte">
       <h3>Acheter un véhicule (flotte permanente de la banque)</h3>
       <table class="table-donnees">
@@ -2775,18 +2817,18 @@ async function pmRendreFlotte() {
 
   zone.querySelectorAll('[data-type]').forEach(b => b.onclick = async () => {
     const { error } = await sb.rpc('acheter_vehicule', { p_banque_tag: pmBanqueActive, p_type: b.dataset.type });
-    if (error) alert(error.message); else pmRendreFlotte();
+    if (error) alert(error.message); else { pmRendreFlotte(); pmRafraichirTresorerie(); }
   });
   zone.querySelectorAll('[data-louer]').forEach(b => b.onclick = async () => {
     const { error } = await sb.rpc('louer_vehicule_john', { p_banque_tag: pmBanqueActive, p_index: Number(b.dataset.louer) });
-    if (error) alert(error.message); else pmRendreFlotte();
+    if (error) alert(error.message); else { pmRendreFlotte(); pmRafraichirTresorerie(); }
   });
   zone.querySelectorAll('[data-charger]').forEach(b => b.onclick = () => pmAfficherFormulaireChargement(b.dataset.charger));
   zone.querySelectorAll('[data-livrer]').forEach(b => b.onclick = () => pmAfficherFormulaireLivraison(b.dataset.livrer));
   zone.querySelectorAll('[data-ameliorer2]').forEach(sel => sel.onchange = async (e) => {
     const type = e.target.value; if (!type) return;
     const { error } = await sb.rpc('ameliorer_vehicule', { p_vehicule_id: e.target.dataset.ameliorer2, p_amelioration: type });
-    if (error) alert(error.message); else pmRendreFlotte();
+    if (error) alert(error.message); else { pmRendreFlotte(); pmRafraichirTresorerie(); }
   });
 
   await pmRendreSuiviLivraisons();
@@ -2798,7 +2840,7 @@ function pmRendreVehiculeHTML(v) {
     .filter(([k]) => am[k]).map(([,e]) => e).join(', ');
   return `<div class="pm-fleet-item" data-vehicule-item="${v.id}">
     <div class="entete">
-      <div><strong>${PM_NOMS_VEHICULES[v.type]}</strong> ${v.loue ? '(loué)' : ''}
+      <div><strong>${PM_NOMS_VEHICULES[v.type]}</strong> ${v.loue ? '(loué)' : ''} <span class="pm-mini">N° ${v.numero_suivi || '—'}</span>
         <div class="pm-mini">Statut : ${v.statut} — ${Number(v.km_parcourus).toLocaleString('fr-FR')} km parcourus${badges ? ' — Améliorations : ' + badges : ''}</div>
       </div>
       <div class="pm-ligne-boutons" style="margin-top:0;">
@@ -2853,6 +2895,7 @@ async function pmAfficherFormulaireChargement(vehiculeId) {
     const { error } = await sb.rpc('charger_camion', { p_vehicule_id: vehiculeId, p_composition: composition });
     if (error) { pmAfficherErreur(document.getElementById(`pm-msg-chargement-${vehiculeId}`), error); return; }
     pmRendreFlotte();
+    pmRafraichirTresorerie();
   };
 }
 
@@ -2885,6 +2928,7 @@ async function pmAfficherFormulaireLivraison(vehiculeId) {
     if (error) { pmAfficherErreur(document.getElementById(`pm-msg-livraison-${vehiculeId}`), error); return; }
     conteneur.innerHTML = '';
     pmRendreFlotte();
+    pmRafraichirTresorerie();
   };
 }
 
@@ -2900,6 +2944,7 @@ async function pmRendreSuiviLivraisons() {
       ${livraisons.map(pmRendreSuiviUneLivraison).join('')}
     </div>
   `;
+  pmRafraichirTresorerie();
 }
 
 function pmRendreSuiviUneLivraison(l) {
@@ -2920,7 +2965,7 @@ function pmRendreSuiviUneLivraison(l) {
   return `
     <div class="pm-suivi">
       <div class="entete" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <strong>${l.province_actuelle ? 'En direction de ' + l.province_actuelle : 'Retour à la banque'}</strong>
+        <strong>Véhicule ${l.numero_suivi || '—'} — ${l.province_actuelle ? 'en direction de ' + l.province_actuelle : 'retour à la banque'}</strong>
         <span class="pm-mini">Démarré depuis ${dureeTexte}</span>
       </div>
       <div class="pm-progress-barre"><div class="pm-progress-remplissage" style="width:${l.progress_pct}%;"></div></div>
@@ -2947,7 +2992,7 @@ async function pmRendreDestruction() {
   zone.innerHTML = `
     <div class="pc-carte">
       <h3>Détruire des billets</h3>
-      <p class="pm-mini">Réservé aux administrateurs de la banque. Coûte 0,02 R$/billet et augmente la valeur du Roiyal. On ne peut détruire que des billets réellement présents dans le coffre de la banque.</p>
+      <p class="pm-mini">Réservé à @gouvernement. Coûte 0,02 R$/billet et augmente la valeur du Roiyal. On ne peut détruire que des billets réellement présents dans le coffre de la banque.</p>
       <table class="table-donnees" style="margin-bottom:14px;">
         <thead><tr><th>Valeur</th><th>Billets disponibles</th></tr></thead>
         <tbody>
@@ -2973,6 +3018,7 @@ async function pmRendreDestruction() {
     if (error) { pmAfficherErreur(msg, error); return; }
     msg.innerHTML = `<p class="pc-succes">Roiyal remonté à ${Number(data.nouveau_r).toFixed(4)} % (coût : ${Number(data.cout).toFixed(2)} R$).</p>`;
     pmRendreDestruction();
+    pmRafraichirTresorerie();
   };
 }
 
@@ -2994,6 +3040,85 @@ async function pmRendreTableau() {
       <div class="pc-carte"><h3>Aujourd'hui</h3><table class="table-donnees">${ligne(jour)}</table></div>
       <div class="pc-carte"><h3>Tous les temps</h3><table class="table-donnees">${ligne(total)}</table></div>
     </div>
+  `;
+}
+
+async function pmRendrePersonnel() {
+  const zone = document.getElementById('pm-onglet-personnel');
+  const { data: liste } = await sb.rpc('gouv_lister_personnel_banque', { p_banque_tag: pmBanqueActive });
+  const NOMS_NIVEAUX = { 1: 'Travailleur de banque', 2: 'Manager', 3: 'Dirigeant de la banque' };
+
+  zone.innerHTML = `
+    <div class="pc-carte">
+      <h3>Personnel — ${PM_NOMS_BANQUES[pmBanqueActive]}</h3>
+      <p class="pm-mini">Réservé à @gouvernement. Niveau 1 = presse à billets seulement. Niveau 2 = + automatisation, flotte et livraisons. Niveau 3 = tout, sauf détruire un billet (réservé à @gouvernement).</p>
+      <table class="table-donnees" style="margin-bottom:14px;">
+        <thead><tr><th>Utilisateur</th><th>Nom</th><th>Niveau</th></tr></thead>
+        <tbody>
+          ${(liste||[]).length ? liste.map(p => `<tr><td>@${p.username}</td><td>${p.prenom} ${p.nom}</td><td>${NOMS_NIVEAUX[p.niveau] || p.niveau}</td></tr>`).join('') : '<tr><td colspan="3">Aucun personnel assigné.</td></tr>'}
+        </tbody>
+      </table>
+      <div class="pc-champ"><label>Nom d'utilisateur</label><input type="text" id="pm-pers-username" placeholder="ex : jdupont"></div>
+      <div class="pc-champ"><label>Niveau</label>
+        <select id="pm-pers-niveau">
+          <option value="1">1 — Travailleur de banque</option>
+          <option value="2">2 — Manager</option>
+          <option value="3">3 — Dirigeant de la banque</option>
+        </select>
+      </div>
+      <button class="bouton bouton-or" id="pm-pers-assigner" style="border:none; cursor:pointer;">Assigner</button>
+      <div id="pm-pers-msg" style="margin-top:10px;"></div>
+    </div>
+  `;
+  document.getElementById('pm-pers-assigner').onclick = async () => {
+    const username = document.getElementById('pm-pers-username').value.trim();
+    const niveau = Number(document.getElementById('pm-pers-niveau').value);
+    if (!username) { pmAfficherErreur(document.getElementById('pm-pers-msg'), "Entrez un nom d'utilisateur."); return; }
+    const { error } = await sb.rpc('gouv_assigner_personnel_banque', { p_username: username, p_banque_tag: pmBanqueActive, p_niveau: niveau });
+    if (error) { pmAfficherErreur(document.getElementById('pm-pers-msg'), error); return; }
+    document.getElementById('pm-pers-msg').innerHTML = `<p class="pc-succes">@${username} assigné au niveau ${niveau}.</p>`;
+    pmRendrePersonnel();
+  };
+}
+
+/* =====================================================================
+   TABLEAU DE BORD NATIONAL (PIB) — visible par TOUS les citoyens
+   ===================================================================== */
+function panneauTableauBordHTML() {
+  return `
+    <div id="onglet-tableaubord" class="pc-masque">
+      <div class="pc-carte" id="tb-app"><p style="color:var(--gris-ardoise);">Chargement…</p></div>
+    </div>
+  `;
+}
+
+async function initialiserPanneauTableauBord() {
+  await pmRendreTableauBordNational();
+  setInterval(pmRendreTableauBordNational, 30000);
+}
+
+async function pmRendreTableauBordNational() {
+  const app = document.getElementById('tb-app');
+  if (!app) return;
+  const { data, error } = await sb.rpc('tableau_de_bord_national');
+  if (error || !data) { app.innerHTML = `<p class="pc-erreur">${error ? error.message : 'Données indisponibles.'}</p>`; return; }
+
+  const variation = Number(data.variation_pct);
+  let couleur, signe;
+  if (variation > 0.05) { couleur = 'var(--vert-institut)'; signe = '+'; }
+  else if (variation < -0.05) { couleur = 'var(--rouge-etalie)'; signe = ''; }
+  else { couleur = 'var(--gris-ardoise)'; signe = variation >= 0 ? '+' : ''; }
+
+  app.innerHTML = `
+    <h3>Tableau de bord national</h3>
+    <p style="font-family:var(--police-titre); font-size:2rem; color:var(--vert-nuit); margin:10px 0 0;">${pmFormaterR(data.pib_actuel)} R$</p>
+    <p style="font-family:var(--police-util); font-size:1.1rem; color:${couleur}; margin:4px 0 16px;">${signe}${variation.toFixed(2)}%</p>
+    <table class="table-donnees">
+      <tr><td>Produit intérieur brut (PIB)</td><td class="num">${pmFormaterR(data.pib_actuel)} R$</td></tr>
+      <tr><td>Ancien PIB de référence</td><td class="num">${pmFormaterR(data.pib_reference)} R$</td></tr>
+      <tr><td>Référence sauvegardée le</td><td class="num">${new Date(data.date_reference).toLocaleString('fr-FR')}</td></tr>
+    </table>
+    <p class="pm-mini" style="margin-top:10px;">La référence du PIB se met à jour automatiquement tous les 59 jours.</p>
   `;
 }
 
