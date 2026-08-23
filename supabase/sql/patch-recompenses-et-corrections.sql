@@ -567,8 +567,8 @@ grant execute on function gouv_traiter_demande_aft(uuid, text) to authenticated;
 -- Formations gérées par le citoyen courant (gestionnaire désigné).
 create or replace function mes_formations_aft_gerees()
 returns jsonb language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'nom', nom, 'niveau', niveau))
-    order by nom, '[]'::jsonb) filter (where id is not null), '[]'::jsonb
+  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'nom', nom, 'niveau', niveau) order by nom)
+    filter (where id is not null), '[]'::jsonb)
   from aft_formations where auth.uid() = any(gestionnaires) and statut = 'acceptee';
 $$;
 grant execute on function mes_formations_aft_gerees() to authenticated;
