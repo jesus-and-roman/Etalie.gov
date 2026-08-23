@@ -803,6 +803,7 @@ async function chargerTableauDeBord(utilisateur) {
 
   const { data: mesAccesBanques } = await sb.rpc('mon_personnel_banque');
   const banquesAccessibles = citoyen.est_admin ? ['H','P','C','L','N','M'] : (mesAccesBanques || []).map(a => a.banque_tag);
+  const { data: etatTresor } = citoyen.est_admin ? await sb.rpc('gouv_etat_tresoreries') : { data: null };
 
   const { data: parametresFiscaux } = await sb.from('parametres_fiscaux').select('taux_preventif').eq('id', 1).single();
   const tauxPreventifActuel = parametresFiscaux ? Number(parametresFiscaux.taux_preventif) : 0;
@@ -822,10 +823,15 @@ async function chargerTableauDeBord(utilisateur) {
     </div>
 
     <div class="pc-grille-stats">
+      ${citoyen.est_admin ? `
+      <div class="pc-stat"><div class="valeur" id="stat-tresor-prive">${etatTresor ? Number(etatTresor.solde_prive).toFixed(2) : '—'}</div><div class="etiquette">Trésorerie privée (R$)</div></div>
+      <div class="pc-stat"><div class="valeur" id="stat-tresor-public">${etatTresor ? Number(etatTresor.solde_publique).toFixed(2) : '—'}</div><div class="etiquette">Trésorerie publique (R$)</div></div>
+      ` : `
       <div class="pc-stat"><div class="valeur" id="stat-tresorerie">—</div><div class="etiquette">Trésorerie (R$)</div></div>
       <div class="pc-stat"><div class="valeur" id="stat-dettes">${Number(citoyen.dettes).toFixed(2)}</div><div class="etiquette">Dettes (R$)</div></div>
       <div class="pc-stat"><div class="valeur" id="stat-prets">${Number(citoyen.prets).toFixed(2)}</div><div class="etiquette">Prêts (R$)</div></div>
       <div class="pc-stat"><div class="valeur" id="stat-attendu">${Number(citoyen.argent_attendu).toFixed(2)}</div><div class="etiquette">Argent attendu (R$)</div></div>
+      `}
     </div>
 
     <div class="pc-onglets">
@@ -2051,6 +2057,47 @@ function panneauAdminHTML() {
   return `
     <div id="onglet-admin" class="pc-masque">
       <div class="pc-carte">
+        <h3>Trésoreries du gouvernement</h3>
+        <div id="a-tresoreries-gouv"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+        <div class="pc-champ" style="max-width:340px; margin-top:14px;">
+          <label for="a-option-attendu">Option de paiement de l'argent attendu</label>
+          <select id="a-option-attendu">
+            <option value="1">1 — Virement automatique (réparti également)</option>
+            <option value="2">2 — Virement automatique (préférence temporelle)</option>
+            <option value="3">3 — Virement manuel</option>
+            <option value="4">4 — Virement manuel avec aide sociale</option>
+          </select>
+        </div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-option-attendu-sauver">Enregistrer l'option</button>
+        <div id="a-option-attendu-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Argent attendu (dette nationale)</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise);">Dette nationale totale : <strong id="a-dette-nationale">—</strong> R$</p>
+        <div id="a-liste-attendu"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer; margin-top:10px;" id="a-attendu-tout-cocher">Tout sélectionner</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; margin-top:10px;" id="a-attendu-payer">Payer ses dûs</button>
+        <div id="a-attendu-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Trésoreries provinciales</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Renflouées automatiquement à 50 000 R$ dès qu'une trésorerie provinciale atteint 0.</p>
+        <div id="a-liste-provinciales"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-top:14px;">
+          <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-nom">Province</label><select id="a-prov-nom"></select></div>
+          <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-montant">Montant (R$)</label><input type="number" id="a-prov-montant" min="0"></div>
+          <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-source">Trésorerie</label>
+            <select id="a-prov-source"><option value="publique">Publique</option><option value="privee">Privée</option></select>
+          </div>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-vers">Vers la province</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-depuis">Depuis la province</button>
+        </div>
+        <div id="a-prov-message"></div>
+      </div>
+
+      <div class="pc-carte">
         <h3>Trésorerie de tous les citoyens</h3>
         <div id="a-liste-tresoreries"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
       </div>
@@ -2222,6 +2269,63 @@ async function chargerTresorPublicAdmin() {
     : `<p style="font-family:var(--police-titre); font-size:1.8rem; color:var(--vert-nuit);">${Number(data.solde).toFixed(2)} R$</p>`;
 }
 
+async function chargerTresoreriesGouv() {
+  const conteneur = document.getElementById('a-tresoreries-gouv');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_etat_tresoreries');
+  if (error || !data) { conteneur.innerHTML = `<p class="pc-erreur">${error ? error.message : 'Indisponible.'}</p>`; return; }
+  conteneur.innerHTML = `
+    <div class="pc-grille-stats" style="margin-bottom:0;">
+      <div class="pc-stat"><div class="valeur">${Number(data.solde_prive).toFixed(2)}</div><div class="etiquette">Trésorerie privée (R$)</div></div>
+      <div class="pc-stat"><div class="valeur">${Number(data.solde_publique).toFixed(2)}</div><div class="etiquette">Trésorerie publique (R$)</div></div>
+      <div class="pc-stat"><div class="valeur">${Number(data.taxes_totales_periode).toFixed(2)}</div><div class="etiquette">Taxes collectées (période)</div></div>
+    </div>
+  `;
+  const sel = document.getElementById('a-option-attendu');
+  if (sel) sel.value = String(data.option_paiement_attendu);
+}
+
+async function chargerArgentAttenduAdmin() {
+  const conteneur = document.getElementById('a-liste-attendu');
+  const elDette = document.getElementById('a-dette-nationale');
+  if (!conteneur) return;
+  const { data: dette } = await sb.rpc('dette_nationale_argent_attendu');
+  if (elDette) elDette.textContent = Number(dette || 0).toFixed(2);
+  const { data, error } = await sb.rpc('gouv_liste_argent_attendu');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Personne n'attend d'argent.</p>`; return; }
+  conteneur.innerHTML = `
+    <table class="table-donnees">
+      <thead><tr><th></th><th>Citoyen</th><th>Nom</th><th class="num">Argent attendu (R$)</th></tr></thead>
+      <tbody>
+        ${data.map(p => `<tr>
+          <td><input type="checkbox" data-attendu-check="${p.citoyen_id}"></td>
+          <td>@${p.username}</td><td>${p.prenom} ${p.nom}</td>
+          <td class="num">${Number(p.argent_attendu).toFixed(2)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function chargerTresoreriesProvinciales() {
+  const conteneur = document.getElementById('a-liste-provinciales');
+  const selectProv = document.getElementById('a-prov-nom');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_tresoreries_provinciales');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  conteneur.innerHTML = `
+    <table class="table-donnees">
+      <thead><tr><th>Province</th><th class="num">Solde (R$)</th></tr></thead>
+      <tbody>${(data||[]).map(p => `<tr><td>${p.province}</td><td class="num">${Number(p.solde).toFixed(2)}</td></tr>`).join('')}</tbody>
+    </table>
+  `;
+  if (selectProv && !selectProv.dataset.rempli) {
+    selectProv.innerHTML = (data||[]).map(p => `<option value="${p.province}">${p.province}</option>`).join('');
+    selectProv.dataset.rempli = '1';
+  }
+}
+
 function afficherZoneRedevance() {
   const zone = document.getElementById('a-redevance-zone');
   sb.rpc('dans_fenetre_redevance').then(({ data: dansFenetre }) => {
@@ -2272,6 +2376,45 @@ function initialiserPanneauAdmin() {
   chargerConstatsAdmin();
   chargerTresorPublicAdmin();
   afficherZoneRedevance();
+  chargerTresoreriesGouv();
+  chargerArgentAttenduAdmin();
+  chargerTresoreriesProvinciales();
+
+  document.getElementById('a-option-attendu-sauver').onclick = async () => {
+    const { error } = await sb.rpc('gouv_definir_option_paiement', { p_option: Number(document.getElementById('a-option-attendu').value) });
+    const msg = document.getElementById('a-option-attendu-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Option enregistrée.</p>`;
+  };
+  document.getElementById('a-attendu-tout-cocher').onclick = () => {
+    document.querySelectorAll('[data-attendu-check]').forEach(c => c.checked = true);
+  };
+  document.getElementById('a-attendu-payer').onclick = async () => {
+    const ids = Array.from(document.querySelectorAll('[data-attendu-check]:checked')).map(c => c.dataset.attenduCheck);
+    const msg = document.getElementById('a-attendu-message');
+    if (!ids.length) { msg.innerHTML = `<p class="pc-erreur">Sélectionnez au moins un citoyen.</p>`; return; }
+    const { error } = await sb.rpc('gouv_payer_dus_selection', { p_citoyen_ids: ids });
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Paiement effectué.</p>`;
+    chargerArgentAttenduAdmin();
+    chargerTresoreriesGouv();
+  };
+  document.getElementById('a-prov-vers').onclick = async () => {
+    const province = document.getElementById('a-prov-nom').value;
+    const montant = Number(document.getElementById('a-prov-montant').value);
+    const source = document.getElementById('a-prov-source').value;
+    const { error } = await sb.rpc('gouv_transferer_vers_provinciale', { p_province: province, p_montant: montant, p_treasorerie_preferee: source });
+    const msg = document.getElementById('a-prov-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré vers ${province}.</p>`;
+    chargerTresoreriesProvinciales(); chargerTresoreriesGouv();
+  };
+  document.getElementById('a-prov-depuis').onclick = async () => {
+    const province = document.getElementById('a-prov-nom').value;
+    const montant = Number(document.getElementById('a-prov-montant').value);
+    const cible = document.getElementById('a-prov-source').value;
+    const { error } = await sb.rpc('gouv_transferer_depuis_provinciale', { p_province: province, p_montant: montant, p_treasorerie_cible: cible });
+    const msg = document.getElementById('a-prov-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré depuis ${province}.</p>`;
+    chargerTresoreriesProvinciales(); chargerTresoreriesGouv();
+  };
 
   document.getElementById('a-parentalite-uuid').addEventListener('change', async (e) => {
     const uuidVal = e.target.value.trim();
@@ -3117,8 +3260,11 @@ async function pmRendreTableauBordNational() {
       <tr><td>Produit intérieur brut (PIB)</td><td class="num">${pmFormaterR(data.pib_actuel)} R$</td></tr>
       <tr><td>Ancien PIB de référence</td><td class="num">${pmFormaterR(data.pib_reference)} R$</td></tr>
       <tr><td>Référence sauvegardée le</td><td class="num">${new Date(data.date_reference).toLocaleString('fr-FR')}</td></tr>
+      <tr><td>Indice Palamöss</td><td class="num">${Number(data.palamoss_pct).toFixed(2)} %</td></tr>
+      <tr><td>Taxes collectées (période)</td><td class="num">${pmFormaterR(data.taxes_totales_periode)} R$</td></tr>
+      <tr><td>Dette nationale (argent attendu)</td><td class="num">${pmFormaterR(data.dette_nationale)} R$</td></tr>
     </table>
-    <p class="pm-mini" style="margin-top:10px;">La référence du PIB se met à jour automatiquement tous les 59 jours.</p>
+    <p class="pm-mini" style="margin-top:10px;">La référence du PIB se met à jour automatiquement tous les 59 jours. L'indice Palamöss (0 à 5 %) est un repère pour le rendement des contribuables.</p>
   `;
 }
 
