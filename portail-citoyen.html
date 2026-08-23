@@ -2082,17 +2082,17 @@ function panneauAdminHTML() {
       </div>
 
       <div class="pc-carte">
-        <h3>Trésoreries provinciales</h3>
-        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Renflouées automatiquement à 50 000 R$ dès qu'une trésorerie provinciale atteint 0.</p>
+        <h3>Trésoreries des banques nationales</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Renflouées automatiquement à 50 000 R$ dès que la trésorerie d'une banque nationale atteint 0.</p>
         <div id="a-liste-provinciales"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-top:14px;">
-          <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-nom">Province</label><select id="a-prov-nom"></select></div>
+          <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-nom">Banque</label><select id="a-prov-nom"></select></div>
           <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-montant">Montant (R$)</label><input type="number" id="a-prov-montant" min="0"></div>
           <div class="pc-champ" style="margin-bottom:0;"><label for="a-prov-source">Trésorerie</label>
             <select id="a-prov-source"><option value="publique">Publique</option><option value="privee">Privée</option></select>
           </div>
-          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-vers">Vers la province</button>
-          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-depuis">Depuis la province</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-vers">Vers la banque</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-depuis">Depuis la banque</button>
         </div>
         <div id="a-prov-message"></div>
       </div>
@@ -2312,16 +2312,16 @@ async function chargerTresoreriesProvinciales() {
   const conteneur = document.getElementById('a-liste-provinciales');
   const selectProv = document.getElementById('a-prov-nom');
   if (!conteneur) return;
-  const { data, error } = await sb.rpc('gouv_liste_tresoreries_provinciales');
+  const { data, error } = await sb.rpc('gouv_liste_tresoreries_banques');
   if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
   conteneur.innerHTML = `
     <table class="table-donnees">
-      <thead><tr><th>Province</th><th class="num">Solde (R$)</th></tr></thead>
-      <tbody>${(data||[]).map(p => `<tr><td>${p.province}</td><td class="num">${Number(p.solde).toFixed(2)}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Banque</th><th class="num">Solde (R$)</th></tr></thead>
+      <tbody>${(data||[]).map(p => `<tr><td>${p.nom} (${p.tag})</td><td class="num">${Number(p.tresorerie).toFixed(2)}</td></tr>`).join('')}</tbody>
     </table>
   `;
   if (selectProv && !selectProv.dataset.rempli) {
-    selectProv.innerHTML = (data||[]).map(p => `<option value="${p.province}">${p.province}</option>`).join('');
+    selectProv.innerHTML = (data||[]).map(p => `<option value="${p.tag}">${p.nom} (${p.tag})</option>`).join('');
     selectProv.dataset.rempli = '1';
   }
 }
@@ -2370,6 +2370,7 @@ function afficherZoneRedevance() {
   });
 }
 
+let adminTresorMinuterie = null;
 function initialiserPanneauAdmin() {
   chargerToutesLesTresoreries();
   chargerDemandesEpargneAdmin();
@@ -2398,23 +2399,33 @@ function initialiserPanneauAdmin() {
     chargerTresoreriesGouv();
   };
   document.getElementById('a-prov-vers').onclick = async () => {
-    const province = document.getElementById('a-prov-nom').value;
+    const banque = document.getElementById('a-prov-nom').value;
     const montant = Number(document.getElementById('a-prov-montant').value);
     const source = document.getElementById('a-prov-source').value;
-    const { error } = await sb.rpc('gouv_transferer_vers_provinciale', { p_province: province, p_montant: montant, p_treasorerie_preferee: source });
+    const { error } = await sb.rpc('gouv_transferer_vers_banque', { p_banque_tag: banque, p_montant: montant, p_treasorerie_preferee: source });
     const msg = document.getElementById('a-prov-message');
-    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré vers ${province}.</p>`;
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré vers la banque ${banque}.</p>`;
     chargerTresoreriesProvinciales(); chargerTresoreriesGouv();
   };
   document.getElementById('a-prov-depuis').onclick = async () => {
-    const province = document.getElementById('a-prov-nom').value;
+    const banque = document.getElementById('a-prov-nom').value;
     const montant = Number(document.getElementById('a-prov-montant').value);
     const cible = document.getElementById('a-prov-source').value;
-    const { error } = await sb.rpc('gouv_transferer_depuis_provinciale', { p_province: province, p_montant: montant, p_treasorerie_cible: cible });
+    const { error } = await sb.rpc('gouv_transferer_depuis_banque', { p_banque_tag: banque, p_montant: montant, p_treasorerie_cible: cible });
     const msg = document.getElementById('a-prov-message');
-    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré depuis ${province}.</p>`;
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Transféré depuis la banque ${banque}.</p>`;
     chargerTresoreriesProvinciales(); chargerTresoreriesGouv();
   };
+
+  // Trésorerie privée/publique/taxes collectées : rafraîchissement automatique.
+  if (adminTresorMinuterie) clearInterval(adminTresorMinuterie);
+  adminTresorMinuterie = setInterval(() => {
+    const onglet = document.getElementById('onglet-admin');
+    if (onglet && !onglet.classList.contains('pc-masque')) {
+      chargerTresoreriesGouv();
+      chargerTresoreriesProvinciales();
+    }
+  }, 5000);
 
   document.getElementById('a-parentalite-uuid').addEventListener('change', async (e) => {
     const uuidVal = e.target.value.trim();
@@ -3075,12 +3086,15 @@ async function pmAfficherFormulaireLivraison(vehiculeId) {
   };
 }
 
+let pmLivraisonsCache = [];
+
 async function pmRendreSuiviLivraisons() {
   const conteneur = document.getElementById('pm-suivi-zone');
   if (!conteneur) return;
   const { data: livraisons, error } = await sb.rpc('livraisons_actives', { p_banque_tag: pmBanqueActive });
-  if (error || !livraisons || !livraisons.length) { conteneur.innerHTML = ''; return; }
+  if (error || !livraisons || !livraisons.length) { conteneur.innerHTML = ''; pmLivraisonsCache = []; return; }
 
+  pmLivraisonsCache = livraisons;
   conteneur.innerHTML = `
     <div class="pc-carte">
       <h3>Livraisons en cours</h3>
@@ -3088,38 +3102,116 @@ async function pmRendreSuiviLivraisons() {
     </div>
   `;
   pmRafraichirTresorerie();
+  pmActualiserProgressionLivraisons();
+}
+
+// Calcule, purement côté client, la progression exacte à l'instant présent
+// (interpolation entre le départ et l'heure d'arrivée de chaque étape),
+// sans appel serveur — permet une barre de progression fluide en continu.
+function pmCalculerProgressionLivraison(l) {
+  const depart = new Date(l.depart_le).getTime();
+  const maintenant = Date.now();
+  const distanceTotale = Number(l.distance_totale_km) || 1;
+
+  let cum = 0, segStart = depart, kmParcourus = distanceTotale;
+  const bornes = [];
+  for (const leg of l.legs) {
+    const legEnd = new Date(leg.heure_arrivee).getTime();
+    const legDist = Number(leg.distance_km);
+    bornes.push({ leg, debut: cum, fin: cum + legDist, legEnd, segStart });
+    cum += legDist;
+    segStart = legEnd;
+  }
+  for (const b of bornes) {
+    if (maintenant < b.legEnd) {
+      const dureeSeg = Math.max(1, b.legEnd - b.segStart);
+      const ecoule = Math.min(dureeSeg, Math.max(0, maintenant - b.segStart));
+      kmParcourus = b.debut + (ecoule / dureeSeg) * Number(b.leg.distance_km);
+      break;
+    }
+  }
+  kmParcourus = Math.min(distanceTotale, kmParcourus);
+
+  const legsInfo = bornes.map(b => ({
+    province: b.leg.province, traite: b.leg.traite, statut_reel: b.leg.statut_reel,
+    type_accident: b.leg.type_accident, montant_livre: b.leg.montant_livre,
+    heure_arrivee: b.leg.heure_arrivee,
+    distance_restante: Math.max(0, b.fin - kmParcourus)
+  }));
+
+  return { kmParcourus, progressPct: Math.min(100, (kmParcourus / distanceTotale) * 100), legsInfo };
+}
+
+// Ticker rapide (chaque seconde) : met à jour la barre de progression, les
+// km parcourus, le temps écoulé, et la distance restante / heure d'arrivée
+// de chaque étape à venir — sans requête serveur.
+if (!window.pmMinuterieProgression) {
+  window.pmMinuterieProgression = setInterval(() => {
+    for (const l of pmLivraisonsCache) {
+      const barre = document.getElementById(`pm-barre-${l.id}`);
+      const kmTexte = document.getElementById(`pm-km-${l.id}`);
+      const dureeTexte = document.getElementById(`pm-duree-${l.id}`);
+      if (!barre && !kmTexte && !dureeTexte) continue;
+
+      const prog = pmCalculerProgressionLivraison(l);
+      if (barre) barre.style.width = prog.progressPct.toFixed(2) + '%';
+      if (kmTexte) kmTexte.textContent = `${prog.kmParcourus.toLocaleString('fr-FR', {maximumFractionDigits:1})} / ${Number(l.distance_totale_km).toLocaleString('fr-FR')} km parcourus`;
+      if (dureeTexte) {
+        const depuis = Math.max(0, (Date.now() - new Date(l.depart_le).getTime()) / 1000);
+        const h = Math.floor(depuis/3600), m = Math.floor((depuis%3600)/60), s = Math.floor(depuis%60);
+        dureeTexte.textContent = `Démarré depuis ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+      }
+      prog.legsInfo.forEach((info, i) => {
+        if (info.traite) return;
+        const elDist = document.getElementById(`pm-leg-dist-${l.id}-${i}`);
+        const elEta = document.getElementById(`pm-leg-eta-${l.id}-${i}`);
+        if (elDist) elDist.textContent = `dans ${info.distance_restante.toLocaleString('fr-FR', {maximumFractionDigits:0})} km`;
+        if (elEta) elEta.textContent = new Date(info.heure_arrivee).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+      });
+    }
+  }, 1000);
+}
+function pmActualiserProgressionLivraisons() {
+  // déclenche immédiatement un premier calcul (sans attendre 1s)
+  for (const l of pmLivraisonsCache) {
+    const barre = document.getElementById(`pm-barre-${l.id}`);
+    if (!barre) continue;
+    const prog = pmCalculerProgressionLivraison(l);
+    barre.style.width = prog.progressPct.toFixed(2) + '%';
+  }
 }
 
 function pmRendreSuiviUneLivraison(l) {
-  const depuis = Math.max(0, (Date.now() - new Date(l.depart_le).getTime()) / 1000);
-  const heures = Math.floor(depuis / 3600), minutes = Math.floor((depuis % 3600) / 60), secondes = Math.floor(depuis % 60);
-  const dureeTexte = `${heures}h ${String(minutes).padStart(2,'0')}m ${String(secondes).padStart(2,'0')}s`;
-  const lignes = l.legs.map(leg => {
+  const lignes = l.legs.map((leg, i) => {
     if (leg.traite) {
       const badge = leg.statut_reel === 'ok' ? '<span class="pm-badge ok">Livré</span>'
         : leg.statut_reel === 'braquee' ? '<span class="pm-badge non">Braqué</span>'
         : leg.statut_reel === 'bris_total' ? '<span class="pm-badge non">Bris total</span>'
         : `<span class="pm-badge non">Accident (${leg.type_accident || ''})</span>`;
-      return `<tr><td>${leg.province}</td><td>${badge}</td><td class="num">${Number(leg.montant_livre).toFixed(2)} R$</td></tr>`;
+      return `<tr><td>${leg.province}</td><td>${badge}</td><td>—</td><td class="num">${Number(leg.montant_livre).toFixed(2)} R$</td></tr>`;
     }
-    return `<tr><td>${leg.province}</td><td><span class="pm-badge attente">En route</span></td><td class="num">—</td></tr>`;
+    return `<tr><td>${leg.province}</td><td><span class="pm-badge attente">En route</span></td>
+      <td><span id="pm-leg-dist-${l.id}-${i}">…</span> — arrivée vers <span id="pm-leg-eta-${l.id}-${i}">…</span></td>
+      <td class="num">—</td></tr>`;
   }).join('');
 
   return `
     <div class="pm-suivi">
       <div class="entete" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <strong>Véhicule ${l.numero_suivi || '—'} — ${l.province_actuelle ? 'en direction de ' + l.province_actuelle : 'retour à la banque'}</strong>
-        <span class="pm-mini">Démarré depuis ${dureeTexte}</span>
+        <span class="pm-mini" id="pm-duree-${l.id}">Démarré depuis …</span>
       </div>
-      <div class="pm-progress-barre"><div class="pm-progress-remplissage" style="width:${l.progress_pct}%;"></div></div>
-      <p class="pm-mini">
+      <div class="pm-progress-barre"><div class="pm-progress-remplissage" id="pm-barre-${l.id}" style="width:${l.progress_pct}%;"></div></div>
+      <p class="pm-mini" id="pm-km-${l.id}">
         ${Number(l.km_parcourus).toLocaleString('fr-FR')} / ${Number(l.distance_totale_km).toLocaleString('fr-FR')} km parcourus
-        — Accidents : ${l.accidents} — Braquages : ${l.braquages}
+      </p>
+      <p class="pm-mini">
+        Accidents : ${l.accidents} — Braquages : ${l.braquages}
         — Livré jusqu'ici : ${Number(l.montant_livre).toFixed(2)} / ${Number(l.montant_total).toFixed(2)} R$
       </p>
       <div class="pm-suivi-legs">
         <table>
-          <thead><tr><th>Province</th><th>Statut</th><th>Montant</th></tr></thead>
+          <thead><tr><th>Province</th><th>Statut</th><th>Distance / arrivée prévue</th><th>Montant</th></tr></thead>
           <tbody>${lignes}</tbody>
         </table>
       </div>
