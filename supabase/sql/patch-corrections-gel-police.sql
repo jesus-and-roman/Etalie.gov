@@ -27,7 +27,13 @@
 -- ============================================================
 -- 1) CORRECTIONS
 -- ============================================================
-create or replace function gouv_transferer_depuis_banque(p_banque_tag char(1), p_montant numeric, p_treasorerie_cible text default 'publique')
+drop function if exists gouv_transferer_depuis_banque(char, numeric, text);
+
+create or replace function gouv_transferer_depuis_banque(
+  p_banque_tag char(1),
+  p_montant numeric,
+  p_tresorerie_cible text default 'publique'
+)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_solde numeric;
 begin
@@ -37,12 +43,13 @@ begin
   if v_solde is null then raise exception 'Banque invalide.'; end if;
   if v_solde < p_montant then raise exception 'Trésorerie de la banque insuffisante.'; end if;
   update banques_nationales set tresorerie = tresorerie - p_montant where tag = p_banque_tag;
-  if p_treasorerie_cible = 'privee' then
+  if p_tresorerie_cible = 'privee' then
     update tresor_public set solde_prive = solde_prive + p_montant where id = 1;
   else
     update tresor_public set solde = solde + p_montant where id = 1;
   end if;
 end; $$;
+
 grant execute on function gouv_transferer_depuis_banque(char, numeric, text) to authenticated;
 
 create or replace function gouv_transferer_vers_banque(p_banque_tag char(1), p_montant numeric, p_treasorerie_preferee text default 'publique')
