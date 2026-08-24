@@ -1,4 +1,9 @@
 {
+  "name": "0.03 - Nouvelle Version Azgaar Standardisée",
+  "version": "0.03",
+  "author": "Roman Lafleur",
+  "description": "Preset personnalisé pour les cartes Azgaar sur le site d'Étalie",
+  
   "#map": {
     "background-color": "#0b1622",
     "filter": null,
