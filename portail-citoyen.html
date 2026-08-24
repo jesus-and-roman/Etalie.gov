@@ -81,6 +81,16 @@
   .pm-suivi-legs{ font-size:.78rem; margin-top:10px; }
   .pm-suivi-legs table{ width:100%; border-collapse:collapse; }
   .pm-suivi-legs th, .pm-suivi-legs td{ padding:5px 8px; border-bottom:1px solid var(--gris-ligne); text-align:left; }
+
+  /* Répertoire des récompenses */
+  .rc-grille{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:14px; margin-top:10px; }
+  .rc-carte-meritas{ border:2px solid var(--gris-ligne); border-radius:6px; padding:14px 10px; text-align:center; cursor:pointer; background:var(--blanc); transition:transform .15s; }
+  .rc-carte-meritas:hover{ transform:translateY(-3px); }
+  .rc-carte-meritas img{ width:64px; height:64px; object-fit:contain; margin:0 auto 8px; display:block; }
+  .rc-carte-meritas .rc-nom{ font-family:var(--police-titre); font-weight:600; font-size:.85rem; }
+  .rc-carte-meritas .rc-aft-nom{ color:#8a5a2f; }
+  .rc-carte-meritas .rc-date{ font-size:.68rem; color:var(--gris-ardoise); margin-top:4px; }
+  .rc-carte-meritas.rc-non-obtenu{ opacity:.45; filter:grayscale(1); }
 </style>
 </head>
 <body data-page="portail-citoyen">
@@ -845,6 +855,8 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="documents">Documents</button>
       <button data-onglet="contacter">Contacter</button>
       <button data-onglet="tableaubord">Tableau de bord</button>
+      <button data-onglet="argentattendu">Argent attendu</button>
+      <button data-onglet="recompenses">Répertoire des récompenses</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1112,6 +1124,8 @@ async function chargerTableauDeBord(utilisateur) {
     </div>
 
     ${panneauTableauBordHTML()}
+    ${panneauArgentAttenduHTML()}
+    ${panneauRecompensesHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1130,7 +1144,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1156,6 +1170,8 @@ async function chargerTableauDeBord(utilisateur) {
   if (citoyen.est_admin) initialiserPanneauAdmin();
   if (banquesAccessibles.length) initialiserPanneauPresse();
   initialiserPanneauTableauBord();
+  initialiserPanneauArgentAttendu();
+  initialiserPanneauRecompenses();
 
   demarrerTicker(utilisateur.id, citoyen);
 }
@@ -1912,19 +1928,63 @@ function initialiserPanneauAgent() {
     if (error) { resultat.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
     if (!data || data.length === 0) { resultat.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun citoyen trouvé pour ce CAS.</p>'; return; }
     const c = data[0];
+    const { data: fiche } = await sb.rpc('police_chercher_par_cas', { p_cas: codeEncrypte });
     resultat.innerHTML = `
       <table class="table-donnees">
         <tbody>
           <tr><td>Nom d'utilisateur</td><td>${escapeHtml(c.username)}</td></tr>
           <tr><td>Nom légal</td><td>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</td></tr>
           <tr><td>Courriel</td><td>${escapeHtml(c.email)}</td></tr>
-          <tr><td>Date de naissance</td><td>${c.date_naissance}</td></tr>
+          <tr><td>Date de naissance</td><td>${c.date_naissance}${fiche ? ' — ' + fiche.age_toutouien + ' ans toutouïens' : ''}</td></tr>
+          ${fiche && fiche.pays_naissance ? `<tr><td>Pays de naissance</td><td>${escapeHtml(fiche.pays_naissance)}</td></tr>` : ''}
+          ${fiche ? `<tr><td>UUID</td><td>${fiche.id}</td></tr><tr><td>Date d'inscription</td><td>${new Date(fiche.cree_le).toLocaleDateString('fr-FR')}</td></tr>` : ''}
           <tr><td>Trésorerie</td><td class="num">${Number(c.tresorerie).toFixed(2)} R$</td></tr>
           <tr><td>Dettes</td><td class="num">${Number(c.dettes).toFixed(2)} R$</td></tr>
           <tr><td>Prêts</td><td class="num">${Number(c.prets).toFixed(2)} R$</td></tr>
+          ${fiche ? `<tr><td>Argent attendu</td><td class="num">${Number(fiche.argent_attendu).toFixed(2)} R$</td></tr>
+          <tr><td>Économie gelée</td><td>${fiche.economie_gelee ? 'Oui' : 'Non'}</td></tr>
+          <tr><td>Messages gelés</td><td>${fiche.messages_geles ? 'Oui' : 'Non'}</td></tr>` : ''}
         </tbody>
       </table>
+      ${fiche ? `
+      <h4 style="margin-top:16px;">Diplômes tiers (DFTN1 / DFTN2 / DRAEE)</h4>
+      <table class="table-donnees">
+        <thead><tr><th>Formation</th><th>Niveau</th><th>Code</th><th>Date de fin</th></tr></thead>
+        <tbody>${fiche.diplomes_tiers.length ? fiche.diplomes_tiers.map(d => `<tr><td>${escapeHtml(d.formation)}</td><td>${d.niveau}</td><td>${d.code}</td><td>${d.date_fin||'—'}</td></tr>`).join('') : '<tr><td colspan="4">Aucun.</td></tr>'}</tbody>
+      </table>
+      <h4 style="margin-top:16px;">Contrats actifs (emprunts)</h4>
+      <table class="table-donnees">
+        <thead><tr><th>N° de suivi</th><th>Montant initial</th><th>Taux d'intérêt</th><th>Rôle</th></tr></thead>
+        <tbody>${fiche.contrats_actifs.length ? fiche.contrats_actifs.map(e => `<tr><td>${e.numero_suivi}</td><td class="num">${e.montant_initial!=null?Number(e.montant_initial).toFixed(2):'—'}</td><td class="num">${e.taux_interet!=null?Number(e.taux_interet).toFixed(2)+'%':'—'}</td><td>${e.role}</td></tr>`).join('') : '<tr><td colspan="4">Aucun.</td></tr>'}</tbody>
+      </table>
+      <h4 style="margin-top:16px;">Historique des virements</h4>
+      <table class="table-donnees">
+        <thead><tr><th>Type</th><th>De (UUID)</th><th>Vers (UUID)</th><th class="num">Montant</th><th>Date</th></tr></thead>
+        <tbody>${fiche.historique_virements.length ? fiche.historique_virements.map(v => `<tr><td>${v.type}</td><td>${v.expediteur_id}</td><td>${(v.destinataires||[]).join(', ')}</td><td class="num">${Number(v.montant_par_personne).toFixed(2)}</td><td>${new Date(v.cree_le).toLocaleDateString('fr-FR')}</td></tr>`).join('') : '<tr><td colspan="5">Aucun.</td></tr>'}</tbody>
+      </table>
+      <div class="pm-ligne-boutons" style="margin-top:16px;">
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-geler-eco="${fiche.id}" data-etat="${fiche.economie_gelee}">${fiche.economie_gelee ? 'Dégeler l\'économie' : 'Geler l\'économie'}</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-geler-msg="${fiche.id}" data-etat="${fiche.messages_geles}">${fiche.messages_geles ? 'Dégeler les messages' : 'Geler les messages'}</button>
+      </div>
+      <div id="ag-gel-message" style="margin-top:8px;"></div>
+      ` : ''}
     `;
+    const boutonEco = resultat.querySelector('[data-geler-eco]');
+    if (boutonEco) boutonEco.onclick = async () => {
+      const geler = boutonEco.dataset.etat !== 'true';
+      const { error } = await sb.rpc(geler ? 'police_geler_economie' : 'police_degeler_economie', { p_citoyen_id: boutonEco.dataset.gelerEco });
+      const msg = document.getElementById('ag-gel-message');
+      msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Fait.</p>`;
+      if (!error) document.getElementById('ag-rechercher').click();
+    };
+    const boutonMsg = resultat.querySelector('[data-geler-msg]');
+    if (boutonMsg) boutonMsg.onclick = async () => {
+      const geler = boutonMsg.dataset.etat !== 'true';
+      const { error } = await sb.rpc(geler ? 'police_geler_messages' : 'police_degeler_messages', { p_citoyen_id: boutonMsg.dataset.gelerMsg });
+      const msg = document.getElementById('ag-gel-message');
+      msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Fait.</p>`;
+      if (!error) document.getElementById('ag-rechercher').click();
+    };
   };
 
   document.getElementById('ag-m-envoyer').onclick = async () => {
@@ -2076,6 +2136,10 @@ function panneauAdminHTML() {
         <h3>Argent attendu (dette nationale)</h3>
         <p style="font-size:.82rem; color:var(--gris-ardoise);">Dette nationale totale : <strong id="a-dette-nationale">—</strong> R$</p>
         <div id="a-liste-attendu"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+        <div class="pc-champ" style="max-width:260px; margin-top:10px;">
+          <label for="a-attendu-montant-precis">Montant précis (une seule personne cochée, ≤ montant dû)</label>
+          <input type="number" id="a-attendu-montant-precis" min="0" placeholder="Laisser vide = payer le dû complet">
+        </div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer; margin-top:10px;" id="a-attendu-tout-cocher">Tout sélectionner</button>
         <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; margin-top:10px;" id="a-attendu-payer">Payer ses dûs</button>
         <div id="a-attendu-message"></div>
@@ -2095,6 +2159,27 @@ function panneauAdminHTML() {
           <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-prov-depuis">Depuis la banque</button>
         </div>
         <div id="a-prov-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Créer une taxe secondaire (argent attendu)</h3>
+        <div class="pc-champ"><label for="a-taxe-username">Nom d'utilisateur</label><input type="text" id="a-taxe-username"></div>
+        <div class="pc-champ"><label for="a-taxe-titre">Titre</label><input type="text" id="a-taxe-titre"></div>
+        <div class="pc-champ"><label for="a-taxe-description">Description</label><textarea id="a-taxe-description" rows="3"></textarea></div>
+        <div class="pc-champ"><label for="a-taxe-taxe">Montant taxé (au taux de revenu du citoyen)</label><input type="number" id="a-taxe-taxe" min="0" value="0"></div>
+        <div class="pc-champ"><label for="a-taxe-nontaxe">Montant non taxé</label><input type="number" id="a-taxe-nontaxe" min="0" value="0"></div>
+        <button class="bouton bouton-or" id="a-taxe-creer" style="border:none; cursor:pointer;">Créer</button>
+        <div id="a-taxe-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demandes de récompenses (RHPE / DRAEE) en attente</h3>
+        <div id="a-liste-demandes-recompenses"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demandes de formations tierces (AFT) en attente</h3>
+        <div id="a-liste-demandes-aft"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
       </div>
 
       <div class="pc-carte">
@@ -2326,6 +2411,81 @@ async function chargerTresoreriesProvinciales() {
   }
 }
 
+async function chargerDemandesRecompensesAdmin() {
+  const conteneur = document.getElementById('a-liste-demandes-recompenses');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_demandes_recompenses', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune demande en attente.</p>`; return; }
+  conteneur.innerHTML = data.map(d => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${d.type}</strong> (${RHPE_NOMS_CATEGORIES[d.categorie]||d.categorie}) — demandé par @${d.demandeur_username}</div>
+      <p class="pm-mini">Méritant : ${d.nom_meritant} — Raison : ${d.raison}</p>
+      <p class="pm-mini">Quand : ${d.quand||'—'} — Où : ${d.où||'—'} — Date : ${d.date_acte||'—'}</p>
+      <div class="pm-form-chargement">
+        <div class="pc-champ"><label>Réponse de la Direction</label><input type="text" data-rep-reponse="${d.id}"></div>
+        <div class="pc-champ"><label>Vérifié par (DIDRAHE, username)</label><input type="text" data-rep-verifie="${d.id}"></div>
+        <div class="pc-champ"><label>Supervisé par (DSRAHE, username)</label><input type="text" data-rep-supervise="${d.id}"></div>
+        <div class="pm-ligne-boutons">
+          <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-rep-accepter="${d.id}" data-cat="${d.categorie}" data-img="${(RHPE_CATALOGUE.find(r=>r.nom===d.type)||{}).image||''}">Accepter</button>
+          <button class="bouton bouton-contour" style="cursor:pointer;" data-rep-refuser="${d.id}">Refuser</button>
+        </div>
+        <div data-rep-msg="${d.id}"></div>
+      </div>
+    </div>
+  `).join('');
+  const longueurs = { rhpe_royale: 40, rhpe_excellence: 20, rhpe_base: 6, draee: 5 };
+  conteneur.querySelectorAll('[data-rep-accepter]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.repAccepter;
+    const { error } = await sb.rpc('gouv_traiter_demande_recompense', {
+      p_demande_id: id, p_decision: 'acceptee',
+      p_reponse: document.querySelector(`[data-rep-reponse="${id}"]`).value,
+      p_longueur_code: longueurs[b.dataset.cat] || 10,
+      p_image: b.dataset.img || null,
+      p_verifie_par_username: document.querySelector(`[data-rep-verifie="${id}"]`).value,
+      p_supervise_par_username: document.querySelector(`[data-rep-supervise="${id}"]`).value
+    });
+    const msg = document.querySelector(`[data-rep-msg="${id}"]`);
+    if (error) { msg.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+    chargerDemandesRecompensesAdmin();
+  });
+  conteneur.querySelectorAll('[data-rep-refuser]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.repRefuser;
+    const { error } = await sb.rpc('gouv_traiter_demande_recompense', {
+      p_demande_id: id, p_decision: 'refusee', p_reponse: document.querySelector(`[data-rep-reponse="${id}"]`).value,
+      p_longueur_code: null, p_image: null, p_verifie_par_username: null, p_supervise_par_username: null
+    });
+    if (error) alert(error.message); else chargerDemandesRecompensesAdmin();
+  });
+}
+
+async function chargerDemandesAftAdmin() {
+  const conteneur = document.getElementById('a-liste-demandes-aft');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_demandes_aft', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune demande en attente.</p>`; return; }
+  conteneur.innerHTML = data.map(f => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${f.nom}</strong> (${f.niveau}) — demandé par @${f.demandeur_username}</div>
+      <p class="pm-mini">Gestionnaires : ${(f.gestionnaires||[]).map(u=>'@'+u).join(', ') || '—'}</p>
+      <p class="pm-mini">${f.justification}</p>
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-aft-accepter="${f.id}">Accepter</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-aft-refuser="${f.id}">Refuser</button>
+      </div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-aft-accepter]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('gouv_traiter_demande_aft', { p_formation_id: b.dataset.aftAccepter, p_decision: 'acceptee' });
+    if (error) alert(error.message); else chargerDemandesAftAdmin();
+  });
+  conteneur.querySelectorAll('[data-aft-refuser]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('gouv_traiter_demande_aft', { p_formation_id: b.dataset.aftRefuser, p_decision: 'refusee' });
+    if (error) alert(error.message); else chargerDemandesAftAdmin();
+  });
+}
+
 function afficherZoneRedevance() {
   const zone = document.getElementById('a-redevance-zone');
   sb.rpc('dans_fenetre_redevance').then(({ data: dansFenetre }) => {
@@ -2380,6 +2540,20 @@ function initialiserPanneauAdmin() {
   chargerTresoreriesGouv();
   chargerArgentAttenduAdmin();
   chargerTresoreriesProvinciales();
+  chargerDemandesRecompensesAdmin();
+  chargerDemandesAftAdmin();
+
+  document.getElementById('a-taxe-creer').onclick = async () => {
+    const { error } = await sb.rpc('gouv_creer_taxe_secondaire', {
+      p_username: document.getElementById('a-taxe-username').value.trim(),
+      p_titre: document.getElementById('a-taxe-titre').value.trim(),
+      p_description: document.getElementById('a-taxe-description').value.trim(),
+      p_montant_taxe: Number(document.getElementById('a-taxe-taxe').value) || 0,
+      p_montant_non_taxe: Number(document.getElementById('a-taxe-nontaxe').value) || 0
+    });
+    const msg = document.getElementById('a-taxe-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Taxe secondaire créée.</p>`;
+  };
 
   document.getElementById('a-option-attendu-sauver').onclick = async () => {
     const { error } = await sb.rpc('gouv_definir_option_paiement', { p_option: Number(document.getElementById('a-option-attendu').value) });
@@ -2393,8 +2567,21 @@ function initialiserPanneauAdmin() {
     const ids = Array.from(document.querySelectorAll('[data-attendu-check]:checked')).map(c => c.dataset.attenduCheck);
     const msg = document.getElementById('a-attendu-message');
     if (!ids.length) { msg.innerHTML = `<p class="pc-erreur">Sélectionnez au moins un citoyen.</p>`; return; }
-    const { error } = await sb.rpc('gouv_payer_dus_selection', { p_citoyen_ids: ids });
-    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Paiement effectué.</p>`;
+    const montantPrecisVal = document.getElementById('a-attendu-montant-precis').value;
+    const montantPrecis = montantPrecisVal ? Number(montantPrecisVal) : null;
+    if (montantPrecis !== null && ids.length !== 1) {
+      msg.innerHTML = `<p class="pc-erreur">Un montant précis ne peut s'utiliser qu'avec une seule personne cochée.</p>`;
+      return;
+    }
+    const { data, error } = await sb.rpc('gouv_payer_dus_selection', { p_citoyen_ids: ids, p_montant_precis: montantPrecis });
+    if (error) { msg.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+    const totalPaye = (data || []).reduce((s, r) => s + Number(r.paye || 0), 0);
+    if (totalPaye <= 0) {
+      msg.innerHTML = `<p class="pc-erreur">Aucun paiement effectué : trésoreries du gouvernement insuffisantes.</p>`;
+    } else {
+      const incomplet = (data || []).some(r => Number(r.paye || 0) === 0);
+      msg.innerHTML = `<p class="pc-succes">${totalPaye.toFixed(2)} R$ payés.${incomplet ? ' (Certaines personnes n\'ont rien reçu, faute de fonds.)' : ''}</p>`;
+    }
     chargerArgentAttenduAdmin();
     chargerTresoreriesGouv();
   };
@@ -3358,6 +3545,325 @@ async function pmRendreTableauBordNational() {
     </table>
     <p class="pm-mini" style="margin-top:10px;">La référence du PIB se met à jour automatiquement tous les 59 jours. L'indice Palamöss (0 à 5 %) est un repère pour le rendement des contribuables.</p>
   `;
+}
+
+/* =====================================================================
+   CATALOGUE RHPE / DRAEE — géré directement ici (pas en base) pour que
+   vous puissiez en ajouter facilement. Ajoutez simplement une ligne.
+   ===================================================================== */
+const RHPE_CATALOGUE = [
+  { nom: "Médaille Dalma", categorie: "rhpe_royale", longueur_code: 40, image: "assets/rhpe/medaille-dalma.png" },
+  { nom: "Médaille d'honneur", categorie: "rhpe_excellence", longueur_code: 20, image: "assets/rhpe/medaille-dhonneur.png" },
+  { nom: "Médaille de sacrifice", categorie: "rhpe_excellence", longueur_code: 20, image: "assets/rhpe/medaille-de-sacrifice.png" },
+  { nom: "Médaille Laville", categorie: "rhpe_base", longueur_code: 6, image: "assets/rhpe/medaille-laville.png" },
+  { nom: "Médaille d'Expédition au Combat", categorie: "rhpe_base", longueur_code: 6, image: "assets/rhpe/medaille-dexpedition-au-combat.png" },
+  { nom: "Médaille honorifique", categorie: "rhpe_base", longueur_code: 6, image: "assets/rhpe/medaille-honorifique.png" },
+  { nom: "Diplôme d'études Scolaire", categorie: "draee", longueur_code: 5, image: "assets/rhpe/diplome-detudes-scolaire.png" },
+  { nom: "Diplôme d'étude Secondaire", categorie: "draee", longueur_code: 5, image: "assets/rhpe/diplome-detude-secondaire.png" }
+];
+const RHPE_COULEURS = { rhpe_royale: '#7c4dff', rhpe_excellence: '#c9a227', rhpe_base: '#9aa0aa', draee: '#2b2b2b' };
+const RHPE_NOMS_CATEGORIES = { rhpe_royale: 'RHPE royale', rhpe_excellence: 'RHPE d\'excellence', rhpe_base: 'RHPE de base', draee: 'DRAEE' };
+
+/* =====================================================================
+   ARGENT ATTENDU (visible par tous)
+   ===================================================================== */
+function panneauArgentAttenduHTML() {
+  return `<div id="onglet-argentattendu" class="pc-masque"><div class="pc-carte" id="aa-app"><p style="color:var(--gris-ardoise);">Chargement…</p></div></div>`;
+}
+
+async function initialiserPanneauArgentAttendu() {
+  const app = document.getElementById('aa-app');
+  const { data, error } = await sb.rpc('mes_argent_attendu');
+  if (error || !data) { app.innerHTML = `<p class="pc-erreur">${error ? error.message : 'Indisponible.'}</p>`; return; }
+  app.innerHTML = `
+    <h3>Argent attendu</h3>
+    <p style="font-family:var(--police-titre); font-size:1.8rem; color:var(--vert-nuit); margin:8px 0 18px;">${Number(data.total).toFixed(2)} R$</p>
+
+    <div class="pc-champ" style="border:1px solid var(--gris-ligne); padding:16px; margin-bottom:16px;">
+      <h4 style="margin-bottom:10px;">Attente de salaire</h4>
+      <table class="table-donnees">
+        <tr><td>Nombre de salaires prévus</td><td class="num">${data.salaire.nombre}</td></tr>
+        <tr><td>Salaire attendu brut</td><td class="num">${Number(data.salaire.brut).toFixed(2)} R$</td></tr>
+        <tr><td>Salaire attendu net (estimé)</td><td class="num">${Number(data.salaire.net).toFixed(2)} R$</td></tr>
+      </table>
+      <p class="pm-mini" style="margin-top:8px;">Le net est estimé sans la taxe gouvernementale, la taxe préventive (s'il y a lieu), et les taxes de chômage, retraite et parentalité — elles seront prélevées au moment où le gouvernement paiera.</p>
+    </div>
+
+    <div class="pc-champ" style="border:1px solid var(--gris-ligne); padding:16px;">
+      <h4 style="margin-bottom:10px;">Taxes secondaires</h4>
+      ${data.taxes_secondaires.length ? `
+      <table class="table-donnees">
+        <thead><tr><th>Titre</th><th>Description</th><th>Taxé</th><th class="num">Montant</th></tr></thead>
+        <tbody>${data.taxes_secondaires.map(t => `<tr><td>${t.titre||''}</td><td>${t.description||''}</td><td>${t.taxe?'Oui':'Non'}</td><td class="num">${Number(t.montant).toFixed(2)} R$</td></tr>`).join('')}</tbody>
+      </table>` : `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune taxe secondaire en attente.</p>`}
+    </div>
+  `;
+}
+
+/* =====================================================================
+   RÉPERTOIRE DES RÉCOMPENSES — vitrine RHPE/DRAEE + tiroir AFT
+   ===================================================================== */
+function panneauRecompensesHTML() {
+  return `
+    <div id="onglet-recompenses" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Répertoire des récompenses</h3>
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px;">
+          <div class="pc-champ" style="margin-bottom:0;"><label for="rc-username">Voir la vitrine de</label><input type="text" id="rc-username" placeholder="mon propre profil si vide"></div>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="rc-voir">Afficher</button>
+        </div>
+        <div id="rc-vitrine" class="rc-grille"></div>
+      </div>
+
+      <div class="pc-carte">
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="rc-tiroir-toggle">Ouvrir le tiroir (AFT)</button>
+        <div id="rc-tiroir" class="pm-masque" style="margin-top:16px;">
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <button class="bouton bouton-contour" id="rc-tiroir-mes" style="cursor:pointer;">Voir les miens</button>
+            <button class="bouton bouton-contour" id="rc-tiroir-tous" style="cursor:pointer;">Voir tout</button>
+          </div>
+          <div id="rc-tiroir-liste" class="rc-grille"></div>
+
+          <h4 style="margin-top:24px;">Mes formations gérées</h4>
+          <div id="rc-mes-formations"><p style="font-size:.85rem; color:var(--gris-ardoise);">Chargement…</p></div>
+        </div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demander une récompense (RHPE / DRAEE)</h3>
+        <div class="pc-champ"><label for="rc-dem-type">Récompense</label>
+          <select id="rc-dem-type">${RHPE_CATALOGUE.map((r,i) => `<option value="${i}">${r.nom} (${RHPE_NOMS_CATEGORIES[r.categorie]})</option>`).join('')}</select>
+        </div>
+        <div class="pc-champ"><label for="rc-dem-quand">Quand</label><input type="text" id="rc-dem-quand"></div>
+        <div class="pc-champ"><label for="rc-dem-ou">Où</label><input type="text" id="rc-dem-ou"></div>
+        <div class="pc-champ"><label for="rc-dem-affectee">Nom complet de la personne affectée (s'il y a lieu)</label><input type="text" id="rc-dem-affectee"></div>
+        <div class="pc-champ"><label for="rc-dem-meritant">Nom complet du méritant</label><input type="text" id="rc-dem-meritant"></div>
+        <div class="pc-champ"><label for="rc-dem-raison">Raison</label><textarea id="rc-dem-raison" rows="4"></textarea></div>
+        <div class="pc-champ"><label for="rc-dem-date">Date de l'acte</label><input type="date" id="rc-dem-date"></div>
+        <div class="pc-champ"><label for="rc-dem-heure">Heure de l'acte</label><input type="text" id="rc-dem-heure" placeholder="ex : 14h32"></div>
+        <div class="pc-champ"><label><input type="checkbox" id="rc-dem-fidelite"> Je promets fidélité au roi</label></div>
+        <div class="pc-champ"><label for="rc-dem-temoins">Témoins (noms, séparés par des virgules)</label><input type="text" id="rc-dem-temoins"></div>
+        <div class="pc-champ"><label for="rc-dem-preuves">Preuves ou références disponibles</label><input type="text" id="rc-dem-preuves"></div>
+        <div class="pc-champ"><label for="rc-dem-declaration">Déclaration sur l'honneur</label><textarea id="rc-dem-declaration" rows="2" placeholder="Je déclare que les informations fournies sont exactes et complètes."></textarea></div>
+        <button class="bouton bouton-or" id="rc-dem-envoyer" style="border:none; cursor:pointer;">Envoyer la demande à la DIDRAHE / DRAEE</button>
+        <div id="rc-dem-message" style="margin-top:10px;"></div>
+        <h4 style="margin-top:20px;">Mes demandes</h4>
+        <div id="rc-mes-demandes"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demander l'ajout d'une formation tierce (AFT)</h3>
+        <div class="pc-champ"><label for="rc-aft-nom">Nom de la formation</label><input type="text" id="rc-aft-nom"></div>
+        <div class="pc-champ"><label for="rc-aft-niveau">Niveau</label>
+          <select id="rc-aft-niveau"><option value="DFTN1">DFTN1 (non gouvernementale)</option><option value="DFTN2">DFTN2 (gouvernementale, sous un ministère)</option></select>
+        </div>
+        <div class="pc-champ"><label for="rc-aft-gestionnaires">Codes d'assurance sociaux des gestionnaires (séparés par des virgules)</label><input type="text" id="rc-aft-gestionnaires"></div>
+        <div class="pc-champ"><label for="rc-aft-justification">Justification (minimum 100 caractères)</label><textarea id="rc-aft-justification" rows="5"></textarea></div>
+        <button class="bouton bouton-or" id="rc-aft-envoyer" style="border:none; cursor:pointer;">Envoyer la demande</button>
+        <div id="rc-aft-message" style="margin-top:10px;"></div>
+      </div>
+
+      <div id="rc-detail-modal" class="pm-masque" style="position:fixed; inset:0; background:rgba(15,61,34,.7); z-index:999; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; max-width:560px; width:100%; max-height:85vh; overflow-y:auto; padding:26px; border-radius:4px;" id="rc-detail-contenu"></div>
+      </div>
+    </div>
+  `;
+}
+
+let rcTiroirMode = 'mes';
+
+async function initialiserPanneauRecompenses() {
+  document.getElementById('rc-voir').onclick = () => rcAfficherVitrine(document.getElementById('rc-username').value.trim() || null);
+  await rcAfficherVitrine(null);
+
+  document.getElementById('rc-tiroir-toggle').onclick = (e) => {
+    const tiroir = document.getElementById('rc-tiroir');
+    const ouvert = !tiroir.classList.contains('pm-masque');
+    tiroir.classList.toggle('pm-masque');
+    e.target.textContent = ouvert ? 'Ouvrir le tiroir (AFT)' : 'Fermer le tiroir (AFT)';
+    if (!ouvert) { rcAfficherTiroir(); rcAfficherMesFormations(); }
+  };
+  document.getElementById('rc-tiroir-mes').onclick = () => { rcTiroirMode = 'mes'; rcAfficherTiroir(); };
+  document.getElementById('rc-tiroir-tous').onclick = () => { rcTiroirMode = 'tous'; rcAfficherTiroir(); };
+
+  document.getElementById('rc-dem-envoyer').onclick = rcEnvoyerDemande;
+  document.getElementById('rc-aft-envoyer').onclick = rcEnvoyerDemandeAft;
+  await rcAfficherMesDemandes();
+
+  document.getElementById('rc-detail-modal').onclick = (e) => {
+    if (e.target.id === 'rc-detail-modal') e.target.classList.add('pm-masque');
+  };
+}
+
+async function rcAfficherVitrine(username) {
+  const conteneur = document.getElementById('rc-vitrine');
+  conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Chargement…</p>`;
+  const { data, error } = await sb.rpc('recompenses_vitrine', { p_username: username });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune récompense.</p>`; return; }
+  conteneur.innerHTML = data.map(a => `
+    <div class="rc-carte-meritas" data-attrib="${a.id}" style="border-color:${RHPE_COULEURS[a.categorie]||'#ccc'};">
+      <img src="${a.image||''}" alt="${a.type}" onerror="this.style.display='none'">
+      <div class="rc-nom" style="color:${RHPE_COULEURS[a.categorie]||'#333'};">${a.type}</div>
+      <div class="rc-date">${new Date(a.donne_le).toLocaleDateString('fr-FR')}</div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-attrib]').forEach(el => el.onclick = () => rcOuvrirDetail(el.dataset.attrib));
+}
+
+async function rcOuvrirDetail(attributionId) {
+  const { data, error } = await sb.rpc('recompenses_detail_attribution', { p_attribution_id: attributionId });
+  const modal = document.getElementById('rc-detail-modal');
+  const contenu = document.getElementById('rc-detail-contenu');
+  if (error || !data) { contenu.innerHTML = `<p class="pc-erreur">${error ? error.message : 'Introuvable.'}</p>`; modal.classList.remove('pm-masque'); return; }
+  const a = data.attribution, d = data.demande;
+  contenu.innerHTML = `
+    <h3 style="color:${RHPE_COULEURS[a.categorie]||'#333'};">${a.type}</h3>
+    <p class="pm-mini">${RHPE_NOMS_CATEGORIES[a.categorie]||''}</p>
+    ${d ? `
+    <table class="table-donnees" style="margin-top:14px;">
+      <tr><td>Numéro de suivi (demande)</td><td>${d.numero_suivi_demande||''}</td></tr>
+      <tr><td>Nom du méritant</td><td>${d.nom_meritant||''}</td></tr>
+      <tr><td>Personne affectée</td><td>${d.nom_personne_affectee||'—'}</td></tr>
+      <tr><td>Raison</td><td>${d.raison||''}</td></tr>
+      <tr><td>Quand / Où</td><td>${d.quand||''} — ${d.où||''}</td></tr>
+      <tr><td>Date / Heure de l'acte</td><td>${d.date_acte||''} ${d.heure_acte||''}</td></tr>
+      <tr><td>Promesse de fidélité</td><td>${d.promesse_fidelite ? 'Oui' : 'Non'}</td></tr>
+      <tr><td>Réponse de la Direction</td><td>${d.reponse||'—'}</td></tr>
+    </table>` : ''}
+    <table class="table-donnees" style="margin-top:14px;">
+      <tr><td>Numéro de suivi (méritas)</td><td>${a.numero_suivi_meritas}</td></tr>
+      <tr><td>Donné le</td><td>${new Date(a.donne_le).toLocaleString('fr-FR')}</td></tr>
+      <tr><td>Vérifié par (DIDRAHE)</td><td>${a.verifie_par||'—'}</td></tr>
+      <tr><td>Supervisé par (DSRAHE)</td><td>${a.supervise_par||'—'}</td></tr>
+    </table>
+    <button class="bouton bouton-contour" style="margin-top:16px; cursor:pointer;" onclick="document.getElementById('rc-detail-modal').classList.add('pm-masque')">Fermer</button>
+  `;
+  modal.classList.remove('pm-masque');
+}
+
+async function rcAfficherTiroir() {
+  const conteneur = document.getElementById('rc-tiroir-liste');
+  conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Chargement…</p>`;
+  const { data, error } = await sb.rpc('aft_tiroir', { p_username: null });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  const liste = rcTiroirMode === 'mes' ? (data||[]).filter(f => f.obtenu) : (data||[]);
+  if (!liste.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Rien à afficher.</p>`; return; }
+  conteneur.innerHTML = liste.map(f => `
+    <div class="rc-carte-meritas ${f.obtenu ? '' : 'rc-non-obtenu'}" data-aft="${f.formation_id}">
+      <div class="rc-nom rc-aft-nom">${f.nom}</div>
+      <div class="rc-date">${f.niveau}${f.obtenu ? ' — ' + (f.code||'') : ' — non obtenu'}</div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-aft]').forEach(el => {
+    const f = liste.find(x => x.formation_id === el.dataset.aft);
+    el.onclick = () => alert(
+      `${f.nom} (${f.niveau})\n` +
+      (f.obtenu
+        ? `Obtenu — code ${f.code}\nNote : ${f.note ?? '—'}\nDu ${f.date_debut||'?'} au ${f.date_fin||'?'}\nAttribué par : @${f.attribue_par_username||'?'}`
+        : `Non obtenu.`)
+    );
+  });
+}
+
+async function rcAfficherMesFormations() {
+  const conteneur = document.getElementById('rc-mes-formations');
+  const { data, error } = await sb.rpc('mes_formations_aft_gerees');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Vous ne gérez aucune formation.</p>`; return; }
+  conteneur.innerHTML = data.map(f => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${f.nom}</strong> (${f.niveau})
+        <button class="pc-lien" data-gerer-aft="${f.id}">Attribuer / voir les reçus</button>
+      </div>
+      <div data-aft-panneau="${f.id}"></div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-gerer-aft]').forEach(b => b.onclick = () => rcOuvrirGestionAft(b.dataset.gererAft));
+}
+
+async function rcOuvrirGestionAft(formationId) {
+  const panneau = document.querySelector(`[data-aft-panneau="${formationId}"]`);
+  const { data: recus } = await sb.rpc('aft_liste_recus', { p_formation_id: formationId });
+  panneau.innerHTML = `
+    <table class="table-donnees" style="margin:10px 0;">
+      <thead><tr><th>Utilisateur</th><th>Nom complet</th><th>Note</th><th>Code</th><th></th></tr></thead>
+      <tbody>${(recus||[]).map(r => `<tr><td>@${r.username}</td><td>${r.nom_complet}</td><td>${r.note??'—'}</td><td>${r.code}</td>
+        <td><button class="pc-lien" data-retirer-aft="${r.attribution_id}">Retirer</button></td></tr>`).join('') || '<tr><td colspan="5">Personne encore.</td></tr>'}</tbody>
+    </table>
+    <div class="pm-form-chargement">
+      <div class="pc-champ"><label>Code d'assurance social du destinataire</label><input type="text" data-aft-cas="${formationId}"></div>
+      <div class="pc-champ"><label>Justification</label><input type="text" data-aft-justif="${formationId}"></div>
+      <div class="pc-champ"><label>Note (ex : 87)</label><input type="number" data-aft-note="${formationId}"></div>
+      <div class="pc-champ"><label>Date début</label><input type="date" data-aft-debut="${formationId}"></div>
+      <div class="pc-champ"><label>Date fin</label><input type="date" data-aft-fin="${formationId}"></div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-aft-attribuer="${formationId}">Attribuer le diplôme</button>
+      <div data-aft-msg="${formationId}"></div>
+    </div>
+  `;
+  panneau.querySelectorAll('[data-retirer-aft]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('aft_retirer_attribution', { p_attribution_id: b.dataset.retirerAft });
+    if (error) alert(error.message); else rcOuvrirGestionAft(formationId);
+  });
+  panneau.querySelector(`[data-aft-attribuer="${formationId}"]`).onclick = async () => {
+    const cas = panneau.querySelector(`[data-aft-cas="${formationId}"]`).value.trim();
+    const justif = panneau.querySelector(`[data-aft-justif="${formationId}"]`).value.trim();
+    const note = panneau.querySelector(`[data-aft-note="${formationId}"]`).value;
+    const debut = panneau.querySelector(`[data-aft-debut="${formationId}"]`).value;
+    const fin = panneau.querySelector(`[data-aft-fin="${formationId}"]`).value;
+    const { error } = await sb.rpc('aft_attribuer', {
+      p_formation_id: formationId, p_cas_destinataire: encrypterCode(cas), p_note: note ? Number(note) : null,
+      p_justification: justif, p_date_debut: debut || null, p_date_fin: fin || null
+    });
+    const msg = panneau.querySelector(`[data-aft-msg="${formationId}"]`);
+    if (error) { msg.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+    rcOuvrirGestionAft(formationId);
+  };
+}
+
+async function rcEnvoyerDemande() {
+  const r = RHPE_CATALOGUE[Number(document.getElementById('rc-dem-type').value)];
+  const temoins = document.getElementById('rc-dem-temoins').value;
+  const preuves = document.getElementById('rc-dem-preuves').value;
+  const declaration = document.getElementById('rc-dem-declaration').value;
+  const { error } = await sb.rpc('recompenses_demander', {
+    p_type_nom: r.nom, p_categorie: r.categorie,
+    p_quand: document.getElementById('rc-dem-quand').value,
+    p_ou: document.getElementById('rc-dem-ou').value,
+    p_nom_personne_affectee: document.getElementById('rc-dem-affectee').value,
+    p_nom_meritant: document.getElementById('rc-dem-meritant').value,
+    p_raison: document.getElementById('rc-dem-raison').value,
+    p_date_acte: document.getElementById('rc-dem-date').value || null,
+    p_heure_acte: document.getElementById('rc-dem-heure').value,
+    p_promesse_fidelite: document.getElementById('rc-dem-fidelite').checked,
+    p_informations_supplementaires: { temoins, preuves, declaration }
+  });
+  const msg = document.getElementById('rc-dem-message');
+  msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Demande envoyée.</p>`;
+  if (!error) rcAfficherMesDemandes();
+}
+
+async function rcAfficherMesDemandes() {
+  const conteneur = document.getElementById('rc-mes-demandes');
+  const { data, error } = await sb.rpc('mes_demandes_recompenses');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  conteneur.innerHTML = (data||[]).length ? `
+    <table class="table-donnees">
+      <thead><tr><th>Récompense</th><th>Statut</th><th>Numéro de suivi</th></tr></thead>
+      <tbody>${data.map(d => `<tr><td>${d.type}</td><td>${d.statut}</td><td>${d.numero_suivi_demande}</td></tr>`).join('')}</tbody>
+    </table>` : `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune demande.</p>`;
+}
+
+async function rcEnvoyerDemandeAft() {
+  const cas = document.getElementById('rc-aft-gestionnaires').value.split(',').map(s => s.trim()).filter(Boolean).map(encrypterCode);
+  const { error } = await sb.rpc('aft_demander_formation', {
+    p_nom: document.getElementById('rc-aft-nom').value,
+    p_niveau: document.getElementById('rc-aft-niveau').value,
+    p_justification: document.getElementById('rc-aft-justification').value,
+    p_cas_gestionnaires: cas
+  });
+  const msg = document.getElementById('rc-aft-message');
+  msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Demande envoyée au gouvernement.</p>`;
 }
 
 demarrer();
