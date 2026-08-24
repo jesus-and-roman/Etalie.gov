@@ -1,4 +1,9 @@
 {
+  "name": "0.02B - Azgaar Étalien",
+  "version": "0.02.b",
+  "author": "Roman Lafleur",
+  "description": "Preset personnalisé pour les cartes Azgaar sur le site d'Étalie",
+  
   "#map": {
     "background-color": "#0b1622",
     "filter": null,
