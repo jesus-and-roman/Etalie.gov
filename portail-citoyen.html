@@ -857,6 +857,7 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="tableaubord">Tableau de bord</button>
       <button data-onglet="argentattendu">Argent attendu</button>
       <button data-onglet="recompenses">Répertoire des récompenses</button>
+      <button data-onglet="entreprise">Entreprise</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1126,6 +1127,7 @@ async function chargerTableauDeBord(utilisateur) {
     ${panneauTableauBordHTML()}
     ${panneauArgentAttenduHTML()}
     ${panneauRecompensesHTML()}
+    ${panneauEntrepriseHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1144,7 +1146,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1172,6 +1174,7 @@ async function chargerTableauDeBord(utilisateur) {
   initialiserPanneauTableauBord();
   initialiserPanneauArgentAttendu();
   initialiserPanneauRecompenses();
+  initialiserPanneauEntreprise();
 
   demarrerTicker(utilisateur.id, citoyen);
 }
@@ -2162,6 +2165,27 @@ function panneauAdminHTML() {
       </div>
 
       <div class="pc-carte">
+        <h3>Trésorerie des Contribuables</h3>
+        <div class="pc-champ" style="max-width:340px;"><label for="a-contrib-option">Option en vigueur</label>
+          <select id="a-contrib-option"><option value="T1">Traditionnelle (T1)</option><option value="M1">Moderne (M1)</option></select>
+        </div>
+        <div class="pm-ligne-boutons">
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-contrib-sauver">Enregistrer l'option</button>
+          <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-contrib-distribuer">Distribuer le rendement (X/Y)</button>
+          <button class="bouton bouton-contour" style="cursor:pointer;" id="a-contrib-ouvrir-contestation">Ouvrir une période de contestation</button>
+        </div>
+        <div id="a-contrib-message"></div>
+
+        <h4 style="margin-top:16px;">Contestations en attente</h4>
+        <div id="a-liste-contestations"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demandes d'entreprise en attente</h3>
+        <div id="a-liste-demandes-entreprises"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
         <h3>Créer une taxe secondaire (argent attendu)</h3>
         <div class="pc-champ"><label for="a-taxe-username">Nom d'utilisateur</label><input type="text" id="a-taxe-username"></div>
         <div class="pc-champ"><label for="a-taxe-titre">Titre</label><input type="text" id="a-taxe-titre"></div>
@@ -2486,6 +2510,78 @@ async function chargerDemandesAftAdmin() {
   });
 }
 
+async function chargerContribuablesAdmin() {
+  const { data } = await sb.from('tresorerie_contribuables').select('option_calcul').eq('id', 1).single();
+  const sel = document.getElementById('a-contrib-option');
+  if (sel && data) sel.value = data.option_calcul;
+
+  document.getElementById('a-contrib-sauver').onclick = async () => {
+    const { error } = await sb.rpc('gouv_definir_option_contribuables', { p_option: document.getElementById('a-contrib-option').value });
+    document.getElementById('a-contrib-message').innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Option enregistrée.</p>`;
+  };
+  document.getElementById('a-contrib-distribuer').onclick = async () => {
+    const { data: res, error } = await sb.rpc('admin_traiter_rendement_contribuables');
+    document.getElementById('a-contrib-message').innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">${res}</p>`;
+    chargerTresoreriesGouv();
+  };
+  document.getElementById('a-contrib-ouvrir-contestation').onclick = async () => {
+    const { error } = await sb.rpc('gouv_ouvrir_contestation_contribuables');
+    document.getElementById('a-contrib-message').innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Période de contestation ouverte (tableau masqué pour tous).</p>`;
+  };
+
+  const conteneur = document.getElementById('a-liste-contestations');
+  const { data: contestations, error: err2 } = await sb.from('contestations_contribuables').select('*').eq('statut', 'en_attente').order('cree_le');
+  if (err2) { conteneur.innerHTML = `<p class="pc-erreur">${err2.message}</p>`; return; }
+  if (!contestations || !contestations.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune contestation en attente.</p>`; return; }
+  conteneur.innerHTML = contestations.map(c => `
+    <div class="pm-fleet-item">
+      <p class="pm-mini">${c.raison}</p>
+      <div class="pm-form-chargement">
+        <div class="pc-champ"><label>Nouveau montant décidé par le Congrès (si acceptée)</label><input type="number" data-contest-montant="${c.id}"></div>
+        <div class="pm-ligne-boutons">
+          <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-contest-accepter="${c.id}">Accepter</button>
+          <button class="bouton bouton-contour" style="cursor:pointer;" data-contest-refuser="${c.id}">Refuser</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-contest-accepter]').forEach(b => b.onclick = async () => {
+    const montant = Number(document.querySelector(`[data-contest-montant="${b.dataset.contestAccepter}"]`).value);
+    const { error } = await sb.rpc('gouv_traiter_contestation_contribuables', { p_id: b.dataset.contestAccepter, p_decision: 'acceptee', p_nouveau_montant: montant });
+    if (error) alert(error.message); else chargerContribuablesAdmin();
+  });
+  conteneur.querySelectorAll('[data-contest-refuser]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('gouv_traiter_contestation_contribuables', { p_id: b.dataset.contestRefuser, p_decision: 'refusee' });
+    if (error) alert(error.message); else chargerContribuablesAdmin();
+  });
+}
+
+async function chargerDemandesEntreprisesAdmin() {
+  const conteneur = document.getElementById('a-liste-demandes-entreprises');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_demandes_entreprises', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune demande en attente.</p>`; return; }
+  conteneur.innerHTML = data.map(e => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${e.nom}</strong> (${e.code}) — demandé par @${e.fondateur_username}</div>
+      <p class="pm-mini">Siège(s) : ${e.sieges} — Vente : ${e.type_vente||'—'} / ${e.mode_vente||'—'}</p>
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-ent-accepter="${e.id}">Accepter</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-ent-refuser="${e.id}">Refuser</button>
+      </div>
+    </div>
+  `).join('');
+  conteneur.querySelectorAll('[data-ent-accepter]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('gouv_traiter_demande_entreprise', { p_entreprise_id: b.dataset.entAccepter, p_decision: 'acceptee' });
+    if (error) alert(error.message); else chargerDemandesEntreprisesAdmin();
+  });
+  conteneur.querySelectorAll('[data-ent-refuser]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('gouv_traiter_demande_entreprise', { p_entreprise_id: b.dataset.entRefuser, p_decision: 'refusee' });
+    if (error) alert(error.message); else chargerDemandesEntreprisesAdmin();
+  });
+}
+
 function afficherZoneRedevance() {
   const zone = document.getElementById('a-redevance-zone');
   sb.rpc('dans_fenetre_redevance').then(({ data: dansFenetre }) => {
@@ -2542,6 +2638,8 @@ function initialiserPanneauAdmin() {
   chargerTresoreriesProvinciales();
   chargerDemandesRecompensesAdmin();
   chargerDemandesAftAdmin();
+  chargerContribuablesAdmin();
+  chargerDemandesEntreprisesAdmin();
 
   document.getElementById('a-taxe-creer').onclick = async () => {
     const { error } = await sb.rpc('gouv_creer_taxe_secondaire', {
@@ -3531,6 +3629,8 @@ async function pmRendreTableauBordNational() {
   else if (variation < -0.05) { couleur = 'var(--rouge-etalie)'; signe = ''; }
   else { couleur = 'var(--gris-ardoise)'; signe = variation >= 0 ? '+' : ''; }
 
+  const { data: contribuables } = await sb.rpc('contribuables_x_y');
+
   app.innerHTML = `
     <h3>Tableau de bord national</h3>
     <p style="font-family:var(--police-titre); font-size:2rem; color:var(--vert-nuit); margin:10px 0 0;">${pmFormaterR(data.pib_actuel)} R$</p>
@@ -3544,7 +3644,45 @@ async function pmRendreTableauBordNational() {
       <tr><td>Dette nationale (argent attendu)</td><td class="num">${pmFormaterR(data.dette_nationale)} R$</td></tr>
     </table>
     <p class="pm-mini" style="margin-top:10px;">La référence du PIB se met à jour automatiquement tous les 59 jours. L'indice Palamöss (0 à 5 %) est un repère pour le rendement des contribuables.</p>
+
+    <h4 style="margin-top:22px;">Le Roiyal</h4>
+    <table class="table-donnees">
+      <tr><td>Valeur du Roiyal (R)</td><td class="num">${data.roiyal_valeur!=null?Number(data.roiyal_valeur).toFixed(4):'?'} %</td></tr>
+      <tr><td>Inflation</td><td class="num">${data.roiyal_inflation!=null?Number(data.roiyal_inflation).toFixed(4):'?'} %</td></tr>
+      <tr><td>Prix du gaz</td><td class="num">${data.prix_essence!=null?Number(data.prix_essence).toFixed(4):'?'} R$/L</td></tr>
+      <tr><td>Coût carburant</td><td class="num">${data.cout_carburant_km!=null?Number(data.cout_carburant_km).toFixed(6):'0.?'} R$/km</td></tr>
+    </table>
+
+    <h4 style="margin-top:22px;">Trésorerie des Contribuables</h4>
+    <div id="tb-contribuables"></div>
   `;
+  const zoneContrib = document.getElementById('tb-contribuables');
+  if (!contribuables || contribuables.en_contestation) {
+    zoneContrib.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Ce tableau est masqué pendant une période de contestation par le Congrès.</p>`;
+  } else {
+    zoneContrib.innerHTML = `
+      <table class="table-donnees">
+        <tr><td>Option en vigueur</td><td>${contribuables.option === 'T1' ? 'Traditionnelle (T1)' : 'Moderne (M1)'}</td></tr>
+        <tr><td>X — ${contribuables.option === 'T1' ? 'pour les travailleurs' : 'pour les entrepreneurs'}</td><td class="num">${pmFormaterR(contribuables.x)} R$</td></tr>
+        <tr><td>Y — vers la trésorerie publique</td><td class="num">${pmFormaterR(contribuables.y)} R$</td></tr>
+      </table>
+      <p class="pm-mini" style="margin-top:8px;">
+        Option T1 : X = 34 % des taxes préventives + gouvernementales collectées, réparti entre les citoyens ayant un salaire et au moins 500 R$ de taxes payées (max 5000 R$/personne).<br>
+        Option M1 : X est réparti entre les entreprises acceptées, proportionnellement à leur nombre d'employés.<br>
+        Le montant se remet à zéro à chaque rendement des contribuables (ou automatiquement tous les 59 jours).
+      </p>
+      <div class="pc-champ" style="max-width:420px; margin-top:12px;"><label for="tb-contestation-raison">Demander une contestation par le Congrès (une fois tous les 89 jours)</label>
+        <input type="text" id="tb-contestation-raison" placeholder="Raison de la contestation">
+      </div>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="tb-contestation-envoyer">Envoyer la contestation</button>
+      <div id="tb-contestation-message"></div>
+    `;
+    document.getElementById('tb-contestation-envoyer').onclick = async () => {
+      const { error } = await sb.rpc('demander_contestation_contribuables', { p_raison: document.getElementById('tb-contestation-raison').value });
+      const msg = document.getElementById('tb-contestation-message');
+      msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Contestation envoyée au gouvernement.</p>`;
+    };
+  }
 }
 
 /* =====================================================================
@@ -3863,6 +4001,182 @@ async function rcEnvoyerDemandeAft() {
     p_cas_gestionnaires: cas
   });
   const msg = document.getElementById('rc-aft-message');
+  msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Demande envoyée au gouvernement.</p>`;
+}
+
+/* =====================================================================
+   ENTREPRISE (visible par tous — création + gestion)
+   ===================================================================== */
+function panneauEntrepriseHTML() {
+  return `
+    <div id="onglet-entreprise" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mes entreprises</h3>
+        <div id="ent-mes-entreprises"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+        <div id="ent-detail"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Créer une entreprise</h3>
+        <div class="pc-champ"><label for="ent-nom">Nom de l'entreprise</label><input type="text" id="ent-nom"></div>
+        <div class="pc-champ"><label for="ent-cas">Votre code d'assurance social (fondateur)</label><input type="text" id="ent-cas"></div>
+        <div class="pc-champ"><label for="ent-depenses">Dépenses de la dernière année</label><input type="number" id="ent-depenses" min="0"></div>
+        <div class="pc-champ"><label for="ent-num-depenses">N° de papier d'impôt (dépenses)</label><input type="text" id="ent-num-depenses"></div>
+        <div class="pc-champ"><label for="ent-achats">Nombre d'achats de la dernière année</label><input type="number" id="ent-achats" min="0"></div>
+        <div class="pc-champ"><label for="ent-num-achats">N° de papier d'impôt (achats)</label><input type="text" id="ent-num-achats"></div>
+        <div class="pc-champ"><label for="ent-type-vente">Type de vente</label>
+          <select id="ent-type-vente"><option value="internationale">Internationale</option><option value="nationale">Nationale</option><option value="provincial">Provinciale</option><option value="districtal">Districtale</option><option value="municipal">Municipale</option></select>
+        </div>
+        <div class="pc-champ"><label for="ent-mode-vente">Mode de vente</label>
+          <select id="ent-mode-vente"><option value="digital">Digital</option><option value="physique">Physique</option></select>
+        </div>
+        <div class="pc-champ"><label for="ent-boutique-p">Boutique principale (lien ou adresse)</label><input type="text" id="ent-boutique-p"></div>
+        <div class="pc-champ"><label for="ent-boutique-s">Boutiques secondaires (séparées par des virgules)</label><input type="text" id="ent-boutique-s"></div>
+        <div class="pc-champ"><label for="ent-sieges">Siège(s) social (adresse complète — au moins un physique, obligatoire)</label><input type="text" id="ent-sieges"></div>
+        <div class="pc-champ"><label for="ent-employes">Travailleurs (nom complet:CAS, séparés par des virgules)</label><input type="text" id="ent-employes" placeholder="Jean Dupont:A-B-C/D-E-F..."></div>
+        <button class="bouton bouton-or" id="ent-creer" style="border:none; cursor:pointer;">Envoyer la demande</button>
+        <div id="ent-creer-message"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function initialiserPanneauEntreprise() {
+  await entRafraichirMesEntreprises();
+  document.getElementById('ent-creer').onclick = entCreerEntreprise;
+}
+
+async function entRafraichirMesEntreprises() {
+  const conteneur = document.getElementById('ent-mes-entreprises');
+  const { data, error } = await sb.rpc('mes_entreprises');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Vous n'êtes membre d'aucune entreprise acceptée.</p>`; return; }
+  conteneur.innerHTML = data.map(e => `
+    <div class="pm-fleet-item"><div class="entete">
+      <div><strong>${e.nom}</strong> (${e.code}) — ${e.type} — rôle : ${e.role}
+        <div class="pm-mini">Trésorerie : ${Number(e.tresorerie).toFixed(2)} R$</div></div>
+      <button class="pc-lien" data-ouvrir-ent="${e.id}">Gérer</button>
+    </div></div>
+  `).join('');
+  conteneur.querySelectorAll('[data-ouvrir-ent]').forEach(b => b.onclick = () => entOuvrirDetail(b.dataset.ouvrirEnt));
+}
+
+async function entOuvrirDetail(entrepriseId) {
+  const conteneur = document.getElementById('ent-detail');
+  const { data: e, error } = await sb.rpc('entreprise_detail', { p_entreprise_id: entrepriseId });
+  if (error || !e) { conteneur.innerHTML = `<p class="pc-erreur">${error ? error.message : 'Introuvable.'}</p>`; return; }
+  const gere = e.mon_role === 'pdg' || e.mon_role === 'co_pdg';
+  conteneur.innerHTML = `
+    <div class="pc-carte" style="background:var(--blanc-casse);">
+      <h4>${e.nom} (${e.code}) — ${e.type}</h4>
+      <p class="pm-mini">Sièges : ${e.sieges}</p>
+      <p style="font-family:var(--police-titre); font-size:1.4rem; color:var(--vert-nuit);">${Number(e.tresorerie).toFixed(2)} R$</p>
+      <table class="table-donnees">
+        <thead><tr><th>Membre</th><th>Nom complet</th><th>Rôle</th><th>Salaire/h</th>${gere ? '<th></th>' : ''}</tr></thead>
+        <tbody>${e.membres.map(m => `<tr><td>@${m.username}</td><td>${m.nom_complet}</td><td>${m.role}</td><td>${m.salaire_horaire??'—'}</td>
+          ${gere ? `<td>
+            <input type="number" style="width:70px;" placeholder="heures" data-payer-heures="${m.citoyen_id}">
+            <button class="pc-lien" data-payer="${m.citoyen_id}">Payer</button>
+            ${e.mon_role === 'pdg' ? `<button class="pc-lien" data-role="${m.citoyen_id}" data-nouveau-role="co_pdg">→ Co-PDG</button>
+            <button class="pc-lien" data-role="${m.citoyen_id}" data-nouveau-role="pdg">→ Transférer le PDG</button>` : ''}
+          </td>` : ''}
+        </tr>`).join('')}</tbody>
+      </table>
+      ${gere ? `
+      <div class="pm-form-chargement">
+        <h5>Ajouter un employé</h5>
+        <div class="pc-champ"><label>CAS</label><input type="text" id="ent-emp-cas"></div>
+        <div class="pc-champ"><label>Salaire horaire (min 18 R$/h)</label><input type="number" id="ent-emp-salaire" min="18"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-emp-ajouter">Ajouter</button>
+        <div id="ent-emp-message"></div>
+      </div>
+      <div class="pm-form-chargement">
+        <h5>Virement entrepreneur (0,15%, sans limite)</h5>
+        <div class="pc-champ"><label>Nom d'utilisateur destinataire</label><input type="text" id="ent-vir-username"></div>
+        <div class="pc-champ"><label>Montant</label><input type="number" id="ent-vir-montant" min="0"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-vir-envoyer">Envoyer</button>
+        <div id="ent-vir-message"></div>
+      </div>
+      <div class="pm-form-chargement">
+        <h5>Déposer un papier d'impôt</h5>
+        <div class="pc-champ"><label>Période</label><input type="text" id="ent-imp-periode" placeholder="ex : 2026-T1"></div>
+        <div class="pc-champ"><label>Bénéfices</label><input type="number" id="ent-imp-benefices"></div>
+        <div class="pc-champ"><label>Dépenses</label><input type="number" id="ent-imp-depenses"></div>
+        <div class="pc-champ"><label>Note</label><input type="text" id="ent-imp-note"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-imp-deposer">Déposer</button>
+        <div id="ent-imp-message"></div>
+      </div>
+      <h5 style="margin-top:14px;">Historique des dépôts d'impôts</h5>
+      <table class="table-donnees">
+        <thead><tr><th>Période</th><th class="num">Bénéfices</th><th class="num">Dépenses</th><th>Note</th></tr></thead>
+        <tbody>${e.depots_impots.map(d => `<tr><td>${d.periode}</td><td class="num">${Number(d.benefices).toFixed(2)}</td><td class="num">${Number(d.depenses).toFixed(2)}</td><td>${d.note||''}</td></tr>`).join('') || '<tr><td colspan="4">Aucun dépôt.</td></tr>'}</tbody>
+      </table>
+      ` : ''}
+    </div>
+  `;
+  if (!gere) return;
+  conteneur.querySelectorAll('[data-payer]').forEach(b => b.onclick = async () => {
+    const heures = Number(conteneur.querySelector(`[data-payer-heures="${b.dataset.payer}"]`).value) || 0;
+    const { error } = await sb.rpc('entreprise_payer_employe', { p_entreprise_id: entrepriseId, p_citoyen_id: b.dataset.payer, p_heures: heures });
+    if (error) alert(error.message); else entOuvrirDetail(entrepriseId);
+  });
+  conteneur.querySelectorAll('[data-role]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('entreprise_definir_role', { p_entreprise_id: entrepriseId, p_citoyen_id: b.dataset.role, p_role: b.dataset.nouveauRole });
+    if (error) alert(error.message); else entOuvrirDetail(entrepriseId);
+  });
+  document.getElementById('ent-emp-ajouter').onclick = async () => {
+    const { error } = await sb.rpc('entreprise_ajouter_employe', {
+      p_entreprise_id: entrepriseId, p_cas: encrypterCode(document.getElementById('ent-emp-cas').value),
+      p_salaire_horaire: Number(document.getElementById('ent-emp-salaire').value)
+    });
+    const msg = document.getElementById('ent-emp-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Ajouté.</p>`;
+    if (!error) entOuvrirDetail(entrepriseId);
+  };
+  document.getElementById('ent-vir-envoyer').onclick = async () => {
+    const { error } = await sb.rpc('virement_entrepreneur', {
+      p_entreprise_id: entrepriseId, p_destinataire_username: document.getElementById('ent-vir-username').value,
+      p_montant: Number(document.getElementById('ent-vir-montant').value)
+    });
+    const msg = document.getElementById('ent-vir-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Virement envoyé.</p>`;
+    if (!error) entOuvrirDetail(entrepriseId);
+  };
+  document.getElementById('ent-imp-deposer').onclick = async () => {
+    const { error } = await sb.rpc('entreprise_deposer_impot', {
+      p_entreprise_id: entrepriseId, p_periode: document.getElementById('ent-imp-periode').value,
+      p_benefices: Number(document.getElementById('ent-imp-benefices').value) || 0,
+      p_depenses: Number(document.getElementById('ent-imp-depenses').value) || 0,
+      p_note: document.getElementById('ent-imp-note').value
+    });
+    const msg = document.getElementById('ent-imp-message');
+    msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Déposé.</p>`;
+    if (!error) entOuvrirDetail(entrepriseId);
+  };
+}
+
+async function entCreerEntreprise() {
+  const employesTexte = document.getElementById('ent-employes').value;
+  const employes = employesTexte.split(',').map(s => s.trim()).filter(Boolean).map(paire => {
+    const idx = paire.lastIndexOf(':');
+    return idx === -1 ? null : { nom: paire.slice(0, idx).trim(), cas: encrypterCode(paire.slice(idx + 1).trim()) };
+  }).filter(Boolean);
+
+  const { error } = await sb.rpc('entreprise_demander', {
+    p_nom: document.getElementById('ent-nom').value,
+    p_depenses: Number(document.getElementById('ent-depenses').value) || null,
+    p_num_papier_depenses: document.getElementById('ent-num-depenses').value,
+    p_achats: Number(document.getElementById('ent-achats').value) || null,
+    p_num_papier_achats: document.getElementById('ent-num-achats').value,
+    p_type_vente: document.getElementById('ent-type-vente').value,
+    p_mode_vente: document.getElementById('ent-mode-vente').value,
+    p_boutique_principale: document.getElementById('ent-boutique-p').value,
+    p_boutiques_secondaires: document.getElementById('ent-boutique-s').value,
+    p_sieges: document.getElementById('ent-sieges').value,
+    p_fondateur_cas: encrypterCode(document.getElementById('ent-cas').value),
+    p_employes: employes
+  });
+  const msg = document.getElementById('ent-creer-message');
   msg.innerHTML = error ? `<p class="pc-erreur">${error.message}</p>` : `<p class="pc-succes">Demande envoyée au gouvernement.</p>`;
 }
 
