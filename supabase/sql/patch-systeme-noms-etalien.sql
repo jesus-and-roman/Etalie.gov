@@ -84,7 +84,7 @@ returns boolean
 language sql
 immutable
 as $$
-  select p_nom ~
+  select p_nom ~ (
     '^(?:' ||
 
     -- Complet-1
@@ -112,7 +112,8 @@ as $$
     '[A-EG-IKM-PR-WYZÄÖÍÜËŔ][a-eg-ikm-pr-wyzäöíüëŕ]* hw\. ' ||
     '[A-EG-IKM-PR-WYZ]\.' ||
 
-    ')$';
+    ')$'
+  );
 $$;
 
 
