@@ -40,23 +40,56 @@
 -- ============================================================
 -- 1) CORRECTIONS
 -- ============================================================
-create or replace function gouv_transferer_depuis_banque(p_banque_tag char(1), p_montant numeric, p_treasorerie_cible text default 'publique')
+DROP FUNCTION IF EXISTS gouv_transferer_depuis_banque(char, numeric, text);
+
+create or replace function gouv_transferer_depuis_banque(
+  p_banque_tag char(1),
+  p_montant numeric,
+  p_tresorerie_cible text default 'publique'
+)
 returns void language plpgsql security definer set search_path = public as $$
 declare v_solde numeric;
 begin
-  if not est_admin_actuel() then raise exception 'Accès refusé : réservé au gouvernement.'; end if;
-  if p_montant <= 0 then raise exception 'Montant invalide.'; end if;
-  select tresorerie into v_solde from banques_nationales where tag = p_banque_tag for update;
-  if v_solde is null then raise exception 'Banque invalide.'; end if;
-  if v_solde < p_montant then raise exception 'Trésorerie de la banque insuffisante.'; end if;
-  update banques_nationales set tresorerie = tresorerie - p_montant where tag = p_banque_tag;
-  if p_treasorerie_cible = 'privee' then
-    update tresor_public set solde_prive = solde_prive + p_montant where id = 1;
-  else
-    update tresor_public set solde = solde + p_montant where id = 1;
+  if not est_admin_actuel() then
+    raise exception 'Accès refusé : réservé au gouvernement.';
   end if;
-end; $$;
-grant execute on function gouv_transferer_depuis_banque(char, numeric, text) to authenticated;
+
+  if p_montant <= 0 then
+    raise exception 'Montant invalide.';
+  end if;
+
+  select tresorerie
+  into v_solde
+  from banques_nationales
+  where tag = p_banque_tag
+  for update;
+
+  if v_solde is null then
+    raise exception 'Banque invalide.';
+  end if;
+
+  if v_solde < p_montant then
+    raise exception 'Trésorerie de la banque insuffisante.';
+  end if;
+
+  update banques_nationales
+  set tresorerie = tresorerie - p_montant
+  where tag = p_banque_tag;
+
+  if p_tresorerie_cible = 'privee' then
+    update tresor_public
+    set solde_prive = solde_prive + p_montant
+    where id = 1;
+  else
+    update tresor_public
+    set solde = solde + p_montant
+    where id = 1;
+  end if;
+end;
+$$;
+
+grant execute on function gouv_transferer_depuis_banque(char, numeric, text)
+to authenticated;
 
 -- Le renflouement automatique ignore désormais les débits faits pour payer
 -- un civil (drapeau local à la transaction, jamais visible ailleurs).
@@ -463,7 +496,7 @@ create or replace function mes_entreprises()
 returns jsonb language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
     'id', e.id, 'code', e.code, 'nom', e.nom, 'role', m.role, 'tresorerie', e.tresorerie,
-    'type', _type_entreprise((select count(*) from entreprises_membres m2 where m2.entreprise_id = e.id))
+    'type', _type_entreprise((select count(*)::int from entreprises_membres m2 where m2.entreprise_id = e.id))
   )), '[]'::jsonb)
   from entreprises_membres m join entreprises e on e.id = m.entreprise_id
   where m.citoyen_id = auth.uid() and e.statut = 'acceptee';
