@@ -260,18 +260,51 @@ let _registreCasCache = null;
 function parserLigneCAS(ligne) {
   const l = ligne.trim();
   if (!l) return null;
-  const m = l.match(/^(.*?)\$\$\$(.*?)###(.*?)@@@(\d+)&&&(\d{1,2})\*(\d{1,2})\?(\d{4})=(O|N)\/police(O|N)\/\[(\d+(?:,\d+)?)\]$/);
+
+  const m = l.match(
+    /^(.*?)\$\$\$(.*?)###(.*?)(?:%%%(.+?))?@@@(\d+)&&&(\d{1,2})\*(\d{1,2})\?(\d{4})=(O|N)\/police(O|N)\/\[(\d+(?:,\d+)?)\]$/
+  );
+
   if (!m) return null;
-  const [, codeEncrypte, nom, prenom, chiffre, jour, mois, annee, gouv, police, salaireStr] = m;
+
+  const [
+    ,
+    codeEncrypte,
+    aufNam,
+    dwaiNam,
+    triusNam,
+    chiffre,
+    jour,
+    mois,
+    annee,
+    gouv,
+    police,
+    salaireStr
+  ] = m;
+
+  const auf = aufNam.trim().toUpperCase();
+  const dwai = dwaiNam.trim().toUpperCase();
+  const trius = triusNam ? triusNam.trim().toUpperCase() : null;
+
   return {
     code_encrypte: codeEncrypte.trim(),
-    nom: nom.trim().toUpperCase(),
-    prenom: prenom.trim().toUpperCase(),
+
+    auf_nam: auf,
+    dwai_nam: dwai,
+    trius_nam: trius,
+
+    nom_complet: trius
+      ? `${auf} ${dwai} HWOL ${trius}`
+      : `${auf} ${dwai}`,
+
     chiffre: parseInt(chiffre, 10),
-    date_expiration: `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`,
+
+    date_expiration:
+      `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`,
+
     protege_gouvernement: gouv === 'O',
     police: police === 'O',
-    salaire: parseFloat(salaireStr.replace(',', '.')),
+    salaire: parseFloat(salaireStr.replace(',', '.'))
   };
 }
 
@@ -375,21 +408,30 @@ function afficherConnexion(messageErreur) {
           <input type="text" id="i-cas" placeholder="982-391-743">
         </div>
         <div class="pc-champ">
-          <label for="i-nom">Nom de famille (légal)</label>
-          <input type="text" id="i-nom">
-        </div>
-        <div class="pc-champ">
-          <label for="i-prenom">Prénom (légal)</label>
-          <input type="text" id="i-prenom">
-        </div>
+  <label for="i-nom-complet">Nom légal complet</label>
+  <input
+    type="text"
+    id="i-nom-complet"
+    placeholder="Benk Margus hwol Gucie"
+    autocomplete="name"
+  >
+  <small style="color:var(--gris-ardoise);">
+    2 à 4 mots selon les règles de nom étaliennes.
+  </small>
+</div>
         <div class="pc-champ">
           <label for="i-username">Nom d'utilisateur</label>
           <input type="text" id="i-username" autocomplete="username">
         </div>
-        <div class="pc-champ">
-          <label for="i-email">Adresse courriel (recommandé — récupération de mot de passe)</label>
-          <input type="email" id="i-email" autocomplete="email">
-        </div>
+<div class="pc-champ">
+  <label for="i-email">
+    Adresse courriel <span style="color:var(--gris-ardoise);">(optionnelle)</span>
+  </label>
+  <input type="email" id="i-email" autocomplete="email">
+  <small style="color:var(--gris-ardoise);">
+    Recommandée pour récupérer votre mot de passe.
+  </small>
+</div>
         <div class="pc-champ">
           <label for="i-naissance">Date de naissance réelle</label>
           <input type="date" id="i-naissance">
@@ -644,7 +686,7 @@ async function tenterConnexion() {
 
 async function tenterInscription() {
   const casEntre = document.getElementById('i-cas').value.trim();
-  const nom = document.getElementById('i-nom').value.trim();
+  const nomComplet = document.getElementById('i-nom-complet').value.trim();
   const prenom = document.getElementById('i-prenom').value.trim();
   const username = document.getElementById('i-username').value.trim();
   const email = document.getElementById('i-email').value.trim();
@@ -653,10 +695,18 @@ async function tenterInscription() {
   const mdp = document.getElementById('i-mdp').value;
   const msg = document.getElementById('i-message');
 
-  if (!casEntre || !nom || !prenom || !username || !email || !naissance || !province || !mdp) {
+if (!casEntre || !nomComplet || !username || !naissance || !province || !mdp) {
     msg.innerHTML = '<p class="pc-erreur">Tous les champs sont obligatoires.</p>';
     return;
   }
+  if (
+  nomComplet.toUpperCase() !==
+  enregistrement.nom_complet.toUpperCase()
+) {
+  msg.innerHTML =
+    '<p class="pc-erreur">Le nom légal ne correspond pas au code d\'assurance social.</p>';
+  return;
+}
   msg.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Vérification en cours…</p>';
 
   const codeEncrypte = encrypterCode(casEntre);
