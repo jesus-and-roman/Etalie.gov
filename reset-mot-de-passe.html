@@ -20,6 +20,7 @@
 </style>
 </head>
 <body>
+
 <div class="bandeau-utilitaire">
   <div class="conteneur">
     <span><span class="puce"></span>République d'Étalie — Site officiel du gouvernement</span>
@@ -29,6 +30,7 @@
     </div>
   </div>
 </div>
+
 <div class="tricolore"><span></span><span></span><span></span></div>
 
 <header class="entete">
@@ -53,9 +55,14 @@
 <section class="section" style="padding-top:12px;">
   <div class="conteneur">
     <div class="reset-carte">
+
       <div id="verification">
         <h3>Vérifier votre identité</h3>
-        <p class="reset-note">Entrez le courriel associé au compte et votre Code d'Assurance Social. Si les deux correspondent, vous pourrez choisir un nouveau mot de passe.</p>
+
+        <p class="reset-note">
+          Entrez le courriel associé au compte et votre Code d'Assurance Social.
+          Si les deux correspondent, vous pourrez choisir un nouveau mot de passe.
+        </p>
 
         <div class="reset-champ">
           <label for="email">Adresse courriel</label>
@@ -68,28 +75,60 @@
         </div>
 
         <div id="verification-msg" class="reset-msg" role="alert"></div>
-        <button id="verifier" class="bouton bouton-or" style="border:none;cursor:pointer;width:100%;">Vérifier</button>
+
+        <button
+          id="verifier"
+          class="bouton bouton-or"
+          style="border:none;cursor:pointer;width:100%;"
+        >
+          Vérifier
+        </button>
       </div>
 
       <div id="changement" class="reset-cache">
         <h3>Nouveau mot de passe</h3>
-        <p class="reset-note">Votre identité a été vérifiée. Choisissez maintenant votre nouveau mot de passe.</p>
+
+        <p class="reset-note">
+          Votre identité a été vérifiée. Choisissez maintenant votre nouveau mot de passe.
+        </p>
 
         <div class="reset-champ">
           <label for="nouveau-mdp">Nouveau mot de passe</label>
-          <input id="nouveau-mdp" type="password" autocomplete="new-password" minlength="8" required>
+          <input
+            id="nouveau-mdp"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          >
         </div>
 
         <div class="reset-champ">
           <label for="confirmation-mdp">Confirmer le mot de passe</label>
-          <input id="confirmation-mdp" type="password" autocomplete="new-password" minlength="8" required>
+          <input
+            id="confirmation-mdp"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          >
         </div>
 
         <div id="changement-msg" class="reset-msg" role="alert"></div>
-        <button id="changer" class="bouton bouton-or" style="border:none;cursor:pointer;width:100%;">Changer le mot de passe</button>
+
+        <button
+          id="changer"
+          class="bouton bouton-or"
+          style="border:none;cursor:pointer;width:100%;"
+        >
+          Changer le mot de passe
+        </button>
       </div>
 
-      <p style="margin-top:22px;font-size:.8rem;"><a href="portail-citoyen.html">← Retour au portail citoyen</a></p>
+      <p style="margin-top:22px;font-size:.8rem;">
+        <a href="portail-citoyen.html">← Retour au portail citoyen</a>
+      </p>
+
     </div>
   </div>
 </section>
@@ -104,31 +143,47 @@
 </footer>
 
 <script>
-  const FUNCTION_URL =
+const FUNCTION_URL =
   "https://voomgxyfozebpztmiavv.supabase.co/functions/v1/reset-password";
 
 const SUPABASE_ANON_KEY =
   "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
 
 const TABLE_CAS = {
-  '1':'Q','2':'E','3':'Z','4':'V','5':'X',
-  '6':'T','7':'H','8':'N','9':'B','0':'K'
+  '1': 'Q',
+  '2': 'E',
+  '3': 'Z',
+  '4': 'V',
+  '5': 'X',
+  '6': 'T',
+  '7': 'H',
+  '8': 'N',
+  '9': 'B',
+  '0': 'K'
 };
 
 function encrypterCode(str) {
-  let out = '', dernierEtaitLettre = false;
+  let out = '';
+  let dernierEtaitLettre = false;
+
   for (const ch of String(str)) {
     if (TABLE_CAS[ch]) {
-      if (dernierEtaitLettre) out += '-';
+      if (dernierEtaitLettre) {
+        out += '-';
+      }
+
       out += TABLE_CAS[ch];
       dernierEtaitLettre = true;
+
     } else if (ch === ' ' || ch === '-') {
       out += '/';
       dernierEtaitLettre = false;
+
     } else {
       dernierEtaitLettre = false;
     }
   }
+
   return out;
 }
 
@@ -149,97 +204,128 @@ async function verifierIdentite() {
 
   verificationMsg.className = 'reset-msg';
   verificationMsg.textContent = 'Vérification…';
+
   document.getElementById('verifier').disabled = true;
 
   try {
-const reponse = await fetch(FUNCTION_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON_KEY
-  },
-  body: JSON.stringify({
-    action: 'verify',
-    email,
-    code_social: encrypterCode(cas)
-  })
-});
+    const reponse = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
       body: JSON.stringify({
         action: 'verify',
         email,
         code_social: encrypterCode(cas)
       })
     });
+
     const resultat = await reponse.json().catch(() => ({}));
 
     if (!reponse.ok || !resultat.verified) {
-      throw new Error(resultat.error || 'Courriel ou Code d’Assurance Social invalide.');
+      throw new Error(
+        resultat.error ||
+        'Courriel ou Code d’Assurance Social invalide.'
+      );
     }
 
     verification.classList.add('reset-cache');
     changement.classList.remove('reset-cache');
+
     document.getElementById('nouveau-mdp').focus();
+
   } catch (e) {
     verificationMsg.className = 'reset-msg reset-erreur';
     verificationMsg.textContent = e.message;
+
     document.getElementById('verifier').disabled = false;
   }
 }
 
 async function changerMotDePasse() {
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const cas = document.getElementById('cas').value.trim();
-  const mdp = document.getElementById('nouveau-mdp').value;
-  const confirmation = document.getElementById('confirmation-mdp').value;
+  const email =
+    document.getElementById('email').value.trim().toLowerCase();
+
+  const cas =
+    document.getElementById('cas').value.trim();
+
+  const mdp =
+    document.getElementById('nouveau-mdp').value;
+
+  const confirmation =
+    document.getElementById('confirmation-mdp').value;
 
   if (mdp.length < 8) {
     changementMsg.className = 'reset-msg reset-erreur';
-    changementMsg.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+    changementMsg.textContent =
+      'Le mot de passe doit contenir au moins 8 caractères.';
     return;
   }
+
   if (mdp !== confirmation) {
     changementMsg.className = 'reset-msg reset-erreur';
-    changementMsg.textContent = 'Les deux mots de passe ne correspondent pas.';
+    changementMsg.textContent =
+      'Les deux mots de passe ne correspondent pas.';
     return;
   }
 
   changementMsg.className = 'reset-msg';
   changementMsg.textContent = 'Modification…';
+
   document.getElementById('changer').disabled = true;
 
   try {
-const reponse = await fetch(FUNCTION_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON_KEY
-  },
-  body: JSON.stringify({
-    action: 'reset',
-    email,
-    code_social: encrypterCode(cas),
-    password: mdp
-  })
-});
+    const reponse = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        action: 'reset',
+        email,
+        code_social: encrypterCode(cas),
+        password: mdp
+      })
+    });
+
     const resultat = await reponse.json().catch(() => ({}));
 
     if (!reponse.ok || !resultat.success) {
-      throw new Error(resultat.error || 'Impossible de modifier le mot de passe.');
+      throw new Error(
+        resultat.error ||
+        'Impossible de modifier le mot de passe.'
+      );
     }
 
     changementMsg.className = 'reset-msg reset-succes';
-    changementMsg.textContent = 'Mot de passe modifié avec succès. Vous pouvez maintenant vous connecter.';
+
+    changementMsg.textContent =
+      'Mot de passe modifié avec succès. Vous pouvez maintenant vous connecter.';
+
     document.getElementById('changer').disabled = true;
-    setTimeout(() => { window.location.href = 'portail-citoyen.html'; }, 1600);
+
+    setTimeout(() => {
+      window.location.href = 'portail-citoyen.html';
+    }, 1600);
+
   } catch (e) {
     changementMsg.className = 'reset-msg reset-erreur';
     changementMsg.textContent = e.message;
+
     document.getElementById('changer').disabled = false;
   }
 }
 
-document.getElementById('verifier').addEventListener('click', verifierIdentite);
-document.getElementById('changer').addEventListener('click', changerMotDePasse);
+document
+  .getElementById('verifier')
+  .addEventListener('click', verifierIdentite);
+
+document
+  .getElementById('changer')
+  .addEventListener('click', changerMotDePasse);
 </script>
+
 </body>
 </html>
