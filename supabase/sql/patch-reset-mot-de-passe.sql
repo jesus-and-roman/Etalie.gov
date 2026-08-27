@@ -1,0 +1,20 @@
+-- ============================================================
+-- patch-reset-mot-de-passe.sql
+--
+-- Rien à exécuter pour la modification du mot de passe elle-même :
+-- l'Edge Function reset-password utilise SUPABASE_SERVICE_ROLE_KEY
+-- et supabase.auth.admin.updateUserById(), ce qui modifie le mot de
+-- passe géré par Supabase Auth (auth.users).
+--
+-- Ce fichier documente volontairement l'architecture :
+--   public.citoyens.email
+--        +
+--   public.citoyens.code_social_encrypte
+--        ↓ vérification côté Edge Function
+--   auth.users.id
+--        ↓ admin API Supabase
+--   mot de passe Auth
+--
+-- NE PAS créer une table users parallèle ni écrire directement dans
+-- auth.users.encrypted_password depuis le navigateur.
+-- ============================================================
