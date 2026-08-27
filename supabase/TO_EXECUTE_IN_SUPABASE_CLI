@@ -1,0 +1,1 @@
+supabase functions deploy reset-password --no-verify-jwt
