@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réinitialisation du mot de passe — Étalie</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .reset-carte{max-width:520px;margin:36px auto;background:var(--blanc);border:1px solid var(--gris-ligne);padding:28px}
+  .reset-carte h3{font-family:var(--police-titre);color:var(--vert-nuit);margin-bottom:10px}
+  .reset-champ{margin:16px 0}
+  .reset-champ label{display:block;font-family:var(--police-util);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--or-laiton);margin-bottom:6px}
+  .reset-champ input{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--gris-ligne);border-radius:2px;font-size:.95rem;background:var(--blanc)}
+  .reset-msg{margin:12px 0;font-size:.86rem}
+  .reset-erreur{color:var(--rouge-etalie)}
+  .reset-succes{color:var(--vert-institut)}
+  .reset-cache{display:none}
+  .reset-note{font-size:.8rem;color:var(--gris-ardoise);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="bandeau-utilitaire">
+  <div class="conteneur">
+    <span><span class="puce"></span>République d'Étalie — Site officiel du gouvernement</span>
+    <div class="liens-util">
+      <a href="index.html">Accueil</a>
+      <a href="portail-citoyen.html">Mon espace citoyen</a>
+    </div>
+  </div>
+</div>
+<div class="tricolore"><span></span><span></span><span></span></div>
+
+<header class="entete">
+  <div class="conteneur">
+    <div class="identite">
+      <img alt="Blason d'Étalie" height="58" width="44" src="assets/blason-etalie.png" style="object-fit:contain;">
+      <div class="texte-identite">
+        <span class="surtitre">République d'Étalie</span>
+        <h1>Étalie</h1>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="entete-page">
+  <div class="conteneur">
+    <span class="surtitre">Portail citoyen</span>
+    <h2>Réinitialiser le mot de passe</h2>
+  </div>
+</div>
+
+<section class="section" style="padding-top:12px;">
+  <div class="conteneur">
+    <div class="reset-carte">
+      <div id="verification">
+        <h3>Vérifier votre identité</h3>
+        <p class="reset-note">Entrez le courriel associé au compte et votre Code d'Assurance Social. Si les deux correspondent, vous pourrez choisir un nouveau mot de passe.</p>
+
+        <div class="reset-champ">
+          <label for="email">Adresse courriel</label>
+          <input id="email" type="email" autocomplete="email" required>
+        </div>
+
+        <div class="reset-champ">
+          <label for="cas">Code d'Assurance Social</label>
+          <input id="cas" type="text" inputmode="numeric" autocomplete="off" placeholder="982-391-743" required>
+        </div>
+
+        <div id="verification-msg" class="reset-msg" role="alert"></div>
+        <button id="verifier" class="bouton bouton-or" style="border:none;cursor:pointer;width:100%;">Vérifier</button>
+      </div>
+
+      <div id="changement" class="reset-cache">
+        <h3>Nouveau mot de passe</h3>
+        <p class="reset-note">Votre identité a été vérifiée. Choisissez maintenant votre nouveau mot de passe.</p>
+
+        <div class="reset-champ">
+          <label for="nouveau-mdp">Nouveau mot de passe</label>
+          <input id="nouveau-mdp" type="password" autocomplete="new-password" minlength="8" required>
+        </div>
+
+        <div class="reset-champ">
+          <label for="confirmation-mdp">Confirmer le mot de passe</label>
+          <input id="confirmation-mdp" type="password" autocomplete="new-password" minlength="8" required>
+        </div>
+
+        <div id="changement-msg" class="reset-msg" role="alert"></div>
+        <button id="changer" class="bouton bouton-or" style="border:none;cursor:pointer;width:100%;">Changer le mot de passe</button>
+      </div>
+
+      <p style="margin-top:22px;font-size:.8rem;"><a href="portail-citoyen.html">← Retour au portail citoyen</a></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="conteneur">
+    <div class="pied-bas">
+      <span>© 2023 – 2026 République d'Étalie — Tous droits réservés</span>
+      <span>Site fictif à des fins narratives</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const FUNCTION_URL = "https://voomgxyfozebpztmiavv.supabase.co/functions/v1/reset-password";
+
+const TABLE_CAS = {
+  '1':'Q','2':'E','3':'Z','4':'V','5':'X',
+  '6':'T','7':'H','8':'N','9':'B','0':'K'
+};
+
+function encrypterCode(str) {
+  let out = '', dernierEtaitLettre = false;
+  for (const ch of String(str)) {
+    if (TABLE_CAS[ch]) {
+      if (dernierEtaitLettre) out += '-';
+      out += TABLE_CAS[ch];
+      dernierEtaitLettre = true;
+    } else if (ch === ' ' || ch === '-') {
+      out += '/';
+      dernierEtaitLettre = false;
+    } else {
+      dernierEtaitLettre = false;
+    }
+  }
+  return out;
+}
+
+const verification = document.getElementById('verification');
+const changement = document.getElementById('changement');
+const verificationMsg = document.getElementById('verification-msg');
+const changementMsg = document.getElementById('changement-msg');
+
+async function verifierIdentite() {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const cas = document.getElementById('cas').value.trim();
+
+  if (!email || !cas) {
+    verificationMsg.className = 'reset-msg reset-erreur';
+    verificationMsg.textContent = 'Veuillez remplir les deux champs.';
+    return;
+  }
+
+  verificationMsg.className = 'reset-msg';
+  verificationMsg.textContent = 'Vérification…';
+  document.getElementById('verifier').disabled = true;
+
+  try {
+    const reponse = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'verify',
+        email,
+        code_social: encrypterCode(cas)
+      })
+    });
+    const resultat = await reponse.json().catch(() => ({}));
+
+    if (!reponse.ok || !resultat.verified) {
+      throw new Error(resultat.error || 'Courriel ou Code d’Assurance Social invalide.');
+    }
+
+    verification.classList.add('reset-cache');
+    changement.classList.remove('reset-cache');
+    document.getElementById('nouveau-mdp').focus();
+  } catch (e) {
+    verificationMsg.className = 'reset-msg reset-erreur';
+    verificationMsg.textContent = e.message;
+    document.getElementById('verifier').disabled = false;
+  }
+}
+
+async function changerMotDePasse() {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const cas = document.getElementById('cas').value.trim();
+  const mdp = document.getElementById('nouveau-mdp').value;
+  const confirmation = document.getElementById('confirmation-mdp').value;
+
+  if (mdp.length < 8) {
+    changementMsg.className = 'reset-msg reset-erreur';
+    changementMsg.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+    return;
+  }
+  if (mdp !== confirmation) {
+    changementMsg.className = 'reset-msg reset-erreur';
+    changementMsg.textContent = 'Les deux mots de passe ne correspondent pas.';
+    return;
+  }
+
+  changementMsg.className = 'reset-msg';
+  changementMsg.textContent = 'Modification…';
+  document.getElementById('changer').disabled = true;
+
+  try {
+    const reponse = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'reset',
+        email,
+        code_social: encrypterCode(cas),
+        password: mdp
+      })
+    });
+    const resultat = await reponse.json().catch(() => ({}));
+
+    if (!reponse.ok || !resultat.success) {
+      throw new Error(resultat.error || 'Impossible de modifier le mot de passe.');
+    }
+
+    changementMsg.className = 'reset-msg reset-succes';
+    changementMsg.textContent = 'Mot de passe modifié avec succès. Vous pouvez maintenant vous connecter.';
+    document.getElementById('changer').disabled = true;
+    setTimeout(() => { window.location.href = 'portail-citoyen.html'; }, 1600);
+  } catch (e) {
+    changementMsg.className = 'reset-msg reset-erreur';
+    changementMsg.textContent = e.message;
+    document.getElementById('changer').disabled = false;
+  }
+}
+
+document.getElementById('verifier').addEventListener('click', verifierIdentite);
+document.getElementById('changer').addEventListener('click', changerMotDePasse);
+</script>
+</body>
+</html>
