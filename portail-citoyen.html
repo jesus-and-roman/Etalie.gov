@@ -228,6 +228,35 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
    CAS entré par l'utilisateur à la version encryptée stockée.
    --------------------------------------------------------------------- */
 const TABLE_CAS = { '1':'Q','2':'E','3':'Z','4':'V','5':'X','6':'T','7':'H','8':'N','9':'B','0':'K' };
+/* =====================================================================
+   NOM LÉGAL ÉTALIEN — auf näm / dwai näm / (hwol|hw.) / trius näm (ou
+   abréviation d'une lettre). 2 à 4 mots, voir validerNomLegal().
+   ===================================================================== */
+const NL_MIN = "abcdeghikmnoprstuvwyzäöíüëŕ";
+const NL_MAJ = "ABCDEGHIKMNOPRSTUVWYZÄÖÍÜËŔ";
+const NL_MAJ_SIMPLE = "ABCDEGHIKMNOPRSTUVWYZ"; // sans accents, pour l'abréviation à 1 lettre
+
+function nlMotComplet(mot) {
+  if (!mot || mot.length < 1) return false;
+  if (!NL_MAJ.includes(mot[0])) return false;
+  for (let i = 1; i < mot.length; i++) if (!NL_MIN.includes(mot[i])) return false;
+  return true;
+}
+
+function validerNomLegal(nomBrut) {
+  const mots = (nomBrut || '').trim().split(/\s+/).filter(Boolean);
+  if (mots.length < 2 || mots.length > 4) return { valide: false, erreur: 'Le nom doit contenir entre 2 et 4 mots.' };
+  if (!nlMotComplet(mots[0])) return { valide: false, erreur: 'Le 1ᵉʳ mot (auf näm) est invalide : 1ʳᵉ lettre majuscule, le reste en minuscules, lettres autorisées seulement.' };
+  if (!nlMotComplet(mots[1])) return { valide: false, erreur: 'Le 2ᵉ mot (dwai näm) est invalide : 1ʳᵉ lettre majuscule, le reste en minuscules, lettres autorisées seulement.' };
+  if (mots.length === 2) return { valide: true, mots };
+  if (mots.length === 3) return { valide: false, erreur: 'Le 4ᵉ mot (trius näm) est requis si le 3ᵉ mot est présent.' };
+  if (mots[2] !== 'hwol' && mots[2] !== 'hw.') return { valide: false, erreur: 'Le 3ᵉ mot doit être exactement « hwol » ou « hw. ».' };
+  const m4 = mots[3];
+  const estAbrege = m4.length === 2 && NL_MAJ_SIMPLE.includes(m4[0]) && m4[1] === '.';
+  if (!estAbrege && !nlMotComplet(m4)) return { valide: false, erreur: 'Le 4ᵉ mot (trius näm) est invalide.' };
+  return { valide: true, mots };
+}
+
 function encrypterCode(str) {
   let out = '', dernierEtaitLettre = false;
   for (const ch of str) {
@@ -260,51 +289,18 @@ let _registreCasCache = null;
 function parserLigneCAS(ligne) {
   const l = ligne.trim();
   if (!l) return null;
-
-  const m = l.match(
-    /^(.*?)\$\$\$(.*?)###(.*?)(?:%%%(.+?))?@@@(\d+)&&&(\d{1,2})\*(\d{1,2})\?(\d{4})=(O|N)\/police(O|N)\/\[(\d+(?:,\d+)?)\]$/
-  );
-
+  const m = l.match(/^(.*?)\$\$\$(.*?)###(.*?)@@@(\d+)&&&(\d{1,2})\*(\d{1,2})\?(\d{4})=(O|N)\/police(O|N)\/\[(\d+(?:,\d+)?)\]$/);
   if (!m) return null;
-
-  const [
-    ,
-    codeEncrypte,
-    aufNam,
-    dwaiNam,
-    triusNam,
-    chiffre,
-    jour,
-    mois,
-    annee,
-    gouv,
-    police,
-    salaireStr
-  ] = m;
-
-  const auf = aufNam.trim().toUpperCase();
-  const dwai = dwaiNam.trim().toUpperCase();
-  const trius = triusNam ? triusNam.trim().toUpperCase() : null;
-
+  const [, codeEncrypte, nom, prenom, chiffre, jour, mois, annee, gouv, police, salaireStr] = m;
   return {
     code_encrypte: codeEncrypte.trim(),
-
-    auf_nam: auf,
-    dwai_nam: dwai,
-    trius_nam: trius,
-
-    nom_complet: trius
-      ? `${auf} ${dwai} HWOL ${trius}`
-      : `${auf} ${dwai}`,
-
+    nom: nom.trim().toUpperCase(),
+    prenom: prenom.trim().toUpperCase(),
     chiffre: parseInt(chiffre, 10),
-
-    date_expiration:
-      `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`,
-
+    date_expiration: `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`,
     protege_gouvernement: gouv === 'O',
     police: police === 'O',
-    salaire: parseFloat(salaireStr.replace(',', '.'))
+    salaire: parseFloat(salaireStr.replace(',', '.')),
   };
 }
 
@@ -408,30 +404,19 @@ function afficherConnexion(messageErreur) {
           <input type="text" id="i-cas" placeholder="982-391-743">
         </div>
         <div class="pc-champ">
-  <label for="i-nom-complet">Nom légal complet</label>
-  <input
-    type="text"
-    id="i-nom-complet"
-    placeholder="Benk Margus hwol Gucie"
-    autocomplete="name"
-  >
-  <small style="color:var(--gris-ardoise);">
-    2 à 4 mots selon les règles de nom étaliennes.
-  </small>
-</div>
+          <label for="i-nom-complet">Nom légal complet</label>
+          <input type="text" id="i-nom-complet" placeholder="ex : Benk Margus  —  ou marié·e : Benk Margus hwol Gucie">
+          <p class="pm-mini" style="margin-top:4px;">2 à 4 mots : auf näm (nom de famille), dwai näm (prénom), puis si marié·e « hwol » (ou « hw. ») suivi du nom de famille de l'époux/se — ou d'une seule lettre suivie d'un point si vous partagez le même auf näm. Lettres autorisées : A-Z/a-z sauf F, J, L, Q, X, plus Ä Ö Í Ü Ë Ŕ.</p>
+          <div id="i-nom-complet-validation" style="margin-top:4px;"></div>
+        </div>
         <div class="pc-champ">
           <label for="i-username">Nom d'utilisateur</label>
           <input type="text" id="i-username" autocomplete="username">
         </div>
-<div class="pc-champ">
-  <label for="i-email">
-    Adresse courriel <span style="color:var(--gris-ardoise);">(optionnelle)</span>
-  </label>
-  <input type="email" id="i-email" autocomplete="email">
-  <small style="color:var(--gris-ardoise);">
-    Recommandée pour récupérer votre mot de passe.
-  </small>
-</div>
+        <div class="pc-champ">
+          <label for="i-email">Adresse courriel (recommandé — récupération de mot de passe)</label>
+          <input type="email" id="i-email" autocomplete="email">
+        </div>
         <div class="pc-champ">
           <label for="i-naissance">Date de naissance réelle</label>
           <input type="date" id="i-naissance">
@@ -461,6 +446,12 @@ function afficherConnexion(messageErreur) {
   document.getElementById('onglet-demande-cas').onclick = () => basculerOnglet('demande-cas');
   document.getElementById('c-valider').onclick = tenterConnexion;
   document.getElementById('i-valider').onclick = tenterInscription;
+  document.getElementById('i-nom-complet').addEventListener('input', (e) => {
+    const zone = document.getElementById('i-nom-complet-validation');
+    if (!e.target.value.trim()) { zone.innerHTML = ''; return; }
+    const res = validerNomLegal(e.target.value);
+    zone.innerHTML = res.valide ? '<p class="pc-succes" style="margin:0;">Format valide.</p>' : `<p class="pc-erreur" style="margin:0;">${res.erreur}</p>`;
+  });
   document.getElementById('i-province').innerHTML += PROVINCES_RESIDENCE.map(p => `<option value="${p}">${p}</option>`).join('');
   initialiserFormulaireDemandeCas();
 
@@ -687,7 +678,6 @@ async function tenterConnexion() {
 async function tenterInscription() {
   const casEntre = document.getElementById('i-cas').value.trim();
   const nomComplet = document.getElementById('i-nom-complet').value.trim();
-  const prenom = document.getElementById('i-prenom').value.trim();
   const username = document.getElementById('i-username').value.trim();
   const email = document.getElementById('i-email').value.trim();
   const naissance = document.getElementById('i-naissance').value;
@@ -695,18 +685,17 @@ async function tenterInscription() {
   const mdp = document.getElementById('i-mdp').value;
   const msg = document.getElementById('i-message');
 
-if (!casEntre || !nomComplet || !username || !naissance || !province || !mdp) {
+  if (!casEntre || !nomComplet || !username || !email || !naissance || !province || !mdp) {
     msg.innerHTML = '<p class="pc-erreur">Tous les champs sont obligatoires.</p>';
     return;
   }
-  if (
-  nomComplet.toUpperCase() !==
-  enregistrement.nom_complet.toUpperCase()
-) {
-  msg.innerHTML =
-    '<p class="pc-erreur">Le nom légal ne correspond pas au code d\'assurance social.</p>';
-  return;
-}
+  const validation = validerNomLegal(nomComplet);
+  if (!validation.valide) {
+    msg.innerHTML = `<p class="pc-erreur">${validation.erreur}</p>`;
+    return;
+  }
+  const nom = validation.mots[0];
+  const prenom = validation.mots[1];
   msg.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Vérification en cours…</p>';
 
   const codeEncrypte = encrypterCode(casEntre);
@@ -750,7 +739,7 @@ if (!casEntre || !nomComplet || !username || !naissance || !province || !mdp) {
     //    même si la page a été fermée entre-temps.
     const { data: inscription, error: erreurAuth } = await sb.auth.signUp({
       email, password: mdp,
-      options: { data: { username, prenom, nom, code_social_encrypte: codeEncrypte, date_naissance: naissance, protege_gouvernement: enregistrement.protege_gouvernement, police: enregistrement.police, salaire: enregistrement.salaire, province } }
+      options: { data: { username, nom_complet: nomComplet, nom, prenom, code_social_encrypte: codeEncrypte, date_naissance: naissance, protege_gouvernement: enregistrement.protege_gouvernement, police: enregistrement.police, salaire: enregistrement.salaire, province } }
     });
     if (erreurAuth) throw erreurAuth;
     if (!inscription.session) {
@@ -761,7 +750,7 @@ if (!casEntre || !nomComplet || !username || !naissance || !province || !mdp) {
     }
 
     const { error: erreurRpc } = await sb.rpc('inscrire_citoyen', {
-      p_username: username, p_email: email, p_prenom: prenom, p_nom: nom,
+      p_username: username, p_email: email, p_nom_complet: nomComplet,
       p_code_social_encrypte: codeEncrypte, p_date_naissance: naissance,
       p_protege_gouvernement: enregistrement.protege_gouvernement,
       p_police: enregistrement.police,
@@ -816,7 +805,7 @@ async function chargerTableauDeBord(utilisateur) {
     const meta = utilisateur.user_metadata || {};
     if (meta.code_social_encrypte) {
       const { error: erreurRpc } = await sb.rpc('inscrire_citoyen', {
-        p_username: meta.username, p_email: utilisateur.email, p_prenom: meta.prenom, p_nom: meta.nom,
+        p_username: meta.username, p_email: utilisateur.email, p_nom_complet: meta.nom_complet,
         p_code_social_encrypte: meta.code_social_encrypte, p_date_naissance: meta.date_naissance,
         p_protege_gouvernement: meta.protege_gouvernement || false,
         p_police: meta.police || false,
@@ -872,7 +861,7 @@ async function chargerTableauDeBord(utilisateur) {
     <div class="pc-carte" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
       <div>
         <span style="font-family:var(--police-util); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--or-laiton);">Connecté en tant que</span>
-        <h3 style="margin-top:4px;">${citoyen.prenom} ${citoyen.nom} <span style="color:var(--gris-ardoise); font-weight:400;">(@${citoyen.username})</span>${citoyen.est_admin ? '<span class="pc-badge-admin">ADMIN</span>' : ''}</h3>
+        <h3 style="margin-top:4px;">${citoyen.nom_complet || (citoyen.prenom + ' ' + citoyen.nom)} <span style="color:var(--gris-ardoise); font-weight:400;">(@${citoyen.username})</span>${citoyen.est_admin ? '<span class="pc-badge-admin">ADMIN</span>' : ''}</h3>
       </div>
       <button class="pc-lien" id="deconnexion">Se déconnecter</button>
     </div>
@@ -919,7 +908,7 @@ async function chargerTableauDeBord(utilisateur) {
         <table class="table-donnees">
           <tbody>
             <tr><td>Nom d'utilisateur</td><td>${citoyen.username}</td></tr>
-            <tr><td>Nom légal</td><td>${citoyen.prenom} ${citoyen.nom}</td></tr>
+            <tr><td>Nom légal</td><td>${citoyen.nom_complet || (citoyen.prenom + ' ' + citoyen.nom)}</td></tr>
             <tr><td>Courriel</td><td>${citoyen.email}</td></tr>
             <tr><td>Date de naissance</td><td>${citoyen.date_naissance}</td></tr>
             <tr><td>Âge toutouïen à l'inscription</td><td>${Number(citoyen.age_toutouien_inscription).toFixed(2)} ans</td></tr>
@@ -1986,7 +1975,7 @@ function initialiserPanneauAgent() {
       <table class="table-donnees">
         <tbody>
           <tr><td>Nom d'utilisateur</td><td>${escapeHtml(c.username)}</td></tr>
-          <tr><td>Nom légal</td><td>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</td></tr>
+          <tr><td>Nom légal</td><td>${escapeHtml(c.nom_complet || (c.prenom + " " + c.nom))}</td></tr>
           <tr><td>Courriel</td><td>${escapeHtml(c.email)}</td></tr>
           <tr><td>Date de naissance</td><td>${c.date_naissance}${fiche ? ' — ' + fiche.age_toutouien + ' ans toutouïens' : ''}</td></tr>
           ${fiche && fiche.pays_naissance ? `<tr><td>Pays de naissance</td><td>${escapeHtml(fiche.pays_naissance)}</td></tr>` : ''}
@@ -2152,7 +2141,7 @@ async function chargerToutesLesTresoreries() {
         <tbody>
           ${data.map(c => `
             <tr>
-              <td>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)} (@${escapeHtml(c.username)})</td>
+              <td>${escapeHtml(c.nom_complet || (c.prenom + " " + c.nom))} (@${escapeHtml(c.username)})</td>
               <td class="num">${Number(c.tresorerie).toFixed(2)}</td>
               <td class="num">${Number(c.dettes).toFixed(2)}</td>
               <td class="num">${Number(c.prets).toFixed(2)}</td>
