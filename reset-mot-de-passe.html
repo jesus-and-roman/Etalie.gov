@@ -105,6 +105,11 @@
 
 <script>
 const FUNCTION_URL = "https://voomgxyfozebpztmiavv.supabase.co/functions/v1/reset-password";
+  const FUNCTION_URL =
+  "https://voomgxyfozebpztmiavv.supabase.co/functions/v1/reset-password";
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
 
 const TABLE_CAS = {
   '1':'Q','2':'E','3':'Z','4':'V','5':'X',
@@ -148,9 +153,18 @@ async function verifierIdentite() {
   document.getElementById('verifier').disabled = true;
 
   try {
-    const reponse = await fetch(FUNCTION_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+const reponse = await fetch(FUNCTION_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY
+  },
+  body: JSON.stringify({
+    action: 'verify',
+    email,
+    code_social: encrypterCode(cas)
+  })
+});
       body: JSON.stringify({
         action: 'verify',
         email,
@@ -195,16 +209,19 @@ async function changerMotDePasse() {
   document.getElementById('changer').disabled = true;
 
   try {
-    const reponse = await fetch(FUNCTION_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        action: 'reset',
-        email,
-        code_social: encrypterCode(cas),
-        password: mdp
-      })
-    });
+const reponse = await fetch(FUNCTION_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY
+  },
+  body: JSON.stringify({
+    action: 'reset',
+    email,
+    code_social: encrypterCode(cas),
+    password: mdp
+  })
+});
     const resultat = await reponse.json().catch(() => ({}));
 
     if (!reponse.ok || !resultat.success) {
