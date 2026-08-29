@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 
+/* Modifier la variable habitants pour modifier le PIB par habitants */
+
 <html lang="fr">
 <head>
 <meta charset="utf-8"/>
@@ -197,6 +199,9 @@
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+
+  const habitants = 53138439;
+  
 /* =====================================================================
    CONFIGURATION — à remplir avant mise en ligne
    Project Settings > API dans le tableau de bord Supabase :
@@ -3675,9 +3680,27 @@ async function pmRendreTableauBordNational() {
     <p style="font-family:var(--police-titre); font-size:2rem; color:var(--vert-nuit); margin:10px 0 0;">${pmFormaterR(data.pib_actuel)} R$</p>
     <p style="font-family:var(--police-util); font-size:1.1rem; color:${couleur}; margin:4px 0 16px;">${signe}${variation.toFixed(2)}%</p>
     <table class="table-donnees">
-      <tr><td>Produit intérieur brut (PIB)</td><td class="num">${pmFormaterR(data.pib_actuel)} R$</td></tr>
-      <tr><td>Ancien PIB de référence</td><td class="num">${pmFormaterR(data.pib_reference)} R$</td></tr>
-      <tr><td>Référence sauvegardée le</td><td class="num">${new Date(data.date_reference).toLocaleString('fr-FR')}</td></tr>
+<table class="table-donnees">
+  <tr>
+    <td>Produit intérieur brut (PIB)</td>
+    <td class="num">${pmFormaterR(data.pib_actuel)} R$</td>
+  </tr>
+  <tr>
+    <td>PIB par habitant</td>
+    <td class="num">${pmFormaterR(data.pib_actuel / habitants)} R$</td>
+  </tr>
+  <tr>
+    <td>Ancien PIB de référence</td>
+    <td class="num">${pmFormaterR(data.pib_reference)} R$</td>
+  </tr>
+  <tr>
+    <td>Ancien PIB par habitant</td>
+    <td class="num">${pmFormaterR(data.pib_reference / habitants)} R$</td>
+  </tr>
+  <tr>
+    <td>Référence sauvegardée le</td>
+    <td class="num">${new Date(data.date_reference).toLocaleString('fr-FR')}</td>
+  </tr>
       <tr><td>Indice Palamöss</td><td class="num">${Number(data.palamoss_pct).toFixed(2)} %</td></tr>
       <tr><td>Taxes collectées (période)</td><td class="num">${pmFormaterR(data.taxes_totales_periode)} R$</td></tr>
       <tr><td>Dette nationale (argent attendu)</td><td class="num">${pmFormaterR(data.dette_nationale)} R$</td></tr>
