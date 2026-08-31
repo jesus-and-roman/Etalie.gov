@@ -1,9 +1,11 @@
-[1] Cartes récentes
-(1)Nouveau monde Toutou 2026-08-07-18-15.map:
-(1)Nouveau monde Toutou 2026-07-20-23-45.map:
-(1)Nouveau monde Toutou 2026-06-11-10-12.map:
-(1)Nouveau monde Toutou 2026-08-19-04-19.map: Fix des marketplaces ayant certaines colonies, fixe du style, fixe du nom de Valcourt = Valcos, ajout de certains ports maritimes en Étalie, modification du drapeau, ajout de certains PINS.
-(1)Nouveau monde Toutou 2026-08-21-21-00.map: Ajout automatique.
-(1)Nouveau monde Toutou 2026-08-24-16-24.map: Mise en place des territoires sur la glace méridionale, régler les problèmes des cultures et ajout de certaines organisations et de leurs Q.G. (nécessite le preset 0.02C pour fonctionnement plus érgonomique.)
-[2] Premier règne
-(2)Nouveau monde Toutou 2026-05-30-22-45.map:
+[1] Deuxième Règne
+(1)Nouveau monde Toutou 2026-08-31-13-50.map: Union de Yhorule, Montcurie et Étalie. Échange de terres maudites et terres saintes et échange Dovintski.
+[2] Cartes récentes
+(2)Nouveau monde Toutou 2026-08-07-18-15.map:
+(2)Nouveau monde Toutou 2026-07-20-23-45.map:
+(2)Nouveau monde Toutou 2026-06-11-10-12.map:
+(2)Nouveau monde Toutou 2026-08-19-04-19.map: Fix des marketplaces ayant certaines colonies, fixe du style, fixe du nom de Valcourt = Valcos, ajout de certains ports maritimes en Étalie, modification du drapeau, ajout de certains PINS.
+(2)Nouveau monde Toutou 2026-08-21-21-00.map: Ajout automatique.
+(2)Nouveau monde Toutou 2026-08-24-16-24.map: Mise en place des territoires sur la glace méridionale, régler les problèmes des cultures et ajout de certaines organisations et de leurs Q.G. (nécessite le preset 0.02C pour fonctionnement plus érgonomique.)
+[3] Premier règne
+(3)Nouveau monde Toutou 2026-05-30-22-45.map:
