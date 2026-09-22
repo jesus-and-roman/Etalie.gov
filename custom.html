@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>custom</title>
+<meta name="robots" content="noindex, nofollow"/>
+<link href="assets/favicon.ico" rel="icon" type="image/x-icon"/>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#12151b; --panel2:#181c24; --ligne:#262b35;
+    --texte:#d7dce3; --texte-att:#8993a3; --accent:#5fd0a3; --danger:#e2596b; --avert:#e2b95f;
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--texte);min-height:100vh;padding:24px 16px 80px;}
+  h1,h2,h3{font-weight:600;color:#fff;margin:0 0 8px;}
+  h1{font-size:18px;letter-spacing:.5px;}
+  h2{font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-top:0;}
+  a{color:var(--accent);}
+  .conteneur{max-width:920px;margin:0 auto;}
+  .entete{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid var(--ligne);padding-bottom:12px;}
+  .badge{font-size:11px;color:var(--texte-att);border:1px solid var(--ligne);padding:2px 8px;border-radius:3px;}
+  .panneau{background:var(--panel);border:1px solid var(--ligne);border-radius:8px;padding:18px;margin-bottom:18px;}
+  label{display:block;font-size:12px;color:var(--texte-att);margin:10px 0 4px;}
+  input[type=text],input[type=password],textarea,select{
+    width:100%;background:var(--panel2);border:1px solid var(--ligne);color:var(--texte);
+    padding:9px 10px;border-radius:5px;font-family:inherit;font-size:13px;
+  }
+  textarea{min-height:110px;resize:vertical;white-space:pre;}
+  button{
+    background:var(--accent);color:#06120c;border:none;padding:9px 16px;border-radius:5px;
+    font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;margin-top:12px;
+  }
+  button:hover{filter:brightness(1.08);}
+  button.secondaire{background:transparent;color:var(--texte);border:1px solid var(--ligne);}
+  button.danger{background:var(--danger);color:#1a0508;}
+  button.petit{padding:4px 10px;font-size:12px;margin:0 4px 0 0;}
+  .msg{font-size:12px;padding:8px 10px;border-radius:5px;margin-top:10px;display:none;white-space:pre-wrap;}
+  .msg.ok{display:block;background:#0f2a1e;color:var(--accent);border:1px solid #1f4d38;}
+  .msg.erreur{display:block;background:#2a1013;color:var(--danger);border:1px solid #4d1f27;}
+  .avertissement{background:#241d0d;border:1px solid #5c4a1a;color:var(--avert);font-size:12px;padding:10px 12px;border-radius:5px;margin:10px 0;}
+  .onglets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .onglet{padding:7px 14px;border:1px solid var(--ligne);border-radius:5px;cursor:pointer;font-size:12px;color:var(--texte-att);}
+  .onglet.actif{color:#06120c;background:var(--accent);border-color:var(--accent);}
+  .vue{display:none;}
+  .vue.actif{display:block;}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--ligne);vertical-align:top;}
+  th{color:var(--texte-att);font-weight:500;}
+  .mono{word-break:break-all;}
+  .carte-demande{border:1px solid var(--ligne);border-radius:6px;padding:10px 12px;margin-bottom:10px;background:var(--panel2);}
+  .ligne-boutons{display:flex;gap:8px;}
+  .pre-resultat{background:#000;border:1px solid var(--ligne);border-radius:5px;padding:10px;font-size:12px;max-height:340px;overflow:auto;white-space:pre-wrap;margin-top:10px;}
+  .discret{color:var(--texte-att);font-size:11px;margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="conteneur">
+
+  <div class="entete">
+    <h1>custom<span style="color:var(--texte-att)">.access</span></h1>
+    <span class="badge" id="badge-statut">déconnecté</span>
+  </div>
+
+  <!-- ================= CONNEXION ================= -->
+  <div class="panneau" id="panneau-connexion">
+    <h2>Connexion</h2>
+    <label>Numéro de compte</label>
+    <input type="text" id="c-numero" autocomplete="off"/>
+    <label>Secret key</label>
+    <input type="password" id="c-secret" autocomplete="off"/>
+    <button onclick="connexion()">Se connecter</button>
+    <div class="msg" id="c-msg"></div>
+  </div>
+
+  <!-- ================= DEMANDE D'ACCÈS (public) ================= -->
+  <div class="panneau" id="panneau-demande">
+    <h2>Demander un accès</h2>
+    <div class="avertissement">
+      Avertissement : tant que ta demande est en attente, la secret key que tu inscris ci-dessous
+      est visible en clair par les comptes custom existants (c'est nécessaire pour qu'ils puissent
+      l'ajouter). Choisis une clé longue que tu n'utilises nulle part ailleurs. Dès que ta demande
+      est traitée (acceptée ou refusée), cette clé est effacée définitivement de la base — personne
+      ne pourra plus jamais la relire, même un compte custom.
+    </div>
+    <label>Ton pseudo (portail-citoyen)</label>
+    <input type="text" id="d-username"/>
+    <label>Ton code d'identification en jeu</label>
+    <input type="text" id="d-code-jeu"/>
+    <label>Numéro de compte souhaité</label>
+    <input type="text" id="d-numero"/>
+    <label>Secret key souhaitée (24 caractères minimum)</label>
+    <input type="password" id="d-secret"/>
+    <button onclick="soumettreDemande()">Envoyer la demande</button>
+    <div class="msg" id="d-msg"></div>
+  </div>
+
+  <!-- ================= BOOTSTRAP (premier compte) ================= -->
+  <div class="panneau" id="panneau-bootstrap">
+    <h2>Bootstrap — premier compte</h2>
+    <p class="discret">
+      Ne fonctionne qu'une seule fois, avant qu'un compte custom n'existe. Une fois utilisée,
+      cette section échouera pour toujours et ne présente plus aucun risque.
+    </p>
+    <label>Numéro de compte</label>
+    <input type="text" id="b-numero"/>
+    <label>Secret key (24 caractères minimum)</label>
+    <input type="password" id="b-secret"/>
+    <label>Clé maître (celle définie dans le patch SQL)</label>
+    <input type="password" id="b-maitre"/>
+    <button class="secondaire" onclick="bootstrap()">Créer le compte fondateur</button>
+    <div class="msg" id="b-msg"></div>
+  </div>
+
+  <!-- ================= TABLEAU DE BORD (connecté) ================= -->
+  <div id="tableau-de-bord" style="display:none;">
+
+    <div class="onglets">
+      <div class="onglet actif" data-onglet="demandes" onclick="afficherOnglet('demandes')">Demandes</div>
+      <div class="onglet" data-onglet="comptes" onclick="afficherOnglet('comptes')">Comptes custom</div>
+      <div class="onglet" data-onglet="message" onclick="afficherOnglet('message')">Message bot</div>
+      <div class="onglet" data-onglet="tables" onclick="afficherOnglet('tables')">Tables</div>
+      <div class="onglet" data-onglet="sql" onclick="afficherOnglet('sql')">Console SQL</div>
+      <button class="secondaire petit" style="margin-top:0" onclick="deconnexion()">Déconnexion</button>
+    </div>
+
+    <!-- Demandes -->
+    <div class="vue actif" id="vue-demandes">
+      <div class="panneau">
+        <h2>File des demandes</h2>
+        <button class="secondaire petit" onclick="chargerDemandes()">Rafraîchir</button>
+        <div id="liste-demandes"></div>
+      </div>
+    </div>
+
+    <!-- Comptes custom -->
+    <div class="vue" id="vue-comptes">
+      <div class="panneau">
+        <h2>Créer un compte custom directement</h2>
+        <label>Numéro de compte</label>
+        <input type="text" id="n-numero"/>
+        <label>Secret key (24 caractères minimum)</label>
+        <input type="password" id="n-secret"/>
+        <label>Note (optionnel)</label>
+        <input type="text" id="n-note"/>
+        <button onclick="creerCompte()">Créer</button>
+        <div class="msg" id="n-msg"></div>
+      </div>
+      <div class="panneau">
+        <h2>Comptes existants</h2>
+        <button class="secondaire petit" onclick="chargerComptes()">Rafraîchir</button>
+        <div id="liste-comptes"></div>
+      </div>
+    </div>
+
+    <!-- Message bot -->
+    <div class="vue" id="vue-message">
+      <div class="panneau">
+        <h2>Envoyer un message via le bot gouvernemental</h2>
+        <label>Pseudo du destinataire (portail-citoyen)</label>
+        <input type="text" id="m-destinataire"/>
+        <label>Titre</label>
+        <input type="text" id="m-titre"/>
+        <label>Contenu</label>
+        <textarea id="m-contenu"></textarea>
+        <button onclick="envoyerMessage()">Envoyer</button>
+        <div class="msg" id="m-msg"></div>
+      </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="vue" id="vue-tables">
+      <div class="panneau">
+        <h2>Tables de la base</h2>
+        <button class="secondaire petit" onclick="chargerTables()">Lister les tables</button>
+        <div id="liste-tables"></div>
+        <p class="discret">Cliquer sur une table envoie un SELECT * LIMIT 100 dans la console SQL.</p>
+      </div>
+    </div>
+
+    <!-- Console SQL -->
+    <div class="vue" id="vue-sql">
+      <div class="panneau">
+        <h2>Console SQL</h2>
+        <div class="avertissement">
+          Exécution directe sur la base de données, sans confirmation ni retour arrière.
+          SELECT, UPDATE, DELETE, DROP — tout est permis ici.
+        </div>
+        <textarea id="sql-requete" placeholder="select * from citoyens limit 100;"></textarea>
+        <button class="danger" onclick="executerSql()">Exécuter</button>
+        <div class="msg" id="sql-msg"></div>
+        <div class="pre-resultat" id="sql-resultat" style="display:none;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://voomgxyfozebpztmiavv.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_dwTfEWTxj92ZYWqDRY-wYw_MOAV-aMJ";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CLE_TOKEN = 'custom_token';
+function token(){ return sessionStorage.getItem(CLE_TOKEN); }
+function setToken(t){ sessionStorage.setItem(CLE_TOKEN, t); }
+function clearToken(){ sessionStorage.removeItem(CLE_TOKEN); }
+
+function afficherMsg(id, texte, ok){
+  const el = document.getElementById(id);
+  el.textContent = texte;
+  el.className = 'msg ' + (ok ? 'ok' : 'erreur');
+}
+
+function majEcran(connecte){
+  document.getElementById('panneau-connexion').style.display = connecte ? 'none' : 'block';
+  document.getElementById('panneau-demande').style.display = connecte ? 'none' : 'block';
+  document.getElementById('panneau-bootstrap').style.display = connecte ? 'none' : 'block';
+  document.getElementById('tableau-de-bord').style.display = connecte ? 'block' : 'none';
+  document.getElementById('badge-statut').textContent = connecte ? 'connecté' : 'déconnecté';
+}
+
+function afficherOnglet(nom){
+  document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.onglet === nom));
+  document.querySelectorAll('.vue').forEach(v => v.classList.toggle('actif', v.id === 'vue-' + nom));
+  if (nom === 'demandes') chargerDemandes();
+  if (nom === 'comptes') chargerComptes();
+  if (nom === 'tables') chargerTables();
+}
+
+async function connexion(){
+  const numero = document.getElementById('c-numero').value.trim();
+  const secret = document.getElementById('c-secret').value;
+  const { data, error } = await sb.rpc('custom_connexion', { p_numero_compte: numero, p_secret_key: secret });
+  if (error) { afficherMsg('c-msg', error.message, false); return; }
+  setToken(data);
+  document.getElementById('c-secret').value = '';
+  majEcran(true);
+  afficherOnglet('demandes');
+}
+
+function deconnexion(){
+  sb.rpc('custom_deconnexion', { p_token: token() }).finally(() => {
+    clearToken();
+    majEcran(false);
+  });
+}
+
+async function soumettreDemande(){
+  const secret = document.getElementById('d-secret').value;
+  if (secret.length < 24) { afficherMsg('d-msg', 'La secret key doit contenir au moins 24 caractères.', false); return; }
+  const { error } = await sb.from('custom_demandes').insert({
+    demandeur_username: document.getElementById('d-username').value.trim(),
+    demandeur_code_jeu: document.getElementById('d-code-jeu').value.trim(),
+    numero_compte_demande: document.getElementById('d-numero').value.trim(),
+    secret_key_demandee: secret
+  });
+  if (error) { afficherMsg('d-msg', error.message, false); return; }
+  afficherMsg('d-msg', 'Demande envoyée. Un compte custom existant doit maintenant la traiter.', true);
+  ['d-username','d-code-jeu','d-numero','d-secret'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function bootstrap(){
+  const secret = document.getElementById('b-secret').value;
+  const { error } = await sb.rpc('custom_bootstrap_premier_compte', {
+    p_numero_compte: document.getElementById('b-numero').value.trim(),
+    p_secret_key: secret,
+    p_cle_maitre: document.getElementById('b-maitre').value
+  });
+  if (error) { afficherMsg('b-msg', error.message, false); return; }
+  afficherMsg('b-msg', 'Compte fondateur créé. Connecte-toi maintenant.', true);
+  ['b-numero','b-secret','b-maitre'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function chargerDemandes(){
+  const { data, error } = await sb.rpc('custom_lister_demandes', { p_token: token() });
+  const cible = document.getElementById('liste-demandes');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; if (error.message.includes('Session')) { clearToken(); majEcran(false); } return; }
+  if (!data.length) { cible.innerHTML = '<p class="discret">Aucune demande.</p>'; return; }
+  cible.innerHTML = data.map(d => `
+    <div class="carte-demande">
+      <div><strong>${d.demandeur_username}</strong> — code jeu : ${d.demandeur_code_jeu} — statut : ${d.statut}</div>
+      <div class="discret">numéro demandé : <span class="mono">${d.numero_compte_demande}</span></div>
+      ${d.statut === 'en_attente' ? `<div class="discret">secret key : <span class="mono">${d.secret_key_demandee}</span></div>
+      <div class="ligne-boutons">
+        <button class="petit" onclick="traiterDemande('${d.id}', true)">V — approuver</button>
+        <button class="petit danger" onclick="traiterDemande('${d.id}', false)">X — refuser</button>
+      </div>` : `<div class="discret">traité par ${d.traite_par || '—'} le ${d.traite_le ? new Date(d.traite_le).toLocaleString('fr-FR') : ''}</div>`}
+    </div>
+  `).join('');
+}
+
+async function traiterDemande(id, approuver){
+  const { error } = await sb.rpc('custom_traiter_demande', { p_token: token(), p_id: id, p_approuver: approuver });
+  if (error) { alert(error.message); return; }
+  chargerDemandes();
+}
+
+async function creerCompte(){
+  const secret = document.getElementById('n-secret').value;
+  if (secret.length < 24) { afficherMsg('n-msg', 'La secret key doit contenir au moins 24 caractères.', false); return; }
+  const { error } = await sb.rpc('custom_creer_compte', {
+    p_token: token(),
+    p_nouveau_numero: document.getElementById('n-numero').value.trim(),
+    p_nouvelle_secret_key: secret,
+    p_note: document.getElementById('n-note').value.trim() || null
+  });
+  if (error) { afficherMsg('n-msg', error.message, false); return; }
+  afficherMsg('n-msg', 'Compte créé.', true);
+  ['n-numero','n-secret','n-note'].forEach(id => document.getElementById(id).value = '');
+  chargerComptes();
+}
+
+async function chargerComptes(){
+  const { data, error } = await sb.rpc('custom_lister_comptes', { p_token: token() });
+  const cible = document.getElementById('liste-comptes');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; return; }
+  cible.innerHTML = '<table><tr><th>Numéro</th><th>Actif</th><th>Créé par</th><th>Créé le</th><th>Dernière connexion</th><th></th></tr>' +
+    data.map(c => `<tr>
+      <td class="mono">${c.numero_compte}</td>
+      <td>${c.actif ? 'oui' : 'non'}</td>
+      <td>${c.cree_par || '—'}</td>
+      <td>${new Date(c.cree_le).toLocaleString('fr-FR')}</td>
+      <td>${c.derniere_connexion ? new Date(c.derniere_connexion).toLocaleString('fr-FR') : '—'}</td>
+      <td>${c.actif ? `<button class="petit danger" onclick="desactiverCompte('${c.numero_compte}')">Désactiver</button>` : ''}</td>
+    </tr>`).join('') + '</table>';
+}
+
+async function desactiverCompte(numero){
+  if (!confirm('Désactiver ' + numero + ' ?')) return;
+  const { error } = await sb.rpc('custom_desactiver_compte', { p_token: token(), p_numero_compte_cible: numero });
+  if (error) { alert(error.message); return; }
+  chargerComptes();
+}
+
+async function envoyerMessage(){
+  const { error } = await sb.rpc('custom_envoyer_message_bot', {
+    p_token: token(),
+    p_destinataire_username: document.getElementById('m-destinataire').value.trim(),
+    p_titre: document.getElementById('m-titre').value.trim(),
+    p_contenu: document.getElementById('m-contenu').value.trim()
+  });
+  if (error) { afficherMsg('m-msg', error.message, false); return; }
+  afficherMsg('m-msg', 'Message envoyé.', true);
+  ['m-destinataire','m-titre','m-contenu'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function chargerTables(){
+  const { data, error } = await sb.rpc('custom_lister_tables', { p_token: token() });
+  const cible = document.getElementById('liste-tables');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; return; }
+  cible.innerHTML = data.map(t => `<button class="secondaire petit" onclick="remplirSelect('${t.nom_table}')">${t.nom_table}</button>`).join('');
+}
+
+function remplirSelect(nomTable){
+  document.getElementById('sql-requete').value = `select * from ${nomTable} limit 100;`;
+  afficherOnglet('sql');
+}
+
+async function executerSql(){
+  const requete = document.getElementById('sql-requete').value.trim();
+  if (!requete) return;
+  const { data, error } = await sb.rpc('custom_executer_sql', { p_token: token(), p_sql: requete });
+  const zone = document.getElementById('sql-resultat');
+  if (error) { afficherMsg('sql-msg', error.message, false); zone.style.display = 'none'; return; }
+  document.getElementById('sql-msg').className = 'msg';
+  zone.style.display = 'block';
+  zone.textContent = JSON.stringify(data, null, 2);
+}
+
+// Session existante ?
+if (token()) { majEcran(true); afficherOnglet('demandes'); } else { majEcran(false); }
+</script>
+</body>
+</html>
