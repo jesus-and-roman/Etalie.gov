@@ -118,6 +118,10 @@
 
     <div class="onglets">
       <div class="onglet actif" data-onglet="demandes" onclick="afficherOnglet('demandes')">Demandes</div>
+      <div class="onglet" data-onglet="citoyens" onclick="afficherOnglet('citoyens')">Citoyens</div>
+      <div class="onglet" data-onglet="habiletes" onclick="afficherOnglet('habiletes')">Habiletés / gel</div>
+      <div class="onglet" data-onglet="casoverride" onclick="afficherOnglet('casoverride')">Overrides CAS</div>
+      <div class="onglet" data-onglet="parametres" onclick="afficherOnglet('parametres')">Paramètres globaux</div>
       <div class="onglet" data-onglet="comptes" onclick="afficherOnglet('comptes')">Comptes custom</div>
       <div class="onglet" data-onglet="message" onclick="afficherOnglet('message')">Message bot</div>
       <div class="onglet" data-onglet="tables" onclick="afficherOnglet('tables')">Tables</div>
@@ -131,6 +135,110 @@
         <h2>File des demandes</h2>
         <button class="secondaire petit" onclick="chargerDemandes()">Rafraîchir</button>
         <div id="liste-demandes"></div>
+      </div>
+    </div>
+
+    <!-- Citoyens -->
+    <div class="vue" id="vue-citoyens">
+      <div class="panneau">
+        <h2>Rechercher un citoyen</h2>
+        <label>Nom d'utilisateur, code CAS ou UUID</label>
+        <input type="text" id="cit-terme"/>
+        <button onclick="rechercherCitoyen()">Rechercher</button>
+        <div class="msg" id="cit-msg"></div>
+      </div>
+      <div id="cit-resultats"></div>
+    </div>
+
+    <!-- Habiletés / gel -->
+    <div class="vue" id="vue-habiletes">
+      <div class="panneau">
+        <h2>Geler / dégeler une action</h2>
+        <label>Cible</label>
+        <select id="hab-cible-mode">
+          <option value="tous">Tous les utilisateurs</option>
+          <option value="un">Un utilisateur précis (UUID)</option>
+        </select>
+        <input type="text" id="hab-cible-uuid" placeholder="UUID du citoyen" style="margin-top:6px;display:none;"/>
+        <label>Action</label>
+        <select id="hab-action">
+          <option value="tso">Déclencher un TSO</option>
+          <option value="tsq">Déclencher un TSQ</option>
+          <option value="remboursement_dettes">Rembourser dettes</option>
+          <option value="remboursement_prets">Rembourser prêts</option>
+          <option value="virement_familial">Virement familial</option>
+          <option value="virement_business">Virement business</option>
+          <option value="virement_econome">Virement économe</option>
+          <option value="virement_considerable">Virement considérable</option>
+          <option value="achat_permis">Acheter des permis</option>
+          <option value="payer_constat">Payer des constats</option>
+          <option value="supprimer_constat">Supprimer des constats</option>
+          <option value="demande_chomage">Demande d'accès au chômage</option>
+          <option value="demande_retraite">Demande d'accès à la retraite</option>
+          <option value="envoyer_message">Envoyer des messages</option>
+          <option value="envoyer_document">Envoyer un document</option>
+        </select>
+        <label>Durée</label>
+        <select id="hab-duree">
+          <option value="3600">1 heure</option>
+          <option value="86400">1 jour</option>
+          <option value="604800">1 semaine</option>
+          <option value="2592000">30 jours</option>
+          <option value="definitif">Définitif</option>
+        </select>
+        <div class="ligne-boutons">
+          <button class="danger" onclick="geler()">Geler</button>
+          <button class="secondaire" onclick="reactiver()">Réactiver</button>
+        </div>
+        <div class="msg" id="hab-msg"></div>
+      </div>
+      <div class="panneau">
+        <h2>Règles actives</h2>
+        <button class="secondaire petit" onclick="chargerHabiletes()">Rafraîchir</button>
+        <div id="liste-habiletes"></div>
+      </div>
+    </div>
+
+    <!-- Overrides CAS -->
+    <div class="vue" id="vue-casoverride">
+      <div class="panneau">
+        <div class="avertissement">
+          Un champ laissé vide n'écrase rien : la valeur de num_CAS.txt continue de s'appliquer pour ce champ.
+          Un champ rempli l'emporte définitivement sur le .txt tant qu'il n'est pas supprimé ici.
+        </div>
+        <label>Code CAS encrypté (tel qu'écrit dans num_CAS.txt, ex: B-N-E/Z-B-Q/H-V-Z)</label>
+        <input type="text" id="ov-code"/>
+        <label>Prénom légal</label>
+        <input type="text" id="ov-prenom"/>
+        <label>Nom légal</label>
+        <input type="text" id="ov-nom"/>
+        <label>Date d'expiration</label>
+        <input type="text" id="ov-expiration" placeholder="AAAA-MM-JJ"/>
+        <label>Renouvellement protégé (gouvernement)</label>
+        <select id="ov-protection"><option value="">— inchangé —</option><option value="true">Oui</option><option value="false">Non</option></select>
+        <label>Agent de la paix</label>
+        <select id="ov-police"><option value="">— inchangé —</option><option value="true">Oui</option><option value="false">Non</option></select>
+        <label>Salaire par minute</label>
+        <input type="text" id="ov-salaire" placeholder="ex: 63.22"/>
+        <div class="ligne-boutons">
+          <button onclick="definirOverrideCas()">Enregistrer</button>
+          <button class="danger" onclick="supprimerOverrideCas()">Supprimer l'override de ce code</button>
+        </div>
+        <div class="msg" id="ov-msg"></div>
+      </div>
+      <div class="panneau">
+        <h2>Overrides actifs</h2>
+        <button class="secondaire petit" onclick="chargerOverridesCas()">Rafraîchir</button>
+        <div id="liste-overrides-cas"></div>
+      </div>
+    </div>
+
+    <!-- Paramètres globaux -->
+    <div class="vue" id="vue-parametres">
+      <div class="panneau">
+        <h2>Taux globaux (affichage + futurs calculs)</h2>
+        <div id="liste-parametres"></div>
+        <button class="secondaire petit" onclick="chargerParametres()">Rafraîchir</button>
       </div>
     </div>
 
@@ -229,6 +337,209 @@ function afficherOnglet(nom){
   if (nom === 'demandes') chargerDemandes();
   if (nom === 'comptes') chargerComptes();
   if (nom === 'tables') chargerTables();
+  if (nom === 'habiletes') chargerHabiletes();
+  if (nom === 'casoverride') chargerOverridesCas();
+  if (nom === 'parametres') chargerParametres();
+}
+
+document.getElementById('hab-cible-mode').addEventListener('change', e => {
+  document.getElementById('hab-cible-uuid').style.display = e.target.value === 'un' ? 'block' : 'none';
+});
+
+async function rechercherCitoyen(){
+  const { data, error } = await sb.rpc('custom_rechercher_citoyen', { p_token: token(), p_terme: document.getElementById('cit-terme').value.trim() });
+  const cible = document.getElementById('cit-resultats');
+  if (error) { afficherMsg('cit-msg', error.message, false); cible.innerHTML = ''; return; }
+  if (!data.length) { afficherMsg('cit-msg', 'Aucun résultat.', false); cible.innerHTML = ''; return; }
+  document.getElementById('cit-msg').className = 'msg';
+  cible.innerHTML = data.map(c => `
+    <div class="panneau">
+      <h2>@${c.username} — ${c.nom_complet || (c.prenom + ' ' + c.nom)}</h2>
+      <p class="discret mono">id: ${c.id} — CAS: ${c.code_social_encrypte}</p>
+      <table>
+        <tr><td>Trésorerie</td><td>${Number(c.tresorerie).toFixed(2)}</td></tr>
+        <tr><td>Dettes</td><td>${Number(c.dettes).toFixed(2)}</td></tr>
+        <tr><td>Prêts</td><td>${Number(c.prets).toFixed(2)}</td></tr>
+        <tr><td>Argent attendu</td><td>${Number(c.argent_attendu ?? 0).toFixed(2)}</td></tr>
+        <tr><td>Salaire</td><td>${Number(c.salaire).toFixed(2)} / min</td></tr>
+        <tr><td>Taux revenu</td><td>${Number(c.taux_revenu).toFixed(2)}% ${c.taux_revenu_override != null ? '(override actif)' : ''}</td></tr>
+        <tr><td>Agent de la paix</td><td>${c.est_agent_paix ? 'oui' : 'non'}</td></tr>
+        <tr><td>Admin</td><td>${c.est_admin ? 'oui' : 'non'}</td></tr>
+        <tr><td>Province</td><td>${c.province_residence || '—'}</td></tr>
+        <tr><td>Dossier créé le</td><td>${c.cree_le ? new Date(c.cree_le).toLocaleString('fr-FR') : '—'}</td></tr>
+        <tr><td>Virements illimités</td><td>${c.virements_illimites ? 'oui' : 'non'}</td></tr>
+        <tr><td>Quota virement considérable</td><td>${c.quota_virement_considerable ?? '— (défaut du site)'}</td></tr>
+      </table>
+      <h3 style="margin-top:14px;">Modifier</h3>
+      <label>Nom d'utilisateur</label><input type="text" id="m-username-${c.id}" placeholder="${c.username}"/>
+      <label>Nom légal complet</label><input type="text" id="m-nomcomplet-${c.id}" placeholder="${c.nom_complet || ''}"/>
+      <label>Date de naissance</label><input type="text" id="m-naissance-${c.id}" placeholder="AAAA-MM-JJ"/>
+      <label>Âge toutouïen à l'inscription</label><input type="text" id="m-age-${c.id}"/>
+      <label>Dossier créé le</label><input type="text" id="m-creele-${c.id}" placeholder="AAAA-MM-JJ HH:MM"/>
+      <label>Province de résidence</label><input type="text" id="m-province-${c.id}"/>
+      <label>Salaire par minute</label><input type="text" id="m-salaire-${c.id}"/>
+      <label>Taux de revenu personnalisé (%) — laisser vide pour ne pas toucher</label><input type="text" id="m-tauxrevenu-${c.id}"/>
+      <label>Agent de la paix</label>
+      <select id="m-police-${c.id}"><option value="">— inchangé —</option><option value="true">Oui</option><option value="false">Non</option></select>
+      <label>Trésorerie (+/- delta, ex: +500 ou -200)</label><input type="text" id="m-tresorerie-${c.id}"/>
+      <label>Dettes (+/- delta)</label><input type="text" id="m-dettes-${c.id}"/>
+      <label>Prêts (+/- delta)</label><input type="text" id="m-prets-${c.id}"/>
+      <label>Argent attendu (+/- delta)</label><input type="text" id="m-argentattendu-${c.id}"/>
+      <label>Quota personnalisé de virement considérable</label><input type="text" id="m-quotavc-${c.id}"/>
+      <label>Virements illimités</label>
+      <select id="m-illimites-${c.id}"><option value="">— inchangé —</option><option value="true">Activer</option><option value="false">Désactiver</option></select>
+      <div class="ligne-boutons" style="flex-wrap:wrap">
+        <button onclick="appliquerModifCitoyen('${c.id}')">Enregistrer les modifications</button>
+        <button class="secondaire" onclick="supprimerTauxOverride('${c.id}')">Retirer l'override de taux de revenu</button>
+        <button class="danger" onclick="supprimerCitoyen('${c.id}')">Supprimer ce compte</button>
+      </div>
+      <div class="msg" id="m-msg-${c.id}"></div>
+    </div>
+  `).join('');
+}
+
+async function appliquerModifCitoyen(id){
+  const v = suffix => document.getElementById(suffix + id).value.trim();
+  const parseDelta = s => s === '' ? null : Number(s);
+  const params = {
+    p_token: token(), p_citoyen_id: id,
+    p_username: v('m-username-') || null,
+    p_nom_complet: v('m-nomcomplet-') || null,
+    p_date_naissance: v('m-naissance-') || null,
+    p_age_toutouien_inscription: v('m-age-') === '' ? null : Number(v('m-age-')),
+    p_cree_le: v('m-creele-') || null,
+    p_province_residence: v('m-province-') || null,
+    p_salaire: v('m-salaire-') === '' ? null : Number(v('m-salaire-')),
+    p_est_agent_paix: v('m-police-') === '' ? null : v('m-police-') === 'true',
+    p_tresorerie_delta: parseDelta(v('m-tresorerie-')),
+    p_dettes_delta: parseDelta(v('m-dettes-')),
+    p_prets_delta: parseDelta(v('m-prets-')),
+    p_argent_attendu_delta: parseDelta(v('m-argentattendu-'))
+  };
+  const { error } = await sb.rpc('custom_modifier_citoyen', params);
+  if (error) { afficherMsg('m-msg-' + id, error.message, false); return; }
+
+  const taux = v('m-tauxrevenu-');
+  if (taux !== '') await sb.rpc('custom_definir_taux_revenu', { p_token: token(), p_citoyen_id: id, p_taux: Number(taux) });
+
+  const quota = v('m-quotavc-');
+  if (quota !== '') await sb.rpc('custom_definir_quota_virement_considerable', { p_token: token(), p_citoyen_id: id, p_quota: Number(quota) });
+
+  const illimites = v('m-illimites-');
+  if (illimites !== '') await sb.rpc('custom_definir_virements_illimites', { p_token: token(), p_citoyen_id: id, p_actif: illimites === 'true' });
+
+  afficherMsg('m-msg-' + id, 'Modifications enregistrées.', true);
+  rechercherCitoyen();
+}
+
+async function supprimerTauxOverride(id){
+  const { error } = await sb.rpc('custom_supprimer_taux_revenu_override', { p_token: token(), p_citoyen_id: id });
+  if (error) { alert(error.message); return; }
+  rechercherCitoyen();
+}
+
+async function supprimerCitoyen(id){
+  if (!confirm('Supprimer définitivement ce compte ? Irréversible.')) return;
+  const { error } = await sb.rpc('custom_supprimer_citoyen', { p_token: token(), p_citoyen_id: id });
+  if (error) { alert(error.message); return; }
+  document.getElementById('cit-resultats').innerHTML = '';
+}
+
+async function geler(){
+  const cibleUuid = document.getElementById('hab-cible-mode').value === 'un' ? document.getElementById('hab-cible-uuid').value.trim() : null;
+  const duree = document.getElementById('hab-duree').value;
+  const { error } = await sb.rpc('custom_definir_habilite', {
+    p_token: token(), p_cible_id: cibleUuid, p_action: document.getElementById('hab-action').value,
+    p_definitif: duree === 'definitif', p_duree_secondes: duree === 'definitif' ? null : Number(duree)
+  });
+  if (error) { afficherMsg('hab-msg', error.message, false); return; }
+  afficherMsg('hab-msg', 'Règle appliquée.', true);
+  chargerHabiletes();
+}
+
+async function reactiver(){
+  const cibleUuid = document.getElementById('hab-cible-mode').value === 'un' ? document.getElementById('hab-cible-uuid').value.trim() : null;
+  const { error } = await sb.rpc('custom_reactiver_habilite', { p_token: token(), p_cible_id: cibleUuid, p_action: document.getElementById('hab-action').value });
+  if (error) { afficherMsg('hab-msg', error.message, false); return; }
+  afficherMsg('hab-msg', 'Habileté réactivée.', true);
+  chargerHabiletes();
+}
+
+async function chargerHabiletes(){
+  const { data, error } = await sb.rpc('custom_lister_habiletes', { p_token: token() });
+  const cible = document.getElementById('liste-habiletes');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; return; }
+  if (!data.length) { cible.innerHTML = '<p class="discret">Aucune règle active (tout est autorisé par défaut).</p>'; return; }
+  cible.innerHTML = '<table><tr><th>Cible</th><th>Action</th><th>État</th><th>Jusqu\'à</th><th>Défini par</th><th></th></tr>' +
+    data.map(h => `<tr>
+      <td>${h.cible_id ? '@' + (h.cible_username || h.cible_id) : 'TOUS'}</td>
+      <td>${h.action}</td>
+      <td>${h.etat}</td>
+      <td>${h.gele_jusqua ? new Date(h.gele_jusqua).toLocaleString('fr-FR') : '—'}</td>
+      <td>${h.defini_par || '—'}</td>
+      <td><button class="petit secondaire" onclick="reactiverDirect(${h.cible_id ? `'${h.cible_id}'` : 'null'}, '${h.action}')">Réactiver</button></td>
+    </tr>`).join('') + '</table>';
+}
+
+async function reactiverDirect(cibleId, action){
+  const { error } = await sb.rpc('custom_reactiver_habilite', { p_token: token(), p_cible_id: cibleId, p_action: action });
+  if (error) { alert(error.message); return; }
+  chargerHabiletes();
+}
+
+async function definirOverrideCas(){
+  const val = id => document.getElementById(id).value;
+  const bool = s => s === '' ? null : s === 'true';
+  const { error } = await sb.rpc('custom_definir_override_cas', {
+    p_token: token(), p_code: val('ov-code').trim(),
+    p_prenom_legal: val('ov-prenom').trim() || null,
+    p_nom_legal: val('ov-nom').trim() || null,
+    p_date_expiration: val('ov-expiration').trim() || null,
+    p_protection_gouvernementale: bool(val('ov-protection')),
+    p_agent_paix: bool(val('ov-police')),
+    p_salaire_par_minute: val('ov-salaire').trim() === '' ? null : Number(val('ov-salaire'))
+  });
+  if (error) { afficherMsg('ov-msg', error.message, false); return; }
+  afficherMsg('ov-msg', 'Override enregistré.', true);
+  chargerOverridesCas();
+}
+
+async function supprimerOverrideCas(){
+  const { error } = await sb.rpc('custom_supprimer_override_cas', { p_token: token(), p_code: document.getElementById('ov-code').value.trim() });
+  if (error) { afficherMsg('ov-msg', error.message, false); return; }
+  afficherMsg('ov-msg', 'Override supprimé — le .txt fait à nouveau foi pour ce code.', true);
+  chargerOverridesCas();
+}
+
+async function chargerOverridesCas(){
+  const { data, error } = await sb.rpc('custom_lister_overrides_cas', { p_token: token() });
+  const cible = document.getElementById('liste-overrides-cas');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; return; }
+  if (!data.length) { cible.innerHTML = '<p class="discret">Aucun override.</p>'; return; }
+  cible.innerHTML = '<table><tr><th>Code</th><th>Prénom</th><th>Nom</th><th>Expiration</th><th>Protection</th><th>Agent paix</th><th>Salaire</th></tr>' +
+    data.map(o => `<tr>
+      <td class="mono">${o.code_encrypte}</td><td>${o.prenom_legal ?? '—'}</td><td>${o.nom_legal ?? '—'}</td>
+      <td>${o.date_expiration ?? '—'}</td><td>${o.protection_gouvernementale ?? '—'}</td>
+      <td>${o.agent_paix ?? '—'}</td><td>${o.salaire_par_minute ?? '—'}</td>
+    </tr>`).join('') + '</table>';
+}
+
+async function chargerParametres(){
+  const { data, error } = await sb.rpc('custom_lire_parametres');
+  const cible = document.getElementById('liste-parametres');
+  if (error) { cible.innerHTML = '<div class="msg erreur" style="display:block">' + error.message + '</div>'; return; }
+  cible.innerHTML = data.map(p => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <span style="flex:1;">${p.cle}</span>
+      <input type="text" style="width:100px;" id="param-${p.cle}" value="${p.valeur}"/>
+      <button class="petit" onclick="definirParametre('${p.cle}')">Enregistrer</button>
+    </div>`).join('');
+}
+
+async function definirParametre(cle){
+  const { error } = await sb.rpc('custom_definir_parametre', { p_token: token(), p_cle: cle, p_valeur: Number(document.getElementById('param-' + cle).value) });
+  if (error) { alert(error.message); return; }
+  chargerParametres();
 }
 
 async function connexion(){

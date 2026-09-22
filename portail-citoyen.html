@@ -316,9 +316,56 @@ async function chargerRegistreCAS(forcerRechargement) {
   return _registreCasCache;
 }
 
+// Override custom (voir supabase/sql/patch-custom-controle-total.sql) :
+// une valeur définie ici l'emporte TOUJOURS sur celle de num_CAS.txt.
+let _overrideCasCache = {};
+async function lireOverrideCasCustom(codeEncrypte) {
+  if (codeEncrypte in _overrideCasCache) return _overrideCasCache[codeEncrypte];
+  let resultat = null;
+  try {
+    const { data, error } = await sb.rpc('custom_lire_override_cas', { p_code: codeEncrypte });
+    if (!error && data && data.length) resultat = data[0];
+  } catch (e) { /* pas grave : pas d'override pour ce code */ }
+  _overrideCasCache[codeEncrypte] = resultat;
+  return resultat;
+}
+
+// Paramètres globaux custom (voir supabase/sql/patch-custom-controle-total.sql)
+// — retraite/chômage/parentalité affichés ici reflètent les valeurs définies
+// dans le panneau custom, avec les taux actuels du site en repli.
+let _parametresGlobauxCustom = null;
+async function chargerParametresGlobauxCustom() {
+  try {
+    const { data, error } = await sb.rpc('custom_lire_parametres');
+    if (!error && data) {
+      _parametresGlobauxCustom = {};
+      data.forEach(p => { _parametresGlobauxCustom[p.cle] = Number(p.valeur); });
+    }
+  } catch (e) { /* pas grave : on garde les valeurs par défaut */ }
+  return _parametresGlobauxCustom;
+}
+chargerParametresGlobauxCustom();
+function tauxDeductionGlobaleCustom() {
+  const p = _parametresGlobauxCustom || {};
+  return (p.taux_retraite ?? 4) + (p.taux_chomage ?? 1) + (p.taux_parentalite ?? 0.25);
+}
+
 async function trouverDansRegistreCAS(codeEncrypte, forcerRechargement) {
   const registre = await chargerRegistreCAS(forcerRechargement);
-  return registre.find(r => r.code_encrypte === codeEncrypte) || null;
+  const base = registre.find(r => r.code_encrypte === codeEncrypte) || null;
+  const override = await lireOverrideCasCustom(codeEncrypte);
+  if (!override) return base;
+  if (!base && override.salaire_par_minute == null) return null; // rien de valide à retourner
+  return {
+    code_encrypte: codeEncrypte,
+    nom: override.nom_legal ?? base?.nom,
+    prenom: override.prenom_legal ?? base?.prenom,
+    chiffre: base?.chiffre ?? 0,
+    date_expiration: override.date_expiration ?? base?.date_expiration,
+    protege_gouvernement: override.protection_gouvernementale ?? base?.protege_gouvernement ?? false,
+    police: override.agent_paix ?? base?.police ?? false,
+    salaire: override.salaire_par_minute ?? base?.salaire,
+  };
 }
 
 
@@ -922,7 +969,7 @@ async function chargerTableauDeBord(utilisateur) {
             <tr><td>Agent de la paix</td><td>${citoyen.est_agent_paix ? 'Oui' : 'Non'}</td></tr>
             <tr><td>Salaire brut</td><td>${Number(citoyen.salaire).toFixed(2)} R$ / minute</td></tr>
             <tr><td>Taux de Taxe sur les Revenus (TR)</td><td>${Number(citoyen.taux_revenu).toFixed(1)}%</td></tr>
-            <tr><td>Salaire net (après TR 1%, retraite 4%, chômage 1%, parentalité 0,25%)</td><td>${(Number(citoyen.salaire) * (1 - (Number(citoyen.taux_revenu) + 5.25) / 100)).toFixed(4)} R$ / minute</td></tr>
+            <tr><td>Salaire net (après TR ${Number(citoyen.taux_revenu).toFixed(2)}%, retraite/chômage/parentalité ${tauxDeductionGlobaleCustom().toFixed(2)}%)</td><td>${(Number(citoyen.salaire) * (1 - (Number(citoyen.taux_revenu) + tauxDeductionGlobaleCustom()) / 100)).toFixed(4)} R$ / minute</td></tr>
           </tbody>
         </table>
       </div>
