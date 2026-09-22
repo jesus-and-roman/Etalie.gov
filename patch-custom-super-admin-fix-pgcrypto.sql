@@ -14,7 +14,7 @@ begin
   end if;
 
   -- !!! REMPLACE CETTE VALEUR avant d'exécuter ce patch dans Supabase !!!
-  if p_cle_maitre <> 'CHANGE_MOI_AVANT_EXECUTION' then
+  if p_cle_maitre <> '000000000000000000000000' then
     raise exception 'Clé maître invalide.';
   end if;
 
