@@ -951,6 +951,7 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="entreprise">Entreprise</button>
       <button data-onglet="releves">Relevés d'entreprises</button>
       <button data-onglet="infos">Infos utilisateur</button>
+      <button data-onglet="capitaux">Capitaux</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1041,7 +1042,7 @@ async function chargerTableauDeBord(utilisateur) {
       <div class="pc-carte">
         <h3>Virement familial</h3>
         <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Un seul destinataire, maximum 2 000 R$. Taxe de 1,25 % versée au gouvernement. Non remboursable.</p>
-        <div class="pc-champ"><label for="vf-dest">Nom d'utilisateur du destinataire</label><input type="text" id="vf-dest"></div>
+        <div class="pc-champ"><label for="vf-dest">Nom d'utilisateur ou CIB du destinataire</label><input type="text" id="vf-dest"></div>
         <div class="pc-champ"><label for="vf-montant">Montant à envoyer (avant taxe, max 2 000 R$)</label><input type="number" id="vf-montant" min="0" max="2000" step="0.01"></div>
         <div id="vf-message"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="vf-envoyer">Envoyer</button>
@@ -1050,7 +1051,7 @@ async function chargerTableauDeBord(utilisateur) {
       <div class="pc-carte">
         <h3>Virement business</h3>
         <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Envoie le même montant à un ou plusieurs destinataires, total maximum 6 000 R$. Taxe de 1,65 % sur le total, remboursable par l'administration en cas de litige gagné.</p>
-        <div class="pc-champ"><label for="vb-dest">Noms d'utilisateur (séparés par des virgules)</label><input type="text" id="vb-dest" placeholder="ex: fcong, jdupont"></div>
+        <div class="pc-champ"><label for="vb-dest">Noms d'utilisateur ou CIB (séparés par des virgules)</label><input type="text" id="vb-dest" placeholder="ex: fcong, jdupont"></div>
         <div class="pc-champ"><label for="vb-montant">Montant par personne (avant taxe)</label><input type="number" id="vb-montant" min="0" step="0.01"></div>
         <div id="vb-message"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="vb-envoyer">Envoyer</button>
@@ -1059,7 +1060,7 @@ async function chargerTableauDeBord(utilisateur) {
       <div class="pc-carte">
         <h3>Virement économe</h3>
         <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Pour les gros montants : de 6 000 R$ à 500 000 R$, un seul destinataire. Taxe de 0,35 % seulement, mais aucun litige possible (non remboursable).</p>
-        <div class="pc-champ"><label for="ve-dest">Nom d'utilisateur du destinataire</label><input type="text" id="ve-dest"></div>
+        <div class="pc-champ"><label for="ve-dest">Nom d'utilisateur ou CIB du destinataire</label><input type="text" id="ve-dest"></div>
         <div class="pc-champ"><label for="ve-montant">Montant à envoyer (avant taxe, entre 6 000 et 500 000 R$)</label><input type="number" id="ve-montant" min="6000" max="500000" step="0.01"></div>
         <div id="ve-message"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ve-envoyer">Envoyer</button>
@@ -1232,6 +1233,7 @@ async function chargerTableauDeBord(utilisateur) {
     ${panneauEntrepriseHTML()}
     ${panneauRelevesHTML()}
     ${panneauInfosHTML()}
+    ${panneauCapitauxHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1250,7 +1252,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'capitaux', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1282,6 +1284,8 @@ async function chargerTableauDeBord(utilisateur) {
   initialiserPanneauEntreprise();
   initialiserPanneauReleves();
   initialiserPanneauInfos();
+  initialiserPanneauCapitaux();
+  synchroniserCIBEtRapports();
 
   demarrerTicker(utilisateur.id, citoyen);
 }
@@ -2299,6 +2303,16 @@ function panneauAdminHTML() {
       </div>
 
       <div class="pc-carte">
+        <h3>Offres de capital au gouvernement (en attente)</h3>
+        <div id="a-liste-offres-capital"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demandes de changement de CIB</h3>
+        <div id="a-liste-demandes-cib"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
         <h3>Créer une taxe secondaire (argent attendu)</h3>
         <div class="pc-champ"><label for="a-taxe-username">Nom d'utilisateur</label><input type="text" id="a-taxe-username"></div>
         <div class="pc-champ"><label for="a-taxe-titre">Titre</label><input type="text" id="a-taxe-titre"></div>
@@ -2754,6 +2768,8 @@ function initialiserPanneauAdmin() {
   chargerContribuablesAdmin();
   chargerDemandesEntreprisesAdmin();
   chargerEmpruntsEntreprisesAdmin();
+  chargerOffresCapitalAdmin();
+  chargerDemandesCibAdmin();
 
   document.getElementById('a-taxe-creer').onclick = async () => {
     const { error } = await sb.rpc('gouv_creer_taxe_secondaire', {
@@ -3932,6 +3948,10 @@ function panneauRecompensesHTML() {
         <button class="bouton bouton-or" id="rc-aft-envoyer" style="border:none; cursor:pointer;">Envoyer la demande</button>
         <div id="rc-aft-message" style="margin-top:10px;"></div>
       </div>
+
+      <div id="rc-detail-modal" class="pm-masque" style="position:fixed; inset:0; background:rgba(15,61,34,.7); z-index:999; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; max-width:560px; width:100%; max-height:85vh; overflow-y:auto; padding:26px; border-radius:4px;" id="rc-detail-contenu"></div>
+      </div>
     </div>
   `;
 }
@@ -4204,24 +4224,33 @@ function panneauEntrepriseHTML() {
 
 let entMinuteurs = [];
 let entMesPointage = [];
+let entDetailOuvert = null;
 
 async function initialiserPanneauEntreprise() {
   await entRafraichirMesEntreprises();
   document.getElementById('ent-creer').onclick = entCreerEntreprise;
   entMinuteurs.forEach(clearInterval);
   entMinuteurs = [
-    // Mode manuel : +1 minute travaillée par minute de connexion.
+    // Mode manuel : accumulation toutes les 10 secondes (10/60 de minute).
     setInterval(async () => {
       for (const e of entMesPointage) if (e.mode_paiement === 'manuel') {
-        await sb.rpc('entreprise_accumuler_heure', { p_entreprise_id: e.id, p_minutes: 1 });
+        try { await sb.rpc('entreprise_accumuler_heure', { p_entreprise_id: e.id, p_minutes: 10 / 60 }); }
+        catch (err) { console.error('entreprise_accumuler_heure', err); }
       }
-    }, 60000),
-    // Mode automatique : paiement par lots de 5 secondes.
+    }, 10000),
+    // Mode automatique : paiement toutes les 10 secondes.
     setInterval(async () => {
       for (const e of entMesPointage) if (e.mode_paiement === 'automatique') {
-        await sb.rpc('entreprise_avancer_paiement_auto', { p_entreprise_id: e.id, p_secondes: 5 });
+        try { await sb.rpc('entreprise_avancer_paiement_auto', { p_entreprise_id: e.id, p_secondes: 10 }); }
+        catch (err) { console.error('entreprise_avancer_paiement_auto', err); }
       }
-    }, 5000)
+    }, 10000),
+    // Rafraîchit le panneau ouvert (heures/montants visiblement à jour).
+    setInterval(() => {
+      const conteneur = document.getElementById('ent-detail');
+      const saisieEnCours = conteneur && conteneur.contains(document.activeElement) && document.activeElement !== document.body;
+      if (entDetailOuvert && !saisieEnCours) entOuvrirDetail(entDetailOuvert, true);
+    }, 10000)
   ];
 }
 
@@ -4246,7 +4275,8 @@ function entFormatHeures(heures) {
   return heures.map(h => `${Number(h.heures).toFixed(2)} h (${fmtR(h.taux)} R$)`).join('<br>');
 }
 
-async function entOuvrirDetail(entrepriseId) {
+async function entOuvrirDetail(entrepriseId, silencieux) {
+  entDetailOuvert = entrepriseId;
   const conteneur = document.getElementById('ent-detail');
   const { data: e, error } = await sb.rpc('entreprise_detail', { p_entreprise_id: entrepriseId });
   if (error || !e) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error ? error.message : 'Introuvable.')}</p>`; return; }
@@ -4272,6 +4302,13 @@ async function entOuvrirDetail(entrepriseId) {
       <h5 style="margin-top:14px;">Mes CIB d'entreprise</h5>
       <button class="pc-lien" id="ent-voir-cib">Afficher les CIB auxquels j'ai droit</button>
       <div id="ent-cib-zone"></div>
+      ${e.mon_role === 'pdg' ? `
+      <details style="margin-top:8px;"><summary class="pm-mini" style="cursor:pointer;">Un CIB de l'entreprise a fuité ?</summary>
+        <div class="pc-champ"><label>Lequel</label><select id="ent-cibreq-champ"><option value="impots">CIB impôts</option><option value="reception">CIB réception</option><option value="envoi">CIB envoi</option></select></div>
+        <div class="pc-champ"><label>Motif (10 caractères minimum)</label><textarea id="ent-cibreq-motif"></textarea></div>
+        <button class="bouton bouton-contour" style="cursor:pointer;" id="ent-cibreq-envoyer">Demander un changement au gouvernement</button>
+        <div id="ent-cibreq-message"></div>
+      </details>` : ''}
 
       <h5 style="margin-top:14px;">Membres</h5>
       <div style="overflow-x:auto;">
@@ -4283,8 +4320,9 @@ async function entOuvrirDetail(entrepriseId) {
             ${a('modifier_droits') && m.role === 'employe' ? `<br><select data-assigner-role="${m.citoyen_id}">${optionsRoles(m)}</select>` : ''}</td>
           <td>${m.salaire_horaire ?? '—'}
             ${a('modifier_salaire') ? `<br><input type="number" min="18" step="0.01" style="width:80px;" data-sal-val="${m.citoyen_id}" value="${m.salaire_horaire ?? ''}"><button class="pc-lien" data-sal="${m.citoyen_id}">Modifier</button>` : ''}</td>
-          <td>${m.cib ? escHtml(m.cib) : '<em>à renseigner</em>'}
-            ${a('ajouter_employe') ? `<br><input type="text" style="width:130px;" data-cib-val="${m.citoyen_id}" placeholder="0R-0..." value="${escHtml(m.cib || '')}"><button class="pc-lien" data-cib="${m.citoyen_id}">Enregistrer</button>` : ''}</td>
+          <td>${m.cib_masque ? `<code>${escHtml(m.cib_masque)}</code>` : '<em>à renseigner</em>'}
+            ${e.mon_role === 'pdg' ? `<br><button class="pc-lien" data-voir-cib="${m.citoyen_id}">Voir (mot de passe)</button>` : ''}
+            ${a('ajouter_employe') ? `<br><input type="text" style="width:130px;" data-cib-val="${m.citoyen_id}" placeholder="0R-0..."><button class="pc-lien" data-cib="${m.citoyen_id}">Enregistrer</button>` : ''}</td>
           <td>${entFormatHeures(m.heures)}
             ${e.mode_paiement === 'manuel' && a('payer_employe') && m.heures && m.heures.length ? `<br>
               <select data-payer-taux="${m.citoyen_id}">${m.heures.map(h => `<option value="${h.taux}">${fmtR(h.taux)} R$/h (${Number(h.heures).toFixed(2)} h)</option>`).join('')}</select>
@@ -4359,6 +4397,12 @@ async function entOuvrirDetail(entrepriseId) {
         <div class="pc-champ"><label>Montant</label><input type="number" id="ent-vie-montant" min="0" step="0.01"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-vie-envoyer">Virer</button>
         <div id="ent-vie-message"></div>` : ''}
+        ${a('transferer_argent') ? `
+        <h6 style="margin-top:12px;">Virer vers un citoyen (depuis le CIB d'envoi de l'entreprise)</h6>
+        <div class="pc-champ"><label>Nom d'utilisateur ou CIB du destinataire</label><input type="text" id="ent-vet-dest"></div>
+        <div class="pc-champ"><label>Montant</label><input type="number" id="ent-vet-montant" min="0" step="0.01"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-vet-envoyer">Virer</button>
+        <div id="ent-vet-message"></div>` : ''}
         ${a('enregistrer_depense') ? `
         <h6 style="margin-top:12px;">Enregistrer une dépense</h6>
         <div class="pc-champ"><label>Montant</label><input type="number" id="ent-dep-montant" min="0" step="0.01"></div>
@@ -4422,6 +4466,27 @@ async function entOuvrirDetail(entrepriseId) {
     if (err) { z.innerHTML = `<p class="pc-erreur">${escHtml(err.message)}</p>`; return; }
     const lignes = [['cib_impots', 'CIB impôts'], ['cib_reception', 'CIB réception'], ['cib_envoi', 'CIB envoi']].filter(([k]) => data && data[k]);
     z.innerHTML = lignes.length ? lignes.map(([k, l]) => `<p><strong>${l} :</strong> <code>${escHtml(data[k])}</code></p>`).join('') : '<p class="pm-mini">Aucun CIB accessible avec vos droits.</p>';
+  };
+  qa('[data-voir-cib]').forEach(b => b.onclick = async () => {
+    const mdp = prompt('Mot de passe du PDG pour voir ce CIB :');
+    if (mdp == null) return;
+    const { data, error: err } = await sb.rpc('entreprise_voir_cib_membre', { p_entreprise_id: entrepriseId, p_citoyen_id: b.dataset.voirCib, p_mdp: mdp });
+    if (err) { alert(err.message); return; }
+    if (!data.ok) { alert('Mot de passe incorrect.'); return; }
+    alert('CIB : ' + (data.cib || 'non renseigné'));
+  });
+  if (q('#ent-cibreq-envoyer')) q('#ent-cibreq-envoyer').onclick = async () => {
+    const { error: err } = await sb.rpc('demander_changement_cib_entreprise', {
+      p_entreprise_id: entrepriseId, p_champ: q('#ent-cibreq-champ').value, p_motif: q('#ent-cibreq-motif').value
+    });
+    entMsg('ent-cibreq-message', err, 'Demande envoyée au gouvernement.');
+  };
+  if (q('#ent-vet-envoyer')) q('#ent-vet-envoyer').onclick = async () => {
+    const { error: err } = await sb.rpc('entreprise_virement_vers_citoyen', {
+      p_entreprise_id: entrepriseId, p_destinataire: q('#ent-vet-dest').value.trim(), p_montant: Number(q('#ent-vet-montant').value)
+    });
+    entMsg('ent-vet-message', err, 'Virement envoyé.');
+    if (!err) rechargerDetail();
   };
   qa('[data-payer]').forEach(b => b.onclick = async () => {
     const id = b.dataset.payer;
@@ -4641,7 +4706,12 @@ function initialiserPanneauReleves() {
           <div id="rel-cap-message"></div>` : '<p class="pm-mini">Aucun capital en vente.</p>'}
         <h5 style="margin-top:12px;">Relevés</h5>
         ${entRapportsHTML(data.rapports)}
+        <h5 style="margin-top:12px;">Logs de l'entreprise</h5>
+        <div id="rel-logs"><p class="pm-mini">Chargement…</p></div>
       </div>`;
+    sb.rpc('entreprise_logs_publics', { p_entreprise_id: data.id }).then(({ data: logs, error: errL }) => {
+      document.getElementById('rel-logs').innerHTML = errL ? `<p class="pc-erreur">${escHtml(errL.message)}</p>` : entLogsHTML(logs);
+    });
     const btn = document.getElementById('rel-cap-acheter');
     if (btn) btn.onclick = async () => {
       const { error: err } = await sb.rpc('entreprise_acheter_capital', { p_entreprise_id: data.id, p_pourcentage: Number(document.getElementById('rel-cap-pct').value) });
@@ -4684,14 +4754,189 @@ function initialiserPanneauInfos() {
   };
 }
 
+
+/* =====================================================================
+   ADMIN — emprunts d'entreprise au gouvernement
+   ===================================================================== */
+
+
+/* =====================================================================
+   OUTILS COMMUNS v2 : logs, historiques de négociation, statut CAS
+   ===================================================================== */
+let statutCASActuel = null, monCIBEffectif = null;
+
+const LIB_STATUT_NEGO = {
+  en_attente: 'en attente du gouvernement', en_attente_entreprise: 'en attente de la réponse de l\'entreprise',
+  acceptee: 'acceptée', refusee: 'refusée', rembourse: 'remboursé'
+};
+
+function entHistoriqueHTML(hist, fmt) {
+  if (!hist || !hist.length) return '';
+  return `<div class="pm-mini" style="margin:6px 0;">${hist.map(h =>
+    `<div>${h.auteur === 'gouvernement' ? 'Gouvernement' : 'Entreprise'} : ${fmt(h)}${h.message ? ' — « ' + escHtml(h.message) + ' »' : ''}</div>`).join('')}</div>`;
+}
+
+function entLogLibelle(l) {
+  const d = l.donnees || {};
+  const u = d.username ? '@' + escHtml(d.username) : 'inconnu';
+  switch (l.type) {
+    case 'depense': return `Dépense de ${fmtR(d.montant)} R$${d.note ? ' — ' + escHtml(d.note) : ''}`;
+    case 'ajout_fonds': return `Ajout de fonds de ${u} : ${fmtR(d.montant)} R$`;
+    case 'paiement_employe': return `Salaire à ${u} : ${fmtR(d.montant)} R$${d.heures ? ' (' + Number(d.heures).toFixed(2) + ' h à ' + fmtR(d.taux) + ' R$/h)' : ' (paie automatique)'}`;
+    case 'virement_entreprise': return `Virement à l'entreprise ${escHtml(d.entreprise_dest_nom)} : ${fmtR(d.montant)} R$`;
+    case 'virement_tiers': return `Virement à @${escHtml(d.destinataire_username)} : ${fmtR(d.montant)} R$`;
+    case 'vente_capital': return `Capital vendu à @${escHtml(d.acheteur_username)} : ${d.pourcentage} % pour ${fmtR(d.cout)} R$`;
+    case 'capital_gouvernement': return `Capital vendu au gouvernement : ${d.pourcentage} % pour ${fmtR(d.cout)} R$`;
+    case 'emprunt_gouvernement': return `Emprunt au gouvernement : ${fmtR(d.montant)} R$ (${escHtml(d.type_taux)} ${d.taux_valeur})`;
+    default: return escHtml(l.type);
+  }
+}
+function entLogsHTML(logs) {
+  if (!logs || !logs.length) return '<p class="pm-mini">Aucun log ce mois-ci.</p>';
+  return `<div style="max-height:320px; overflow:auto;"><table class="table-donnees"><thead><tr><th>Date</th><th>Opération</th></tr></thead><tbody>
+    ${logs.map(l => `<tr><td>${escHtml(String(l.cree_le).replace('T', ' ').slice(0, 16))}</td><td>${entLogLibelle(l)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+// Retrouve la ligne du CAS du citoyen (tolérant sur les tirets et les espaces).
+async function statutCASPourInfos(codeEncrypte) {
+  if (statutCASActuel) return statutCASActuel;
+  let r = null;
+  try { r = await trouverDansRegistreCAS(codeEncrypte, true); } catch (e) { /* ignoré */ }
+  if (r) return r;
+  try {
+    const norm = s => String(s || '').replace(/[^A-Za-z]/g, '').toUpperCase();
+    const reg = await chargerRegistreCAS(false);
+    return reg.find(x => norm(x.code_encrypte) === norm(codeEncrypte)) || null;
+  } catch (e) { return null; }
+}
+
+// À la connexion : synchronise le CIB du fichier CAS et rattrape les
+// relevés automatiques du 2 du mois (au cas où pg_cron n'est pas actif).
+async function synchroniserCIBEtRapports() {
+  try {
+    const { data } = await sb.rpc('enregistrer_mon_cib', { p_cib_fichier: statutCASActuel ? statutCASActuel.cib : null });
+    monCIBEffectif = data || null;
+  } catch (e) { /* conflit de CIB : signalé dans Infos utilisateur */ }
+  try { await sb.rpc('entreprises_rattraper_rapports'); } catch (e) { /* ignoré */ }
+}
+
+/* =====================================================================
+   MARCHÉ DES CAPITAUX + MES CAPITAUX
+   ===================================================================== */
+function panneauCapitauxHTML() {
+  return `
+    <div id="onglet-capitaux" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mes capitaux</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:12px;">Chaque augmentation de la trésorerie d'une entreprise est partagée au prorata du capital détenu par les tiers. Le montant accumulé se retire quand vous voulez.</p>
+        <div id="cap-mes-capitaux"><p class="pm-mini">Chargement…</p></div>
+        <div id="cap-vente-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Marché : capital des entreprises</h3>
+        <div id="cap-marche-entreprises"><p class="pm-mini">Chargement…</p></div>
+        <div id="cap-achat-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Marché : capital revendu par des particuliers</h3>
+        <div id="cap-marche-tiers"><p class="pm-mini">Chargement…</p></div>
+      </div>
+    </div>`;
+}
+
+function initialiserPanneauCapitaux() { capChargerTout(); }
+
+async function capChargerTout() {
+  const [{ data: mes }, { data: marche }] = await Promise.all([sb.rpc('mes_capitaux'), sb.rpc('capital_marche')]);
+  const zMes = document.getElementById('cap-mes-capitaux');
+  if (!zMes) return;
+
+  zMes.innerHTML = (mes && mes.length) ? mes.map(c => `
+    <div class="pm-fleet-item">
+      <div class="entete"><div><strong>${escHtml(c.nom)}</strong> — ${Number(c.pourcentage).toFixed(2)} % du capital
+        <div class="pm-mini">Argent accumulé (retirable) : <strong>${fmtR(c.solde)} R$</strong> — part de la trésorerie de l'entreprise : ${fmtR(c.valeur_tresorerie)} R$ — déjà en vente : ${Number(c.en_vente_pct).toFixed(1)} %</div></div>
+        <button class="pc-lien" data-cap-retirer="${c.entreprise_id}">Retirer vers ma trésorerie</button></div>
+      <details style="margin-top:8px;"><summary class="pm-mini" style="cursor:pointer;">Vendre une partie de mon capital</summary>
+        <div class="pc-champ"><label>Pourcentage à vendre (par tranches de 0,1 %)</label><input type="number" step="0.1" min="0.1" data-cv-pct="${c.entreprise_id}"></div>
+        <div class="pc-champ"><label>Prix par 0,1 % (R$)</label><input type="number" step="0.01" min="0" data-cv-prix="${c.entreprise_id}"></div>
+        <div class="pc-champ"><label>Description (500 caractères max)</label><textarea maxlength="500" data-cv-desc="${c.entreprise_id}"></textarea></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cv-envoyer="${c.entreprise_id}">Mettre en vente</button>
+      </details>
+    </div>`).join('') : '<p class="pm-mini">Vous ne détenez aucun capital.</p>';
+
+  zMes.querySelectorAll('[data-cap-retirer]').forEach(b => b.onclick = async () => {
+    const { data, error } = await sb.rpc('capital_retirer_solde', { p_entreprise_id: b.dataset.capRetirer });
+    entMsg('cap-vente-message', error, `${fmtR(data)} R$ ajoutés à votre trésorerie.`);
+    if (!error) capChargerTout();
+  });
+  zMes.querySelectorAll('[data-cv-envoyer]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.cvEnvoyer;
+    const { error } = await sb.rpc('capital_mettre_en_vente_tiers', {
+      p_entreprise_id: id, p_pourcentage: Number(zMes.querySelector(`[data-cv-pct="${id}"]`).value),
+      p_prix_par_dixieme: Number(zMes.querySelector(`[data-cv-prix="${id}"]`).value) || 0,
+      p_description: zMes.querySelector(`[data-cv-desc="${id}"]`).value || null
+    });
+    entMsg('cap-vente-message', error, 'Offre publiée sur le marché.');
+    if (!error) capChargerTout();
+  });
+
+  const zE = document.getElementById('cap-marche-entreprises');
+  const ents = (marche && marche.entreprises) || [];
+  zE.innerHTML = ents.length ? ents.map(o => `
+    <div class="pm-fleet-item">
+      <div class="entete"><div><strong>${escHtml(o.nom)}</strong> — ${Number(o.en_vente_pct).toFixed(2)} % en vente à ${fmtR(o.prix_par_centieme)} R$ par 0,01 %
+        <div class="pm-mini">Minimum ${o.min_achat_pct} % — max par individu : ${o.max_par_individu ?? 'aucun'}</div></div></div>
+      ${o.description ? `<p style="font-size:.85rem; white-space:pre-wrap; margin:6px 0;">${escHtml(o.description)}</p>` : ''}
+      <div class="pc-champ"><label>Pourcentage à acheter</label><input type="number" step="0.01" min="${o.min_achat_pct}" data-ca-pct="${o.entreprise_id}"></div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-ca-acheter="${o.entreprise_id}">Acheter</button>
+    </div>`).join('') : '<p class="pm-mini">Aucune entreprise ne vend de capital.</p>';
+  zE.querySelectorAll('[data-ca-acheter]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.caAcheter;
+    const { error } = await sb.rpc('entreprise_acheter_capital', { p_entreprise_id: id, p_pourcentage: Number(zE.querySelector(`[data-ca-pct="${id}"]`).value) });
+    entMsg('cap-achat-message', error, 'Achat effectué.');
+    if (!error) capChargerTout();
+  });
+
+  const zT = document.getElementById('cap-marche-tiers');
+  const tiers = (marche && marche.tiers) || [];
+  zT.innerHTML = tiers.length ? tiers.map(o => `
+    <div class="pm-fleet-item">
+      <div class="entete"><div><strong>${escHtml(o.nom)}</strong> — @${escHtml(o.vendeur)} vend ${Number(o.pourcentage).toFixed(1)} % à ${fmtR(o.prix_par_dixieme)} R$ par 0,1 %</div>
+        <button class="pc-lien" data-ct-retirer="${o.id}" style="display:none;">Retirer</button></div>
+      ${o.description ? `<p style="font-size:.85rem; white-space:pre-wrap; margin:6px 0;">${escHtml(o.description)}</p>` : ''}
+      <div class="pc-champ"><label>Pourcentage à acheter (tranches de 0,1 %)</label><input type="number" step="0.1" min="0.1" max="${o.pourcentage}" data-ct-pct="${o.id}"></div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-ct-acheter="${o.id}">Acheter</button>
+      <button class="pc-lien" data-ct-annuler="${o.id}">Retirer mon offre</button>
+    </div>`).join('') : '<p class="pm-mini">Aucune offre de particulier.</p>';
+  zT.querySelectorAll('[data-ct-acheter]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.ctAcheter;
+    const { error } = await sb.rpc('capital_acheter_tiers', { p_offre_id: id, p_pourcentage: Number(zT.querySelector(`[data-ct-pct="${id}"]`).value) });
+    entMsg('cap-achat-message', error, 'Achat effectué.');
+    if (!error) capChargerTout();
+  });
+  zT.querySelectorAll('[data-ct-annuler]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('capital_retirer_offre_tiers', { p_offre_id: b.dataset.ctAnnuler });
+    if (error) alert(error.message); else capChargerTout();
+  });
+}
+
+/* =====================================================================
+   INFOS UTILISATEUR v2
+   ===================================================================== */
 async function afficherInfosPersonnelles() {
   const { data: i, error } = await sb.rpc('mes_infos_personnelles');
   if (error) { entMsg('inf-verrou-message', error); return; }
-  let cas = null;
-  try { cas = await trouverDansRegistreCAS(i.code_social_encrypte, true); } catch (e) { /* registre indisponible */ }
+  const cas = await statutCASPourInfos(i.code_social_encrypte);
+  const { data: demandes } = await sb.rpc('mes_demandes_changement_cib');
   document.getElementById('inf-verrou').classList.add('pc-masque');
-  const ligne = (l, v) => `<tr><th style="text-align:left;">${l}</th><td>${escHtml(v ?? '—')}</td></tr>`;
-  const brut = Number(i.salaire_brut_minute), net = Number(i.salaire_net_minute);
+
+  const ligne = (l, v) => `<tr><th style="text-align:left;">${l}</th><td>${v == null || v === '' ? '—' : escHtml(v)}</td></tr>`;
+  const min = (n) => `${fmtR(n)} R$/min (${fmtR(Number(n) * 60)} R$/h)`;
+  const cib = i.cib || monCIBEffectif || (cas ? cas.cib : null);
+  const nonTrouve = 'introuvable dans num_CAS.txt';
+  const lignesEnt = (i.entreprises || []).map(e => `<div>${escHtml(e.entreprise)} (${escHtml(e.role)}) : ${fmtR(e.salaire_horaire)} R$/h</div>`).join('');
+
   document.getElementById('inf-contenu').innerHTML = `
     <div class="pc-carte">
       <h3>Informations personnelles</h3>
@@ -4701,14 +4946,23 @@ async function afficherInfosPersonnelles() {
         ${ligne('Email', i.email)}
         ${ligne('Date de naissance', i.date_naissance)}
         ${ligne('Dossier créé le', String(i.cree_le).slice(0, 10))}
-        ${ligne('Expiration du CAS', cas ? cas.date_expiration : null)}
-        ${ligne('CAS à renouvellement protégé', cas ? (cas.protege_gouvernement ? 'Oui' : 'Non') : null)}
+        ${ligne('Expiration du CAS', cas ? cas.date_expiration : nonTrouve)}
+        ${ligne('CAS à renouvellement protégé', cas ? (cas.protege_gouvernement ? 'Oui' : 'Non') : nonTrouve)}
         ${ligne('Agent de la paix', i.est_agent_paix ? 'Oui' : 'Non')}
-        ${ligne('Salaire brut', fmtR(brut) + ' R$/minute (' + fmtR(brut * 60) + ' R$/h)')}
-        ${ligne('Salaire sans taxe', fmtR(net) + ' R$/minute (' + fmtR(net * 60) + ' R$/h)')}
-        ${ligne('Taxe sur les revenus', Number(i.taux_revenu).toFixed(2) + ' %')}
         ${ligne('CAS complet (décrypté)', decrypterCode(i.code_social_encrypte))}
-        ${ligne('CIB', cas ? cas.cib : null)}
+        ${ligne('CIB', cib || 'aucun CIB enregistré dans num_CAS.txt')}
+      </tbody></table>
+    </div>
+    <div class="pc-carte">
+      <h3>Salaire</h3>
+      <table class="table-donnees"><tbody>
+        <tr><th style="text-align:left;">Salaire du CAS</th><td>${min(i.salaire_cas_minute || 0)}</td></tr>
+        <tr><th style="text-align:left;">Salaires d'entreprises</th><td>${lignesEnt || '—'}</td></tr>
+        <tr><th style="text-align:left;">Salaire brut (CAS + entreprises)</th><td><strong>${min(i.salaire_brut_minute)}</strong></td></tr>
+        <tr><th style="text-align:left;">Taxe sur les revenus (${Number(i.taux_revenu).toFixed(2)} %)</th><td>− ${min(i.taxe_revenu_minute)}</td></tr>
+        <tr><th style="text-align:left;">Taxe préventive (${Number(i.taux_preventif || 0).toFixed(2)} %)</th><td>− ${min(i.taxe_preventive_minute)}</td></tr>
+        <tr><th style="text-align:left;">Chômage, retraite, parentalité</th><td>− ${min(i.cotisations_minute)}</td></tr>
+        <tr><th style="text-align:left;">Salaire net (sans taxe)</th><td><strong>${min(i.salaire_net_minute)}</strong></td></tr>
       </tbody></table>
     </div>
     <div class="pc-carte">
@@ -4723,7 +4977,16 @@ async function afficherInfosPersonnelles() {
       <div class="pc-champ"><label for="inf-nemail">Nouvel email</label><input type="email" id="inf-nemail"></div>
       <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="inf-email-changer">Changer l'email</button>
       <div id="inf-email-message"></div>
+    </div>
+    <div class="pc-carte">
+      <h3>Mon CIB a fuité ?</h3>
+      <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:12px;">Le gouvernement peut vous attribuer un nouveau CIB. Les entreprises qui vous emploient devront le ressaisir.</p>
+      <div class="pc-champ"><label for="inf-cibreq-motif">Motif (10 caractères minimum)</label><textarea id="inf-cibreq-motif"></textarea></div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="inf-cibreq-envoyer">Demander un changement de CIB</button>
+      <div id="inf-cibreq-message"></div>
+      ${(demandes || []).filter(d => d.cible === 'citoyen').map(d => `<p class="pm-mini">${escHtml(String(d.cree_le).slice(0, 10))} — ${escHtml(LIB_STATUT_NEGO[d.statut] || d.statut)} — ${escHtml(d.motif)}</p>`).join('')}
     </div>`;
+
   document.getElementById('inf-mdp-changer').onclick = async () => {
     const a = document.getElementById('inf-nmdp').value, b = document.getElementById('inf-nmdp2').value;
     if (a.length < 6) { entMsg('inf-mdp-message', { message: 'Le mot de passe doit contenir au moins 6 caractères.' }); return; }
@@ -4735,32 +4998,92 @@ async function afficherInfosPersonnelles() {
     const { error: err } = await sb.rpc('changer_mon_email', { p_nouvel_email: document.getElementById('inf-nemail').value });
     entMsg('inf-email-message', err, 'Email modifié.');
   };
+  document.getElementById('inf-cibreq-envoyer').onclick = async () => {
+    const { error: err } = await sb.rpc('demander_changement_cib_citoyen', { p_motif: document.getElementById('inf-cibreq-motif').value });
+    entMsg('inf-cibreq-message', err, 'Demande envoyée au gouvernement.');
+  };
 }
 
 /* =====================================================================
-   ADMIN — emprunts d'entreprise au gouvernement
+   ADMIN — emprunts, capital vendu au gouvernement, changements de CIB
    ===================================================================== */
+function adminBlocNego(id, hist, fmtHist, champsHTML, attr) {
+  return `<div class="pm-fleet-item" data-${attr}="${id}">${hist ? entHistoriqueHTML(hist, fmtHist) : ''}${champsHTML}
+    <div class="pm-ligne-boutons">
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-adm-action="acceptee">Accepter</button>
+      <button class="bouton bouton-contour" style="cursor:pointer;" data-adm-action="rectifier">Rectifier et renvoyer</button>
+      <button class="bouton bouton-contour" style="cursor:pointer;" data-adm-action="refusee">Refuser</button>
+    </div></div>`;
+}
+
 async function chargerEmpruntsEntreprisesAdmin() {
   const conteneur = document.getElementById('a-liste-emprunts-entreprises');
   if (!conteneur) return;
   const { data, error } = await sb.rpc('gouv_liste_emprunts_entreprises', { p_statut: 'en_attente' });
   if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
-  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucun emprunt en attente.</p>`; return; }
-  conteneur.innerHTML = data.map(e => `
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucun emprunt à traiter.</p>`; return; }
+  conteneur.innerHTML = data.map(e => adminBlocNego(e.id, e.historique,
+    h => `${fmtR(h.montant)} R$ — ${escHtml(h.type_taux)} ${h.taux_valeur}`,
+    `<div class="entete"><strong>${escHtml(e.entreprise_nom)}</strong></div>
+     <div class="pc-champ"><label>Montant</label><input type="number" step="0.01" data-adm-montant value="${e.montant_demande}"></div>
+     <div class="pc-champ"><label>Type de taux</label><select data-adm-type>${['fixe', 'jour', 'mois', 'an'].map(t => `<option value="${t}" ${e.type_taux === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+     <div class="pc-champ"><label>Taux (R$ si fixe, % sinon)</label><input type="number" step="0.01" data-adm-taux value="${e.taux_valeur}"></div>
+     <div class="pc-champ"><label>Message à l'entreprise</label><input type="text" data-adm-message></div>`, 'emp')).join('');
+  conteneur.querySelectorAll('[data-emp]').forEach(bloc => bloc.querySelectorAll('[data-adm-action]').forEach(btn => btn.onclick = async () => {
+    const id = bloc.dataset.emp, act = btn.dataset.admAction;
+    const { error: err } = act === 'rectifier'
+      ? await sb.rpc('gouv_rectifier_emprunt_entreprise', { p_id: id, p_montant: Number(bloc.querySelector('[data-adm-montant]').value),
+          p_type_taux: bloc.querySelector('[data-adm-type]').value, p_taux_valeur: Number(bloc.querySelector('[data-adm-taux]').value),
+          p_message: bloc.querySelector('[data-adm-message]').value || null })
+      : await sb.rpc('gouv_traiter_emprunt_entreprise', { p_id: id, p_decision: act });
+    if (err) alert(err.message); else chargerEmpruntsEntreprisesAdmin();
+  }));
+}
+
+async function chargerOffresCapitalAdmin() {
+  const conteneur = document.getElementById('a-liste-offres-capital');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_offres_capital', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune offre à traiter.</p>`; return; }
+  conteneur.innerHTML = data.map(o => adminBlocNego(o.id, o.historique,
+    h => `${h.pourcentage} % à ${fmtR(h.prix_par_centieme)} R$ par 0,01 %`,
+    `<div class="entete"><strong>${escHtml(o.entreprise_nom)}</strong> — total : ${fmtR(o.cout_total)} R$</div>
+     <div class="pc-champ"><label>Pourcentage (0,01 à 99,9)</label><input type="number" step="0.01" data-adm-pct value="${o.pourcentage}"></div>
+     <div class="pc-champ"><label>Prix par 0,01 % (R$)</label><input type="number" step="0.01" data-adm-prix value="${o.prix_par_centieme}"></div>
+     <div class="pc-champ"><label>Message à l'entreprise</label><input type="text" data-adm-message></div>`, 'cap')).join('');
+  conteneur.querySelectorAll('[data-cap]').forEach(bloc => bloc.querySelectorAll('[data-adm-action]').forEach(btn => btn.onclick = async () => {
+    const id = bloc.dataset.cap, act = btn.dataset.admAction;
+    const { error: err } = act === 'rectifier'
+      ? await sb.rpc('gouv_rectifier_offre_capital', { p_id: id, p_pourcentage: Number(bloc.querySelector('[data-adm-pct]').value),
+          p_prix_par_centieme: Number(bloc.querySelector('[data-adm-prix]').value), p_message: bloc.querySelector('[data-adm-message]').value || null })
+      : await sb.rpc('gouv_traiter_offre_capital', { p_id: id, p_decision: act });
+    if (err) alert(err.message); else chargerOffresCapitalAdmin();
+  }));
+}
+
+async function chargerDemandesCibAdmin() {
+  const conteneur = document.getElementById('a-liste-demandes-cib');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_demandes_cib');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = `<p style="font-size:.85rem; color:var(--gris-ardoise);">Aucune demande.</p>`; return; }
+  conteneur.innerHTML = data.map(d => `
     <div class="pm-fleet-item">
-      <div class="entete"><strong>${escHtml(e.entreprise_nom)}</strong> — ${fmtR(e.montant_demande)} R$ — ${escHtml(e.type_taux)} ${e.taux_valeur}${e.type_taux === 'fixe' ? ' R$ fixes' : ' %'}</div>
-      <p class="pm-mini">${escHtml(e.justification)}</p>
+      <div class="entete"><strong>${d.cible === 'entreprise' ? 'Entreprise ' + escHtml(d.entreprise) + ' — CIB ' + escHtml(d.champ) : 'Citoyen @' + escHtml(d.demandeur)}</strong>
+        <span class="pm-mini">demandé par @${escHtml(d.demandeur)}</span></div>
+      <p class="pm-mini">${escHtml(d.motif)}</p>
       <div class="pm-ligne-boutons">
-        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-emp-accepter="${e.id}">Accepter</button>
-        <button class="bouton bouton-contour" style="cursor:pointer;" data-emp-refuser="${e.id}">Refuser</button>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cib-acc="${d.id}">Attribuer un nouveau CIB</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-cib-ref="${d.id}">Refuser</button>
       </div>
     </div>`).join('');
-  const traiter = async (id, decision) => {
-    const { error: err } = await sb.rpc('gouv_traiter_emprunt_entreprise', { p_id: id, p_decision: decision });
-    if (err) alert(err.message); else chargerEmpruntsEntreprisesAdmin();
+  const traiter = async (id, dec) => {
+    const { error: err } = await sb.rpc('gouv_traiter_demande_cib', { p_id: id, p_decision: dec });
+    if (err) alert(err.message); else chargerDemandesCibAdmin();
   };
-  conteneur.querySelectorAll('[data-emp-accepter]').forEach(b => b.onclick = () => traiter(b.dataset.empAccepter, 'acceptee'));
-  conteneur.querySelectorAll('[data-emp-refuser]').forEach(b => b.onclick = () => traiter(b.dataset.empRefuser, 'refusee'));
+  conteneur.querySelectorAll('[data-cib-acc]').forEach(b => b.onclick = () => traiter(b.dataset.cibAcc, 'acceptee'));
+  conteneur.querySelectorAll('[data-cib-ref]').forEach(b => b.onclick = () => traiter(b.dataset.cibRef, 'refusee'));
 }
 
 demarrer();
