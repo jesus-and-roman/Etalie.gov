@@ -91,6 +91,33 @@
   .rc-carte-meritas .rc-aft-nom{ color:#8a5a2f; }
   .rc-carte-meritas .rc-date{ font-size:.68rem; color:var(--gris-ardoise); margin-top:4px; }
   .rc-carte-meritas.rc-non-obtenu{ opacity:.45; filter:grayscale(1); }
+  /* --- Harmonisation des pages ajoutées (entreprise avancée, conseiller,
+     capital, confiance, relevé) : champs non stylés + débordements --- */
+  #ent-detail input, #ent-detail select, #ent-detail textarea,
+  #onglet-conseiller input, #onglet-conseiller select, #onglet-conseiller textarea,
+  #onglet-confiance input, #onglet-confiance select,
+  #onglet-releve-mensuel input, #onglet-releve-mensuel select, #onglet-releve-mensuel textarea,
+  #onglet-marche-interieur input, #onglet-marche-interieur textarea,
+  #onglet-marche-exterieur input, #onglet-marche-exterieur textarea,
+  #onglet-releves input,
+  #onglet-capitaux input,
+  #connexion-conseiller input, #connexion-conseiller select, #connexion-conseiller textarea,
+  #cc-session input, #cc-session select, #cc-session textarea,
+  .pm-fleet-item input, .pm-fleet-item select, .pm-fleet-item textarea{
+    display:block; width:100%; max-width:420px; padding:9px 11px; margin:4px 0;
+    border:1px solid var(--gris-ligne); border-radius:2px; font-size:.85rem;
+    font-family:var(--police-texte); background:var(--blanc); box-sizing:border-box;
+  }
+  .pm-fleet-item textarea, #onglet-conseiller textarea, #onglet-releve-mensuel textarea{ min-height:60px; resize:vertical; }
+  .pm-fleet-item select, #onglet-conseiller select{ max-width:100%; }
+  #ent-detail table, .pm-fleet-item table{ max-width:100%; }
+  .table-wrap, .pm-fleet-item, #ent-detail, #onglet-conseiller, #onglet-marche-exterieur, #onglet-marche-interieur, #onglet-releve-mensuel{
+    max-width:100%; overflow-x:auto; box-sizing:border-box;
+  }
+  .pm-fleet-item pre{ white-space:pre-wrap; word-break:break-word; overflow-x:auto; max-width:100%; background:#F3F6FB; padding:10px; border-radius:2px; }
+  .pm-fleet-item details{ margin-top:10px; }
+  .pm-fleet-item details summary{ color:var(--vert-institut); cursor:pointer; font-size:.8rem; }
+  svg.graphique-capital{ max-width:100%; height:auto; display:block; }
 </style>
 </head>
 <body data-page="portail-citoyen">
@@ -4241,7 +4268,7 @@ async function entRafraichirMesEntreprises() {
     <div class="pm-fleet-item"><div class="entete">
       <div><strong>${escHtml(e.nom)}</strong> (${escHtml(e.code)}) — ${escHtml(e.type)} — rôle : ${escHtml(e.role)} — paie ${escHtml(e.mode_paiement)}
         <div class="pm-mini">Trésorerie : ${fmtR(e.tresorerie)} R$</div></div>
-      <button class="pc-lien" data-ouvrir-ent="${e.id}">Gérer</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-ouvrir-ent="${e.id}">Gérer</button>
     </div></div>
   `).join('');
   conteneur.querySelectorAll('[data-ouvrir-ent]').forEach(b => b.onclick = () => entOuvrirDetail(b.dataset.ouvrirEnt));
@@ -4277,13 +4304,13 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
       <p class="pm-mini">Dette salariale envers le gouvernement : ${fmtR(e.dette_salariale_gouv)} R$ — Dette envers les employés : ${fmtR(e.dette_salariale_employes)} R$</p>
 
       <h5 style="margin-top:14px;">Mes CIB d'entreprise</h5>
-      <button class="pc-lien" id="ent-voir-cib">Afficher les CIB auxquels j'ai droit</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="ent-voir-cib">Afficher les CIB auxquels j'ai droit</button>
       <div id="ent-cib-zone"></div>
       ${e.mon_role === 'pdg' ? `
       <details style="margin-top:8px;"><summary class="pm-mini" style="cursor:pointer;">Un CIB de l'entreprise a fuité ?</summary>
         <div class="pc-champ"><label>Lequel</label><select id="ent-cibreq-champ"><option value="impots">CIB impôts</option><option value="reception">CIB réception</option><option value="envoi">CIB envoi</option></select></div>
         <div class="pc-champ"><label>Motif (10 caractères minimum)</label><textarea id="ent-cibreq-motif"></textarea></div>
-        <button class="bouton bouton-contour" style="cursor:pointer;" id="ent-cibreq-envoyer">Demander un changement au gouvernement</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="ent-cibreq-envoyer">Demander un changement au gouvernement</button>
         <div id="ent-cibreq-message"></div>
       </details>` : ''}
 
@@ -4296,18 +4323,18 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
           <td>${escHtml(m.role)}${m.role_nom ? ' / ' + escHtml(m.role_nom) : ''}
             ${a('modifier_droits') && m.role === 'employe' ? `<br><select data-assigner-role="${m.citoyen_id}">${optionsRoles(m)}</select>` : ''}</td>
           <td>${m.salaire_horaire ?? '—'}
-            ${a('modifier_salaire') ? `<br><input type="number" min="18" step="0.01" style="width:80px;" data-sal-val="${m.citoyen_id}" value="${m.salaire_horaire ?? ''}"><button class="pc-lien" data-sal="${m.citoyen_id}">Modifier</button>` : ''}</td>
+            ${a('modifier_salaire') ? `<br><input type="number" min="18" step="0.01" style="width:80px;" data-sal-val="${m.citoyen_id}" value="${m.salaire_horaire ?? ''}"><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-sal="${m.citoyen_id}">Modifier</button>` : ''}</td>
           <td>${m.cib_masque ? `<code>${escHtml(m.cib_masque)}</code>` : '<em>à renseigner</em>'}
-            ${e.mon_role === 'pdg' ? `<br><button class="pc-lien" data-voir-cib="${m.citoyen_id}">Voir (mot de passe)</button>` : ''}
-            ${a('ajouter_employe') ? `<br><input type="text" style="width:130px;" data-cib-val="${m.citoyen_id}" placeholder="0R-0..."><button class="pc-lien" data-cib="${m.citoyen_id}">Enregistrer</button>` : ''}</td>
+            ${e.mon_role === 'pdg' ? `<br><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-voir-cib="${m.citoyen_id}">Voir (mot de passe)</button>` : ''}
+            ${a('ajouter_employe') ? `<br><input type="text" style="width:130px;" data-cib-val="${m.citoyen_id}" placeholder="0R-0..."><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cib="${m.citoyen_id}">Enregistrer</button>` : ''}</td>
           <td>${entFormatHeures(m.heures)}
             ${e.mode_paiement === 'manuel' && a('payer_employe') && m.heures && m.heures.length ? `<br>
               <select data-payer-taux="${m.citoyen_id}">${m.heures.map(h => `<option value="${h.taux}">${fmtR(h.taux)} R$/h (${Number(h.heures).toFixed(2)} h)</option>`).join('')}</select>
               <input type="number" style="width:70px;" placeholder="heures" step="0.01" data-payer-heures="${m.citoyen_id}">
-              <button class="pc-lien" data-payer="${m.citoyen_id}">Payer</button>` : ''}</td>
+              <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-payer="${m.citoyen_id}">Payer</button>` : ''}</td>
           <td>${e.mon_role === 'pdg' && m.role !== 'pdg' ? `
-            ${m.role !== 'co_pdg' ? `<button class="pc-lien" data-role="${m.citoyen_id}" data-nouveau-role="co_pdg">Co-PDG</button>` : `<button class="pc-lien" data-role="${m.citoyen_id}" data-nouveau-role="employe">Employé</button>`}
-            <button class="pc-lien" data-role="${m.citoyen_id}" data-nouveau-role="pdg">Transférer le PDG</button>` : ''}</td>
+            ${m.role !== 'co_pdg' ? `<button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-role="${m.citoyen_id}" data-nouveau-role="co_pdg">Co-PDG</button>` : `<button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-role="${m.citoyen_id}" data-nouveau-role="employe">Employé</button>`}
+            <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-role="${m.citoyen_id}" data-nouveau-role="pdg">Transférer le PDG</button>` : ''}</td>
         </tr>`).join('')}</tbody>
       </table></div>
 
@@ -4345,13 +4372,13 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
         <p class="pm-mini">Le PDG a toujours tous les droits. Le droit « modifier les droits » peut être délégué comme les autres.</p>
         <h6 style="margin-top:8px;">Droits des Co-PDG</h6>
         <div id="ent-droits-copdg">${entEditeurDroits('copdg', e.droits_co_pdg)}</div>
-        <button class="pc-lien" id="ent-droits-copdg-appliquer">Enregistrer les droits des Co-PDG</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="ent-droits-copdg-appliquer">Enregistrer les droits des Co-PDG</button>
         <h6 style="margin-top:12px;">Rôles personnalisés</h6>
         ${e.roles.map(r => `
           <div class="pm-fleet-item" data-role-bloc="${r.id}"><strong>${escHtml(r.nom)}</strong>
             <div>${entEditeurDroits('role-' + r.id, r.droits)}</div>
-            <button class="pc-lien" data-role-enregistrer="${r.id}">Enregistrer</button>
-            <button class="pc-lien" data-role-supprimer="${r.id}">Supprimer</button></div>`).join('') || '<p class="pm-mini">Aucun rôle personnalisé.</p>'}
+            <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-role-enregistrer="${r.id}">Enregistrer</button>
+            <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-role-supprimer="${r.id}">Supprimer</button></div>`).join('') || '<p class="pm-mini">Aucun rôle personnalisé.</p>'}
         <h6 style="margin-top:12px;">Créer un rôle (emploi)</h6>
         <div class="pc-champ"><label>Nom du rôle (ex : Chef)</label><input type="text" id="ent-role-nom"></div>
         <div id="ent-role-nouveau-droits">${entEditeurDroits('nouveau-role', [])}</div>
@@ -4394,7 +4421,7 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
         ${empruntsAvecDu.map(em => `<div class="pm-fleet-item"><div class="entete"><div>
           ${fmtR(em.montant_demande)} R$ — ${escHtml(em.type_taux)} ${em.taux_valeur}${em.type_taux === 'fixe' ? ' R$ fixes' : ' %'} — <strong>${escHtml(em.statut)}</strong>
           ${em.statut === 'acceptee' ? ` — dû : ${fmtR(em.du)} R$` : ''}<div class="pm-mini">${escHtml(em.justification)}</div></div>
-          ${em.statut === 'acceptee' ? `<button class="pc-lien" data-rembourser-emprunt="${em.id}">Rembourser</button>` : ''}</div></div>`).join('') || '<p class="pm-mini">Aucun emprunt.</p>'}
+          ${em.statut === 'acceptee' ? `<button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-rembourser-emprunt="${em.id}">Rembourser</button>` : ''}</div></div>`).join('') || '<p class="pm-mini">Aucun emprunt.</p>'}
         <h6 style="margin-top:10px;">Demander un emprunt</h6>
         <div class="pc-champ"><label>Montant voulu</label><input type="number" id="ent-emp-g-montant" min="0" step="0.01"></div>
         <div class="pc-champ"><label>Type de taux</label><select id="ent-emp-g-type"><option value="fixe">Fixe (montant ajouté une fois)</option><option value="jour">Par jour (%)</option><option value="mois">Par mois (%, augmente chaque jour)</option><option value="an">Par an (%, augmente chaque jour)</option></select></div>
@@ -4425,7 +4452,7 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
         <div class="pc-champ"><label>Dépenses</label><input type="number" id="ent-imp-depenses"></div>
         <div class="pc-champ"><label>Note</label><input type="text" id="ent-imp-note"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ent-imp-deposer">Déposer le rapport manuel</button>
-        <button class="bouton bouton-contour" style="cursor:pointer;" id="ent-imp-auto">Générer le rapport automatique</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="ent-imp-auto">Générer le rapport automatique</button>
         <div id="ent-imp-message"></div>
       </div>` : ''}
 
@@ -4833,7 +4860,7 @@ async function capChargerTout() {
     <div class="pm-fleet-item">
       <div class="entete"><div><strong>${escHtml(c.nom)}</strong> — ${Number(c.pourcentage).toFixed(2)} % du capital
         <div class="pm-mini">Argent accumulé (retirable) : <strong>${fmtR(c.solde)} R$</strong> — part de la trésorerie de l'entreprise : ${fmtR(c.valeur_tresorerie)} R$ — déjà en vente : ${Number(c.en_vente_pct).toFixed(1)} %</div></div>
-        <button class="pc-lien" data-cap-retirer="${c.entreprise_id}">Retirer vers ma trésorerie</button></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cap-retirer="${c.entreprise_id}">Retirer vers ma trésorerie</button></div>
       <details style="margin-top:8px;"><summary class="pm-mini" style="cursor:pointer;">Vendre une partie de mon capital</summary>
         <div class="pc-champ"><label>Pourcentage à vendre (par tranches de 0,1 %)</label><input type="number" step="0.1" min="0.1" data-cv-pct="${c.entreprise_id}"></div>
         <div class="pc-champ"><label>Prix par 0,1 % (R$)</label><input type="number" step="0.01" min="0" data-cv-prix="${c.entreprise_id}"></div>
@@ -4880,11 +4907,11 @@ async function capChargerTout() {
   zT.innerHTML = tiers.length ? tiers.map(o => `
     <div class="pm-fleet-item">
       <div class="entete"><div><strong>${escHtml(o.nom)}</strong> — @${escHtml(o.vendeur)} vend ${Number(o.pourcentage).toFixed(1)} % à ${fmtR(o.prix_par_dixieme)} R$ par 0,1 %</div>
-        <button class="pc-lien" data-ct-retirer="${o.id}" style="display:none;">Retirer</button></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-ct-retirer="${o.id}" style="display:none;">Retirer</button></div>
       ${o.description ? `<p style="font-size:.85rem; white-space:pre-wrap; margin:6px 0;">${escHtml(o.description)}</p>` : ''}
       <div class="pc-champ"><label>Pourcentage à acheter (tranches de 0,1 %)</label><input type="number" step="0.1" min="0.1" max="${o.pourcentage}" data-ct-pct="${o.id}"></div>
       <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-ct-acheter="${o.id}">Acheter</button>
-      <button class="pc-lien" data-ct-annuler="${o.id}">Retirer mon offre</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-ct-annuler="${o.id}">Retirer mon offre</button>
     </div>`).join('') : '<p class="pm-mini">Aucune offre de particulier.</p>';
   zT.querySelectorAll('[data-ct-acheter]').forEach(b => b.onclick = async () => {
     const id = b.dataset.ctAcheter;
@@ -4988,8 +5015,8 @@ function adminBlocNego(id, hist, fmtHist, champsHTML, attr) {
   return `<div class="pm-fleet-item" data-${attr}="${id}">${hist ? entHistoriqueHTML(hist, fmtHist) : ''}${champsHTML}
     <div class="pm-ligne-boutons">
       <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-adm-action="acceptee">Accepter</button>
-      <button class="bouton bouton-contour" style="cursor:pointer;" data-adm-action="rectifier">Rectifier et renvoyer</button>
-      <button class="bouton bouton-contour" style="cursor:pointer;" data-adm-action="refusee">Refuser</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="rectifier">Rectifier et renvoyer</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="refusee">Refuser</button>
     </div></div>`;
 }
 
@@ -5052,7 +5079,7 @@ async function chargerDemandesCibAdmin() {
       <p class="pm-mini">${escHtml(d.motif)}</p>
       <div class="pm-ligne-boutons">
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cib-acc="${d.id}">Attribuer un nouveau CIB</button>
-        <button class="bouton bouton-contour" style="cursor:pointer;" data-cib-ref="${d.id}">Refuser</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-cib-ref="${d.id}">Refuser</button>
       </div>
     </div>`).join('');
   const traiter = async (id, dec) => {
@@ -5137,14 +5164,14 @@ async function chargerHistorique(citoyen) {
       <select id="hist-dossier-filtre"><option value="">Tous les virements</option>
         ${(dossiers || []).map(d => `<option value="${d.id}" ${histDossierActuel === d.id ? 'selected' : ''}>${escHtml(d.nom)}</option>`).join('')}</select>
       <input type="text" id="hist-nouveau-dossier" placeholder="Nouveau dossier..." style="width:160px;">
-      <button class="pc-lien" id="hist-creer-dossier">Créer</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="hist-creer-dossier">Créer</button>
     </div>
     <details style="margin-bottom:14px;"><summary class="pm-mini" style="cursor:pointer;">Ajouter une entrée personnelle (Artificiel — n'affecte aucune trésorerie)</summary>
       <div class="pc-champ"><label>Type</label><input type="text" id="hist-art-type" placeholder="ex: Facture épicerie"></div>
       <div class="pc-champ"><label>Montant</label><input type="number" id="hist-art-montant" step="0.01"></div>
       <div class="pc-champ"><label>Date</label><input type="date" id="hist-art-date"></div>
       <div class="pc-champ"><label>Note</label><input type="text" id="hist-art-note"></div>
-      <button class="bouton bouton-contour" style="cursor:pointer;" id="hist-art-ajouter">Ajouter</button>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="hist-art-ajouter">Ajouter</button>
     </details>
     <h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Virements et paiements</h4>`;
 
@@ -5157,7 +5184,7 @@ async function chargerHistorique(citoyen) {
         <td>${escHtml(t.type)} <em>(Artificiel)</em></td><td>—</td><td>—</td>
         <td class="num">${fmtR(t.montant_par_personne)}</td><td>${escHtml(t.note || '')}</td>
         <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
-        <td><button class="pc-lien" data-hist-suppr-art="${t.id}">Supprimer</button></td>
+        <td><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-hist-suppr-art="${t.id}">Supprimer</button></td>
       </tr>` : `
       <tr>
         <td>${libType[t.type] || escHtml(t.type)} (${t.sens === 'envoye' ? 'envoyé' : 'reçu'})</td>
@@ -5165,10 +5192,10 @@ async function chargerHistorique(citoyen) {
         <td class="num">${fmtR(t.montant_par_personne)}</td><td>${escHtml(t.note || '')}</td>
         <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
         <td>
-          <button class="pc-lien" data-hist-masquer="${t.id}">Masquer</button>
-          <button class="pc-lien" data-hist-noter="${t.id}">Note</button>
-          <button class="pc-lien" data-hist-classer="${t.id}">Dossier</button>
-          <button class="pc-lien" data-hist-signaler="${t.id}">Signaler</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-hist-masquer="${t.id}">Masquer</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-hist-noter="${t.id}">Note</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-hist-classer="${t.id}">Dossier</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-hist-signaler="${t.id}">Signaler</button>
         </td>
       </tr>`).join('');
     html += '</tbody></table></div>';
@@ -5341,7 +5368,7 @@ async function initialiserPanneauReleveMensuel() {
   const chargerFactures = async () => {
     const { data } = await sb.rpc('mes_factures_manuelles', { p_periode: periodeCourante() });
     document.getElementById('fm-liste').innerHTML = (data || []).length ? `<table class="table-donnees"><thead><tr><th>Catégorie</th><th>Date</th><th></th></tr></thead><tbody>
-      ${data.map(f => `<tr><td>${escHtml(f.categorie)}</td><td>${escHtml(f.date_effectuee)}</td><td><button class="pc-lien" data-fm-suppr="${f.id}">Supprimer</button></td></tr>`).join('')}
+      ${data.map(f => `<tr><td>${escHtml(f.categorie)}</td><td>${escHtml(f.date_effectuee)}</td><td><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-fm-suppr="${f.id}">Supprimer</button></td></tr>`).join('')}
     </tbody></table>` : '<p class="pm-mini">Aucune facture ce mois-ci.</p>';
     document.querySelectorAll('[data-fm-suppr]').forEach(b => b.onclick = async () => {
       const { error } = await sb.rpc('supprimer_facture_manuelle', { p_id: b.dataset.fmSuppr });
@@ -5415,13 +5442,13 @@ function panneauConseillerHTML() {
         <div id="cons-mon-conseiller"><p class="pm-mini">Chargement…</p></div>
         <div class="pc-champ"><label>Nom d'utilisateur du conseiller</label><input type="text" id="cons-username"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="cons-ajouter">Ajouter / remplacer</button>
-        <button class="bouton bouton-contour" style="cursor:pointer;" id="cons-retirer">Retirer mon conseiller</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="cons-retirer">Retirer mon conseiller</button>
         <div id="cons-message"></div>
         <div style="margin-top:12px;">
           <label style="display:block; font-size:.85rem;"><input type="radio" name="cons-mode" value="restreint"> Restreint (pages choisies uniquement, + logs)</label>
           <label style="display:block; font-size:.85rem;"><input type="radio" name="cons-mode" value="total"> Accès à tout (+ logs)</label>
           <div id="cons-pages"></div>
-          <button class="pc-lien" id="cons-securite-appliquer">Enregistrer la sécurité</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="cons-securite-appliquer">Enregistrer la sécurité</button>
         </div>
       </div>
       <div class="pc-carte">
@@ -5431,8 +5458,8 @@ function panneauConseillerHTML() {
       <div class="pc-carte">
         <h3>Logs de connexion</h3>
         <div class="pc-champ"><label>Envoyer les logs à (nom d'utilisateur)</label><input type="text" id="cons-logs-dest"></div>
-        <button class="pc-lien" id="cons-logs-envoyer">Envoyer</button>
-        <button class="pc-lien" id="cons-logs-telecharger">Télécharger le .txt</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="cons-logs-envoyer">Envoyer</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="cons-logs-telecharger">Télécharger le .txt</button>
         <div id="cons-logs-message"></div>
       </div>
       <div class="pc-carte">
@@ -5496,7 +5523,7 @@ async function consChargerTout() {
       <p class="pm-mini">Justification : ${escHtml(d.justification)}</p>
       ${d.statut === 'en_attente' ? `<div class="pm-ligne-boutons">
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cr-accepter="${d.id}">Accepter</button>
-        <button class="bouton bouton-contour" style="cursor:pointer;" data-cr-refuser="${d.id}">Refuser</button></div>` : ''}
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-cr-refuser="${d.id}">Refuser</button></div>` : ''}
       ${d.motif_refus ? `<p class="pm-mini">Motif du refus : ${escHtml(d.motif_refus)}</p>` : ''}
     </div>`).join('') : '<p class="pm-mini">Aucune demande.</p>';
   document.querySelectorAll('[data-cr-accepter]').forEach(b => b.onclick = async () => {
@@ -5513,11 +5540,23 @@ async function consChargerTout() {
   const { data: clients } = await sb.rpc('conseiller_mes_clients');
   document.getElementById('cons-mes-clients').innerHTML = (clients || []).length ? clients.map(c => `
     <div class="pm-fleet-item"><div class="entete"><strong>@${escHtml(c.client_username)}</strong> (${escHtml(c.mode_securite)})</div>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cons-apercu="${c.client_username}">Aperçu (sans demande)</button>
+      <div data-cons-apercu-zone="${c.client_username}"></div>
       <select data-cons-action="${c.client_username}">${Object.entries(CONS_ACTIONS).map(([k, v]) => `<option value="${k}">${escHtml(v.libelle)}</option>`).join('')}</select>
       <div data-cons-champs="${c.client_username}"></div>
       <input type="text" placeholder="Justification (10 caractères min.)" data-cons-justif="${c.client_username}" style="width:100%;">
       <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cons-demander="${c.client_username}">Envoyer la demande</button>
     </div>`).join('') : '<p class="pm-mini">Vous n\'êtes le conseiller de personne.</p>';
+  document.querySelectorAll('[data-cons-apercu]').forEach(b => b.onclick = async () => {
+    const user = b.dataset.consApercu;
+    const { data, error } = await sb.rpc('conseiller_apercu_client', { p_client_username: user });
+    const zone = document.querySelector(`[data-cons-apercu-zone="${user}"]`);
+    if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+    zone.innerHTML = `<p class="pm-mini">Trésorerie : ${fmtR(data.tresorerie)} R$ — Dettes : ${fmtR(data.dettes)} R$ — Prêts : ${fmtR(data.prets)} R$ — Argent attendu : ${fmtR(data.argent_attendu)} R$</p>
+      <p class="pm-mini">Chômage : ${fmtR(data.compte_chomage)} R$ — Retraite : ${fmtR(data.compte_retraite)} R$ — Parentalité : ${fmtR(data.compte_parentalite)} R$</p>
+      <p class="pm-mini">Entreprises : ${(data.entreprises || []).map(e => escHtml(e.nom) + ' (' + escHtml(e.role) + ')').join(', ') || 'aucune'}</p>
+      <p class="pm-mini">Capitaux : ${(data.capitaux || []).map(c2 => escHtml(c2.entreprise) + ' ' + c2.pourcentage + '%').join(', ') || 'aucun'}</p>`;
+  });
 
   document.querySelectorAll('[data-cons-action]').forEach(sel => {
     const rendreChamps = () => {
@@ -5560,7 +5599,7 @@ let consSessionJeton = null, consSessionClient = null;
 
 function ongletConnexionConseillerHTML() {
   return `
-    <div id="connexion-conseiller" class="pc-masque">
+    <div id="connexion-conseiller">
       <h3>Connexion par conseiller financier</h3>
       <div class="pc-champ"><label>Votre nom complet (conseiller)</label><input type="text" id="cc-nom"></div>
       <div class="pc-champ"><label>Votre code social (conseiller)</label><input type="text" id="cc-cas"></div>
@@ -5598,21 +5637,21 @@ async function consAfficherSession() {
       <h4>Accès temporaire — @${escHtml(consSessionClient)}</h4>
       <p class="pm-mini">Trésorerie : ${fmtR(soldes.tresorerie)} R$ — Dettes : ${fmtR(soldes.dettes)} R$ — Prêts : ${fmtR(soldes.prets)} R$ — Argent attendu : ${fmtR(soldes.argent_attendu)} R$</p>
       <div class="pm-ligne-boutons">
-        <button class="pc-lien" data-cc-page="paiements">Paiements</button>
-        <button class="pc-lien" data-cc-page="permis">Permis</button>
-        <button class="pc-lien" data-cc-page="constats">Constats</button>
-        <button class="pc-lien" data-cc-page="epargne">Épargne</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-page="paiements">Paiements</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-page="permis">Permis</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-page="constats">Constats</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-page="epargne">Épargne</button>
       </div>
       <div id="cc-page-resultat"></div>
       <details style="margin-top:12px;"><summary class="pm-mini" style="cursor:pointer;">Signatures (emprunt)</summary>
         <div class="pc-champ"><label>Numéro de contrat</label><input type="text" id="cc-emp-numero"></div>
-        <button class="pc-lien" data-cc-signer="accepter">Accepter</button>
-        <button class="pc-lien" data-cc-signer="refuser">Refuser</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-signer="accepter">Accepter</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-cc-signer="refuser">Refuser</button>
       </details>
       <details style="margin-top:12px;"><summary class="pm-mini" style="cursor:pointer;">Action d'entreprise</summary>
         <select id="cc-ent-fonction">${['entreprise_payer_employe','virement_entrepreneur','entreprise_enregistrer_depense','entreprise_mettre_capital_en_vente','entreprise_offrir_capital_gouvernement','entreprise_demander_emprunt_gouv','entreprise_definir_mode_paiement','entreprise_definir_option_defaillance','entreprise_creer_role','entreprise_deposer_impot','entreprise_generer_rapport_auto','entreprise_mes_cib','entreprise_demander'].map(f => `<option value="${f}">${f}</option>`).join('')}</select>
         <textarea id="cc-ent-args" placeholder='{"entreprise_id":"...", ...}' style="width:100%; height:60px;"></textarea>
-        <button class="pc-lien" id="cc-ent-executer">Exécuter</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="cc-ent-executer">Exécuter</button>
         <div id="cc-ent-resultat"></div>
       </details>
     </div>`;
@@ -5634,9 +5673,46 @@ async function consAfficherSession() {
   };
 }
 
-/* =====================================================================
-   CAPITAL — MARCHÉ INTÉRIEUR / EXTÉRIEUR (Halgeberg)
-   ===================================================================== */
+function svgLigneBrisee(points, series, opts) {
+  const L = 46, R = 14, T = 14, B = 34, W = (opts && opts.width) || 760, H = (opts && opts.height) || 300;
+  const plotW = W - L - R, plotH = H - T - B;
+  const n = points.length;
+  const xAt = (i) => L + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const toutesValeurs = series.flatMap(s => points.map(p => p[s.cle])).filter(v => v != null && !isNaN(v));
+  const vmax = toutesValeurs.length ? Math.max(...toutesValeurs, 0) : 1;
+  const vmin = Math.min(0, ...toutesValeurs);
+  const echelle = vmax - vmin || 1;
+  const yAt = (v) => T + plotH - ((v - vmin) / echelle) * plotH;
+
+  let svg = `<svg class="graphique-capital" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<line x1="${L}" y1="${yAt(0)}" x2="${W - R}" y2="${yAt(0)}" stroke="#ccc" stroke-width="1"/>`;
+  points.forEach((p, i) => {
+    svg += `<line x1="${xAt(i)}" y1="${T}" x2="${xAt(i)}" y2="${T + plotH}" stroke="#eee" stroke-width="1"/>`;
+    svg += `<text x="${xAt(i)}" y="${H - 8}" font-size="9" text-anchor="middle" fill="#666">${escHtml(String(p.periode).slice(0, 7))}</text>`;
+  });
+
+  series.forEach(s => {
+    let segment = []; const segs = [];
+    points.forEach((p, i) => {
+      const v = p[s.cle];
+      if (v == null || isNaN(v)) { if (segment.length) { segs.push(segment); segment = []; } }
+      else segment.push([xAt(i), yAt(v), i, v]);
+    });
+    if (segment.length) segs.push(segment);
+    segs.forEach(seg => {
+      const d = seg.map((pt, idx) => (idx === 0 ? 'M' : 'L') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1)).join(' ');
+      svg += `<path d="${d}" fill="none" stroke="${s.couleur}" stroke-width="2.5"/>`;
+      seg.forEach(([x, y, i, v]) => {
+        svg += `<circle cx="${x}" cy="${y}" r="4" fill="${s.couleur}" style="cursor:pointer;" data-graph-point="${i}"><title>${escHtml(s.libelle)} — ${escHtml(String(points[i].periode))} : ${fmtR(v)} R$</title></circle>`;
+      });
+    });
+  });
+
+  svg += `<g font-size="10">` + series.map((s, i) => `<rect x="${L + i * 150}" y="0" width="10" height="10" fill="${s.couleur}"/><text x="${L + i * 150 + 14}" y="9">${escHtml(s.libelle)}</text>`).join('') + `</g>`;
+  svg += `</svg>`;
+  return svg;
+}
+
 function panneauMarcheCapitalHTML() {
   return `
     <div id="onglet-marche-interieur" class="pc-masque">
@@ -5653,12 +5729,12 @@ async function initialiserMarcheInterieur() {
     <div class="pm-fleet-item">
       <div class="entete"><div><strong>${escHtml(c.nom)}</strong> — ${Number(c.pourcentage).toFixed(2)} %
         <div class="pm-mini">Accumulé (retirable) : ${fmtR(c.solde)} R$ — total all-time : ${fmtR(c.solde_all_time)} R$</div></div>
-        <button class="pc-lien" data-mi-retirer="${c.entreprise_id}">Retirer</button></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-mi-retirer="${c.entreprise_id}">Retirer</button></div>
       <details><summary class="pm-mini" style="cursor:pointer;">Vendre sur le marché extérieur</summary>
         <input type="number" step="0.1" min="0.1" placeholder="% à vendre" data-mi-pct="${c.entreprise_id}">
         <input type="number" step="0.01" placeholder="Prix par 0,1%" data-mi-prix="${c.entreprise_id}">
         <textarea placeholder="Description (500 max)" maxlength="500" data-mi-desc="${c.entreprise_id}"></textarea>
-        <button class="pc-lien" data-mi-vendre="${c.entreprise_id}">Mettre en vente</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-mi-vendre="${c.entreprise_id}">Mettre en vente</button>
       </details>
     </div>`).join('') : '<p class="pm-mini">Aucun capital possédé.</p>';
   document.querySelectorAll('[data-mi-retirer]').forEach(b => b.onclick = async () => {
@@ -5686,10 +5762,10 @@ async function initialiserMarcheExterieur() {
     ${ents.length ? ents.map(o => `
       <div class="pm-fleet-item" data-me-entreprise="${o.entreprise_id}">
         <div class="entete"><strong>${escHtml(o.nom)}</strong> — ${Number(o.en_vente_pct).toFixed(2)} % à ${fmtR(o.prix_par_centieme)} R$/0,01%</div>
-        <button class="pc-lien" data-me-analyser="${o.entreprise_id}">Analyser (fiche + graphique)</button>
-        <button class="pc-lien" data-me-dernier-releve="${o.nom}">Voir le dernier relevé</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-me-analyser="${o.entreprise_id}">Analyser (fiche + graphique)</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-me-dernier-releve="${o.nom}">Voir le dernier relevé</button>
         <div class="pc-champ"><label>% à investir</label><input type="number" step="0.01" min="${o.min_achat_pct}" data-me-calc-pct="${o.entreprise_id}"></div>
-        <button class="pc-lien" data-me-calculer="${o.entreprise_id}">Estimer le gain</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-me-calculer="${o.entreprise_id}">Estimer le gain</button>
         <div data-me-estimation="${o.entreprise_id}"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-me-acheter="${o.entreprise_id}">Acheter</button>
         <div data-me-fiche="${o.entreprise_id}"></div>
@@ -5709,12 +5785,23 @@ async function initialiserMarcheExterieur() {
     const cible = zone.querySelector(`[data-me-fiche="${id}"]`);
     if (error) { cible.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
     const pts = [...(data.graphique.historique || []), data.graphique.actuel];
+    const serie = [
+      { cle: 'depenses', couleur: '#c0392b', libelle: 'Dépenses' },
+      { cle: 'profits', couleur: '#27ae60', libelle: 'Profits' },
+      { cle: 'tresorerie', couleur: '#2980b9', libelle: 'Trésorerie' },
+      { cle: 'capital_tiers_all_time', couleur: '#f1c40f', libelle: 'Capital tiers (all-time)' },
+      { cle: 'capital_tiers_actuel', couleur: '#e67e22', libelle: 'Capital tiers (actuel)' }
+    ];
     cible.innerHTML = `
       <p class="pm-mini">PDG : @${escHtml(data.pdg || '—')} — Co-PDG : ${(data.co_pdg || []).map(u => '@' + escHtml(u)).join(', ') || '—'} — Employés : ${(data.employes || []).map(u => '@' + escHtml(u)).join(', ') || '—'}</p>
       <p class="pm-mini">Siège : ${escHtml(data.sieges)} — Vente : ${escHtml(data.type_vente || '—')} — Trésorerie : ${fmtR(data.tresorerie)} R$</p>
       ${data.description ? `<p style="font-size:.85rem; white-space:pre-wrap;">${escHtml(data.description)}</p>` : ''}
-      <table class="table-donnees"><thead><tr><th>Période</th><th>Dépenses (rouge)</th><th>Profits (vert)</th><th>Trésorerie (bleu)</th><th>Capital tiers all-time (jaune)</th><th>Capital tiers actuel (orange)</th></tr></thead>
-      <tbody>${pts.map(p => `<tr><td>${escHtml(p.periode)}</td><td>${p.depenses != null ? fmtR(p.depenses) : '—'}</td><td>${p.profits != null ? fmtR(p.profits) : 'non disponible'}</td><td>${p.tresorerie != null ? fmtR(p.tresorerie) : 'non disponible'}</td><td>${p.capital_tiers_all_time != null ? fmtR(p.capital_tiers_all_time) : 'non disponible'}</td><td>${p.capital_tiers_actuel != null ? fmtR(p.capital_tiers_actuel) : 'non disponible'}</td></tr>`).join('')}</tbody></table>`;
+      ${svgLigneBrisee(pts, serie)}
+      <p class="pm-mini">Les courbes trésorerie / capital de tiers ne sont fiables qu'au dernier point (actuel) ; l'historique n'existait pas avant ce système.</p>`;
+    cible.querySelectorAll('[data-graph-point]').forEach(c => c.onclick = () => {
+      const p = pts[Number(c.dataset.graphPoint)];
+      if (p.periode !== 'actuel') { document.getElementById('rel-nom').value = data.nom; document.querySelector('[data-onglet="releves"]').click(); document.getElementById('rel-chercher').click(); }
+    });
   });
   zone.querySelectorAll('[data-me-dernier-releve]').forEach(b => b.onclick = () => {
     document.getElementById('rel-nom').value = b.dataset.meDernierReleve;
