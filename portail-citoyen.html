@@ -426,6 +426,7 @@ function afficherConnexion(messageErreur) {
       <button id="onglet-connexion" class="actif">Connexion</button>
       <button id="onglet-inscription">Inscription</button>
       <button id="onglet-demande-cas">Demander l'Assurance Sociale</button>
+      <button id="onglet-connexion-conseiller">Connexion par conseiller financier</button>
     </div>
 
     <div id="bloc-connexion">
@@ -491,11 +492,16 @@ function afficherConnexion(messageErreur) {
     <div id="bloc-demande-cas" class="pc-masque">
       ${formulaireDemandeCasHTML()}
     </div>
+
+    <div id="bloc-connexion-conseiller" class="pc-masque">
+      ${ongletConnexionConseillerHTML()}
+    </div>
   `;
 
   document.getElementById('onglet-connexion').onclick = () => basculerOnglet('connexion');
   document.getElementById('onglet-inscription').onclick = () => basculerOnglet('inscription');
   document.getElementById('onglet-demande-cas').onclick = () => basculerOnglet('demande-cas');
+  document.getElementById('onglet-connexion-conseiller').onclick = () => basculerOnglet('connexion-conseiller');
   document.getElementById('c-valider').onclick = tenterConnexion;
   document.getElementById('i-valider').onclick = tenterInscription;
   document.getElementById('i-nom-complet').addEventListener('input', (e) => {
@@ -506,6 +512,7 @@ function afficherConnexion(messageErreur) {
   });
   document.getElementById('i-province').innerHTML += PROVINCES_RESIDENCE.map(p => `<option value="${p}">${p}</option>`).join('');
   initialiserFormulaireDemandeCas();
+  initialiserConnexionConseiller();
 
   if (messageErreur) {
     document.getElementById('c-message').innerHTML = `<p class="pc-erreur">${messageErreur}</p>`;
@@ -516,9 +523,11 @@ function basculerOnglet(nom) {
   document.getElementById('onglet-connexion').classList.toggle('actif', nom === 'connexion');
   document.getElementById('onglet-inscription').classList.toggle('actif', nom === 'inscription');
   document.getElementById('onglet-demande-cas').classList.toggle('actif', nom === 'demande-cas');
+  document.getElementById('onglet-connexion-conseiller').classList.toggle('actif', nom === 'connexion-conseiller');
   document.getElementById('bloc-connexion').classList.toggle('pc-masque', nom !== 'connexion');
   document.getElementById('bloc-inscription').classList.toggle('pc-masque', nom !== 'inscription');
   document.getElementById('bloc-demande-cas').classList.toggle('pc-masque', nom !== 'demande-cas');
+  document.getElementById('bloc-connexion-conseiller').classList.toggle('pc-masque', nom !== 'connexion-conseiller');
 }
 
 /* =====================================================================
@@ -951,7 +960,11 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="entreprise">Entreprise</button>
       <button data-onglet="releves">Relevés d'entreprises</button>
       <button data-onglet="infos">Infos utilisateur</button>
-      <button data-onglet="capitaux">Capitaux</button>
+      <button data-onglet="confiance">Transfert (confiance)</button>
+      <button data-onglet="releve-mensuel">Mon relevé</button>
+      <button data-onglet="conseiller">Conseiller financier</button>
+      <button data-onglet="marche-interieur">Marché intérieur</button>
+      <button data-onglet="marche-exterieur">Marché extérieur</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1233,7 +1246,10 @@ async function chargerTableauDeBord(utilisateur) {
     ${panneauEntrepriseHTML()}
     ${panneauRelevesHTML()}
     ${panneauInfosHTML()}
-    ${panneauCapitauxHTML()}
+    ${panneauConfianceHTML()}
+    ${panneauReleveMensuelHTML()}
+    ${panneauConseillerHTML()}
+    ${panneauMarcheCapitalHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1252,7 +1268,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'capitaux', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'confiance', 'releve-mensuel', 'conseiller', 'marche-interieur', 'marche-exterieur', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1284,7 +1300,11 @@ async function chargerTableauDeBord(utilisateur) {
   initialiserPanneauEntreprise();
   initialiserPanneauReleves();
   initialiserPanneauInfos();
-  initialiserPanneauCapitaux();
+  initialiserPanneauConfiance();
+  initialiserPanneauReleveMensuel();
+  initialiserPanneauConseiller();
+  initialiserMarcheInterieur();
+  initialiserMarcheExterieur();
   synchroniserCIBEtRapports();
 
   demarrerTicker(utilisateur.id, citoyen);
@@ -1688,49 +1708,6 @@ async function chargerVirementsConsiderablesRecus(citoyen) {
 /* =====================================================================
    HISTORIQUE — virements et paiements
    ===================================================================== */
-async function chargerHistorique(citoyen) {
-  const conteneur = document.getElementById('liste-historique');
-  const [{ data: transferts, error: e1 }, { data: paiements, error: e2 }] = await Promise.all([
-    sb.from('transferts').select('*').order('cree_le', { ascending: false }),
-    sb.from('paiements_historique').select('*').order('cree_le', { ascending: false }),
-  ]);
-  if (e1 || e2) { conteneur.innerHTML = `<p class="pc-erreur">${(e1 || e2).message}</p>`; return; }
-
-  let html = '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Virements</h4>';
-  if (!transferts || transferts.length === 0) {
-    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun virement.</p>';
-  } else {
-    html += '<div class="table-wrap" style="margin-bottom:24px;"><table class="table-donnees"><thead><tr><th>Type</th><th class="num">Montant / pers.</th><th class="num">Taxe</th><th class="num">Total débité</th><th>Statut</th><th>Date</th></tr></thead><tbody>';
-    html += transferts.map(t => `
-      <tr>
-        <td>${t.type === 'famille' ? 'Familial' : t.type === 'business' ? 'Business' : 'Économe'} ${t.expediteur_id === citoyen.id ? '(envoyé)' : '(reçu)'}</td>
-        <td class="num">${Number(t.montant_par_personne).toFixed(2)}</td>
-        <td class="num">${Number(t.taxe_totale).toFixed(2)} (${t.taxe_pourcentage}%)</td>
-        <td class="num">${Number(t.total_debite).toFixed(2)}</td>
-        <td>${t.rembourse ? 'Remboursé' : 'Complété'}</td>
-        <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
-      </tr>
-    `).join('');
-    html += '</tbody></table></div>';
-  }
-
-  html += '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Paiements</h4>';
-  if (!paiements || paiements.length === 0) {
-    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun paiement.</p>';
-  } else {
-    html += '<div class="table-wrap"><table class="table-donnees"><thead><tr><th>Type</th><th class="num">Montant</th><th>Date</th></tr></thead><tbody>';
-    html += paiements.map(p => {
-      const libelles = { dette: 'Dette', pret: 'Prêt', constat: "Constat d'infraction", emprunt: 'Emprunt' };
-      return `
-      <tr><td>${libelles[p.type] || p.type}</td>
-      <td class="num">${Number(p.montant).toFixed(2)}</td><td>${new Date(p.cree_le).toLocaleDateString('fr-FR')}</td></tr>
-    `;
-    }).join('');
-    html += '</tbody></table></div>';
-  }
-
-  conteneur.innerHTML = html;
-}
 
 /* =====================================================================
    PERMIS
@@ -5084,6 +5061,685 @@ async function chargerDemandesCibAdmin() {
   };
   conteneur.querySelectorAll('[data-cib-acc]').forEach(b => b.onclick = () => traiter(b.dataset.cibAcc, 'acceptee'));
   conteneur.querySelectorAll('[data-cib-ref]').forEach(b => b.onclick = () => traiter(b.dataset.cibRef, 'refusee'));
+}
+
+/* =====================================================================
+   CONFIANCE + TRANSFERT AVEC CONFIANCE
+   ===================================================================== */
+function panneauConfianceHTML() {
+  return `
+    <div id="onglet-confiance" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Transfert (avec vérification de confiance)</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:12px;">Cherchez un destinataire (nom d'utilisateur ou CIB) pour voir son calcul de confiance avant d'envoyer de l'argent (taxe familiale sous 2000 R$, économe au-delà).</p>
+        <div class="pc-champ"><label for="conf-dest">Nom d'utilisateur ou CIB</label><input type="text" id="conf-dest"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="conf-chercher">Vérifier la confiance</button>
+        <div id="conf-resultat"></div>
+      </div>
+    </div>`;
+}
+
+function confianceDetailHTML(c) {
+  const t = c.termes;
+  return `
+    <p style="font-family:var(--police-titre); font-size:1.6rem; color:var(--vert-nuit);">${c.score} %</p>
+    <table class="table-donnees"><tbody>
+      <tr><th style="text-align:left;">Base</th><td>${t.base}</td></tr>
+      <tr><th style="text-align:left;">Ancienneté (${t.jours_compte} jours)</th><td>+ ${t.anciennete}</td></tr>
+      <tr><th style="text-align:left;">Dettes (${fmtR(t.dettes)} R$)</th><td>− ${t.penalite_dettes}</td></tr>
+      <tr><th style="text-align:left;">Constats impayés (${t.constats_impayes})</th><td>− ${t.penalite_constats}</td></tr>
+      <tr><th style="text-align:left;">Formations (${t.formations})</th><td>+ ${t.bonus_formations}</td></tr>
+      <tr><th style="text-align:left;">Récompenses (${t.recompenses})</th><td>+ ${t.bonus_recompenses}</td></tr>
+      <tr><th style="text-align:left;">Signalements de finance (${t.signalements})</th><td>− ${t.penalite_signalements}</td></tr>
+    </tbody></table>`;
+}
+
+function initialiserPanneauConfiance() {
+  document.getElementById('conf-chercher').onclick = async () => {
+    const zone = document.getElementById('conf-resultat');
+    zone.innerHTML = '<p class="pm-mini">Recherche…</p>';
+    const dest = document.getElementById('conf-dest').value.trim();
+    const { data, error } = await sb.rpc('confiance_par_identifiant', { p_texte: dest });
+    if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+    zone.innerHTML = `
+      <div class="pc-carte" style="background:var(--blanc-casse); margin-top:12px;">
+        <h4>@${escHtml(data.username)}</h4>
+        ${confianceDetailHTML(data)}
+        <div class="pc-champ" style="margin-top:12px;"><label>Montant à envoyer</label><input type="number" id="conf-montant" min="0" step="0.01"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="conf-envoyer">Envoyer</button>
+        <div id="conf-envoi-message"></div>
+      </div>`;
+    document.getElementById('conf-envoyer').onclick = async () => {
+      const { error: err } = await sb.rpc('virement_confiance', { p_destinataire: dest, p_montant: Number(document.getElementById('conf-montant').value) });
+      entMsg('conf-envoi-message', err, 'Virement envoyé.');
+    };
+  };
+}
+
+/* =====================================================================
+   HISTORIQUE ENRICHI (remplace chargerHistorique)
+   ===================================================================== */
+let histDossierActuel = null;
+
+async function chargerHistorique(citoyen) {
+  const conteneur = document.getElementById('liste-historique');
+  const [{ data: hist, error: e1 }, { data: paiements, error: e2 }, { data: dossiers }] = await Promise.all([
+    sb.rpc('mon_historique_virements', { p_dossier_id: histDossierActuel }),
+    sb.from('paiements_historique').select('*').order('cree_le', { ascending: false }),
+    sb.rpc('mes_dossiers_virements')
+  ]);
+  if (e1 || e2) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml((e1 || e2).message)}</p>`; return; }
+
+  const items = [...(hist.virements || []), ...(hist.artificiels || [])].sort((a, b) => new Date(b.cree_le) - new Date(a.cree_le));
+  const libType = { famille: 'Familial', business: 'Business', econome: 'Économe', entreprise_tiers: "Entreprise vers tiers", considerable: 'Considérable' };
+
+  let html = `<div class="pm-ligne-boutons" style="margin-bottom:10px;">
+      <select id="hist-dossier-filtre"><option value="">Tous les virements</option>
+        ${(dossiers || []).map(d => `<option value="${d.id}" ${histDossierActuel === d.id ? 'selected' : ''}>${escHtml(d.nom)}</option>`).join('')}</select>
+      <input type="text" id="hist-nouveau-dossier" placeholder="Nouveau dossier..." style="width:160px;">
+      <button class="pc-lien" id="hist-creer-dossier">Créer</button>
+    </div>
+    <details style="margin-bottom:14px;"><summary class="pm-mini" style="cursor:pointer;">Ajouter une entrée personnelle (Artificiel — n'affecte aucune trésorerie)</summary>
+      <div class="pc-champ"><label>Type</label><input type="text" id="hist-art-type" placeholder="ex: Facture épicerie"></div>
+      <div class="pc-champ"><label>Montant</label><input type="number" id="hist-art-montant" step="0.01"></div>
+      <div class="pc-champ"><label>Date</label><input type="date" id="hist-art-date"></div>
+      <div class="pc-champ"><label>Note</label><input type="text" id="hist-art-note"></div>
+      <button class="bouton bouton-contour" style="cursor:pointer;" id="hist-art-ajouter">Ajouter</button>
+    </details>
+    <h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Virements et paiements</h4>`;
+
+  if (!items.length) {
+    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun virement.</p>';
+  } else {
+    html += '<div class="table-wrap" style="margin-bottom:24px;"><table class="table-donnees"><thead><tr><th>Type</th><th>De</th><th>À</th><th class="num">Montant</th><th>Note</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+    html += items.map(t => t.artificiel ? `
+      <tr style="opacity:.85;">
+        <td>${escHtml(t.type)} <em>(Artificiel)</em></td><td>—</td><td>—</td>
+        <td class="num">${fmtR(t.montant_par_personne)}</td><td>${escHtml(t.note || '')}</td>
+        <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
+        <td><button class="pc-lien" data-hist-suppr-art="${t.id}">Supprimer</button></td>
+      </tr>` : `
+      <tr>
+        <td>${libType[t.type] || escHtml(t.type)} (${t.sens === 'envoye' ? 'envoyé' : 'reçu'})</td>
+        <td>${escHtml(t.expediteur)}</td><td>${escHtml(t.entreprise_destinataire || (t.destinataires || []).join(', '))}</td>
+        <td class="num">${fmtR(t.montant_par_personne)}</td><td>${escHtml(t.note || '')}</td>
+        <td>${new Date(t.cree_le).toLocaleDateString('fr-FR')}</td>
+        <td>
+          <button class="pc-lien" data-hist-masquer="${t.id}">Masquer</button>
+          <button class="pc-lien" data-hist-noter="${t.id}">Note</button>
+          <button class="pc-lien" data-hist-classer="${t.id}">Dossier</button>
+          <button class="pc-lien" data-hist-signaler="${t.id}">Signaler</button>
+        </td>
+      </tr>`).join('');
+    html += '</tbody></table></div>';
+  }
+
+  html += '<h4 style="font-family:var(--police-titre); font-size:1rem; color:var(--vert-nuit); margin-bottom:10px;">Paiements</h4>';
+  if (!paiements || paiements.length === 0) {
+    html += '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun paiement.</p>';
+  } else {
+    html += '<div class="table-wrap"><table class="table-donnees"><thead><tr><th>Type</th><th class="num">Montant</th><th>Date</th></tr></thead><tbody>';
+    html += paiements.map(p => {
+      const libelles = { dette: 'Dette', pret: 'Prêt', constat: "Constat d'infraction", emprunt: 'Emprunt' };
+      return `<tr><td>${libelles[p.type] || p.type}</td><td class="num">${fmtR(p.montant)}</td><td>${new Date(p.cree_le).toLocaleDateString('fr-FR')}</td></tr>`;
+    }).join('');
+    html += '</tbody></table></div>';
+  }
+
+  conteneur.innerHTML = html;
+
+  document.getElementById('hist-dossier-filtre').onchange = (e) => { histDossierActuel = e.target.value || null; chargerHistorique(citoyen); };
+  document.getElementById('hist-creer-dossier').onclick = async () => {
+    const nom = document.getElementById('hist-nouveau-dossier').value.trim();
+    if (!nom) return;
+    const { error } = await sb.rpc('creer_dossier_virement', { p_nom: nom });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  };
+  document.getElementById('hist-art-ajouter').onclick = async () => {
+    const { error } = await sb.rpc('creer_transfert_artificiel', {
+      p_type: document.getElementById('hist-art-type').value, p_montant: Number(document.getElementById('hist-art-montant').value) || 0,
+      p_date: document.getElementById('hist-art-date').value || null, p_note: document.getElementById('hist-art-note').value || null,
+      p_dossier_id: histDossierActuel
+    });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  };
+  conteneur.querySelectorAll('[data-hist-suppr-art]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('supprimer_transfert_artificiel', { p_id: b.dataset.histSupprArt });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  });
+  conteneur.querySelectorAll('[data-hist-masquer]').forEach(b => b.onclick = async () => {
+    if (!confirm('Masquer ce virement de votre historique ? (il reste visible pour l\'autre personne)')) return;
+    const { error } = await sb.rpc('masquer_transfert', { p_transfert_id: b.dataset.histMasquer });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  });
+  conteneur.querySelectorAll('[data-hist-noter]').forEach(b => b.onclick = async () => {
+    const note = prompt('Note personnelle (500 caractères max) :');
+    if (note == null) return;
+    const { error } = await sb.rpc('noter_transfert', { p_transfert_id: b.dataset.histNoter, p_note: note });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  });
+  conteneur.querySelectorAll('[data-hist-classer]').forEach(b => b.onclick = async () => {
+    const nomDossier = prompt('Nom du dossier (vide pour retirer du dossier) :');
+    if (nomDossier == null) return;
+    let dossierId = null;
+    if (nomDossier.trim()) {
+      const existant = (dossiers || []).find(d => d.nom.toLowerCase() === nomDossier.trim().toLowerCase());
+      if (existant) dossierId = existant.id;
+      else { const { data, error: errC } = await sb.rpc('creer_dossier_virement', { p_nom: nomDossier.trim() }); if (errC) { alert(errC.message); return; } dossierId = data.id; }
+    }
+    const { error } = await sb.rpc('classer_transfert', { p_transfert_id: b.dataset.histClasser, p_dossier_id: dossierId });
+    if (error) alert(error.message); else chargerHistorique(citoyen);
+  });
+  conteneur.querySelectorAll('[data-hist-signaler]').forEach(b => b.onclick = async () => {
+    const motif = prompt('Motif du signalement au gouvernement des finances (10 caractères minimum) :');
+    if (motif == null) return;
+    const { error } = await sb.rpc('signaler_transfert', { p_transfert_id: b.dataset.histSignaler, p_motif: motif });
+    if (error) alert(error.message); else alert('Signalement envoyé.');
+  });
+}
+
+/* =====================================================================
+   RELEVÉ MENSUEL DU CITOYEN
+   ===================================================================== */
+function panneauReleveMensuelHTML() {
+  return `
+    <div id="onglet-releve-mensuel" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mon relevé mensuel</h3>
+        <div class="pc-champ"><label for="rm-periode">Période</label><select id="rm-periode"></select></div>
+        <div id="rm-contenu"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Facture manuelle (pour la prochaine déclaration)</h3>
+        <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:12px;">Remplissez ce qui s'applique — le reste peut rester vide.</p>
+        <div class="pc-champ"><label>Catégorie</label><input type="text" id="fm-categorie"></div>
+        <div class="pc-champ"><label>Date effectuée (dans le mois en cours)</label><input type="date" id="fm-date"></div>
+        <div class="pc-champ"><label>Montant reçu</label><input type="number" step="0.01" id="fm-montant-recu"></div>
+        <div class="pc-champ"><label>Montant envoyé</label><input type="number" step="0.01" id="fm-montant-envoye"></div>
+        <div class="pc-champ"><label>Taxes payées au gouvernement</label><input type="number" step="0.01" id="fm-taxe-gouv"></div>
+        <div class="pc-champ"><label>Taxes payées à des tiers</label><input type="number" step="0.01" id="fm-taxe-tiers"></div>
+        <div class="pc-champ"><label>% taxes gouvernementales</label><input type="number" step="0.01" id="fm-pct-gouv"></div>
+        <div class="pc-champ"><label>% taxes des tiers</label><input type="number" step="0.01" id="fm-pct-tiers"></div>
+        <div class="pc-champ"><label>Pourboire au gouvernement</label><input type="number" step="0.01" id="fm-pourboire-gouv"></div>
+        <div class="pc-champ"><label>Pourboire aux tiers</label><input type="number" step="0.01" id="fm-pourboire-tiers"></div>
+        <div class="pc-champ"><label>Payé en</label><select id="fm-paye-en"><option value="">—</option><option value="liquide">Liquide</option><option value="virement">Virement</option></select></div>
+        <div class="pc-champ"><label>Personne affectée</label><input type="text" id="fm-personne"></div>
+        <div class="pc-champ"><label>Lieu(x)</label><input type="text" id="fm-lieux"></div>
+        <div class="pc-champ"><label>Date de fin</label><input type="date" id="fm-date-fin"></div>
+        <div class="pc-champ"><label>Date d'entrée en action</label><input type="date" id="fm-date-action"></div>
+        <div class="pc-champ"><label>Nom du permis</label><input type="text" id="fm-permis"></div>
+        <div class="pc-champ"><label>CIB</label><input type="text" id="fm-cib"></div>
+        <div class="pc-champ"><label>Signataires (noms d'utilisateur, virgules)</label><input type="text" id="fm-sign-user"></div>
+        <div class="pc-champ"><label>Signataires (CAS, virgules)</label><input type="text" id="fm-sign-cas"></div>
+        <div class="pc-champ"><label>Récompenses</label><input type="text" id="fm-recompenses"></div>
+        <div class="pc-champ"><label>Formations</label><input type="text" id="fm-formations"></div>
+        <div class="pc-champ"><label>Note</label><textarea id="fm-note"></textarea></div>
+        <label style="display:block; margin:8px 0; font-size:.85rem;"><input type="checkbox" id="fm-visible"> Visible publiquement dans le relevé</label>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="fm-ajouter">Ajouter la facture</button>
+        <div id="fm-message"></div>
+        <div id="fm-liste" style="margin-top:14px;"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Consulter le relevé public d'un citoyen</h3>
+        <div class="pc-champ"><label>Nom d'utilisateur</label><input type="text" id="rmp-username"></div>
+        <div class="pc-champ"><label>Période (AAAA-MM)</label><input type="text" id="rmp-periode"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="rmp-chercher">Consulter</button>
+        <div id="rmp-resultat"></div>
+      </div>
+    </div>`;
+}
+
+function releveContenuHTML(r) {
+  const car = (v) => v == null ? '<span style="background:#111; color:#111; user-select:none;">0R-00000000000</span>' : escHtml(v);
+  return `
+    <table class="table-donnees"><tbody>
+      <tr><th style="text-align:left;">Trésorerie</th><td>${fmtR(r.tresorerie)} R$</td></tr>
+      <tr><th style="text-align:left;">Dettes / Prêts</th><td>${fmtR(r.dettes)} / ${fmtR(r.prets)} R$</td></tr>
+      <tr><th style="text-align:left;">Chômage / Retraite / Parentalité</th><td>${fmtR(r.compte_chomage)} / ${fmtR(r.compte_retraite)} / ${fmtR(r.compte_parentalite)} R$</td></tr>
+      <tr><th style="text-align:left;">Contribution au gouvernement (estimée)</th><td>${fmtR(r.contribution_gouvernement_estimee)} R$</td></tr>
+      <tr><th style="text-align:left;">Taxe de revenu (${r.taxe_pourcentage}%)</th><td>${fmtR((r.taxe_revenu_entreprises || 0) + (r.taxe_revenu_cas_estimee || 0))} R$</td></tr>
+      <tr><th style="text-align:left;">Taxe préventive</th><td>${fmtR((r.taxe_preventive_entreprises || 0) + (r.taxe_preventive_cas_estimee || 0))} R$</td></tr>
+      <tr><th style="text-align:left;">Taxes (ajout manuel)</th><td>${fmtR(r.taxes_ajout_manuel_gouv)} R$ gouv. / ${fmtR(r.taxes_ajout_manuel_tiers)} R$ tiers</td></tr>
+      <tr><th style="text-align:left;">Salaire net estimé (CAS)</th><td>${fmtR(r.salaire_net_cas_estime)} R$</td></tr>
+      <tr><th style="text-align:left;">Salaire d'entreprises (réel)</th><td>${fmtR(r.salaire_entreprises_mois)} R$</td></tr>
+      <tr><th style="text-align:left;">Pourcentage de confiance</th><td>${r.confiance ? r.confiance.score + ' %' : '—'}</td></tr>
+      <tr><th style="text-align:left;">Capital retiré ce mois</th><td>${fmtR(r.capital_retire_mois)} R$</td></tr>
+      <tr><th style="text-align:left;">Argent attendu (total)</th><td>${fmtR(r.argent_attendu ? r.argent_attendu.total : 0)} R$</td></tr>
+    </tbody></table>
+    <h5 style="margin-top:14px;">Entreprises</h5>
+    ${(r.entreprises || []).length ? `<table class="table-donnees"><thead><tr><th>Entreprise</th><th>Rôle</th><th>Salaire/h</th><th>Payé ce mois</th></tr></thead><tbody>
+      ${r.entreprises.map(e => `<tr><td>${escHtml(e.entreprise)}</td><td>${escHtml(e.role)}</td><td>${fmtR(e.salaire_horaire)}</td><td>${fmtR(e.paye_ce_mois)}</td></tr>`).join('')}
+    </tbody></table>` : '<p class="pm-mini">Aucune.</p>'}
+    <h5 style="margin-top:14px;">Constats</h5>
+    <p class="pm-mini">Payés : ${(r.constats_payes || []).length} — En attente : ${(r.constats_en_attente || []).length}</p>
+    <h5 style="margin-top:14px;">Permis achetés ce mois</h5>
+    <p class="pm-mini">${(r.permis_achetes || []).map(p => escHtml(p.type)).join(', ') || 'Aucun'}</p>
+    <h5 style="margin-top:14px;">Formations / Récompenses obtenues ce mois</h5>
+    <p class="pm-mini">${(r.formations_obtenues || []).map(f => escHtml(f.nom)).join(', ') || 'Aucune formation'} — ${(r.recompenses_obtenues || []).length} récompense(s)</p>
+    <h5 style="margin-top:14px;">Capitaux possédés</h5>
+    <p class="pm-mini">${(r.capitaux_possedes || []).map(c => escHtml(c.entreprise) + ' (' + c.pourcentage + '%, ' + fmtR(c.solde) + ' R$)').join(', ') || 'Aucun'}</p>
+    <h5 style="margin-top:14px;">Emprunts</h5>
+    <p class="pm-mini">Gouvernement : ${(r.emprunts_gouvernement || []).length} — Civils : ${(r.emprunts_civils || []).length} — En attente/refusés : ${(r.emprunts_en_attente_ou_refuses || []).length}</p>
+    <h5 style="margin-top:14px;">Relevés d'entreprises faits manuellement</h5>
+    <p class="pm-mini">${(r.relevés_entreprises_manuels || []).map(d => escHtml(d.entreprise) + ' (' + escHtml(d.periode) + ')').join(', ') || 'Aucun'}</p>
+    ${r.notes_au_dossier ? `<h5 style="margin-top:14px;">Notes au dossier</h5>
+    <p class="pm-mini">${(r.notes_au_dossier || []).map(n => escHtml(n.note)).join('<br>') || 'Aucune'}</p>` : ''}
+  `;
+}
+
+async function initialiserPanneauReleveMensuel() {
+  const { data: periodes } = await sb.rpc('mes_periodes_releves');
+  const sel = document.getElementById('rm-periode');
+  sel.innerHTML = (periodes || []).map(p => `<option value="${p}">${p}</option>`).join('') || '<option value="">Aucun relevé disponible</option>';
+  const charger = async () => {
+    if (!sel.value) { document.getElementById('rm-contenu').innerHTML = '<p class="pm-mini">Aucun relevé pour le moment (généré automatiquement le 1er du mois).</p>'; return; }
+    const { data, error } = await sb.rpc('mon_releve', { p_periode: sel.value });
+    document.getElementById('rm-contenu').innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : releveContenuHTML(data);
+  };
+  sel.onchange = charger; charger();
+
+  const chargerFactures = async () => {
+    const { data } = await sb.rpc('mes_factures_manuelles', { p_periode: periodeCourante() });
+    document.getElementById('fm-liste').innerHTML = (data || []).length ? `<table class="table-donnees"><thead><tr><th>Catégorie</th><th>Date</th><th></th></tr></thead><tbody>
+      ${data.map(f => `<tr><td>${escHtml(f.categorie)}</td><td>${escHtml(f.date_effectuee)}</td><td><button class="pc-lien" data-fm-suppr="${f.id}">Supprimer</button></td></tr>`).join('')}
+    </tbody></table>` : '<p class="pm-mini">Aucune facture ce mois-ci.</p>';
+    document.querySelectorAll('[data-fm-suppr]').forEach(b => b.onclick = async () => {
+      const { error } = await sb.rpc('supprimer_facture_manuelle', { p_id: b.dataset.fmSuppr });
+      if (error) alert(error.message); else chargerFactures();
+    });
+  };
+  chargerFactures();
+
+  document.getElementById('fm-ajouter').onclick = async () => {
+    const v = (id) => document.getElementById(id).value || null;
+    const champs = {
+      date_effectuee: v('fm-date'), montant_recu: v('fm-montant-recu'), montant_envoye: v('fm-montant-envoye'),
+      taxes_payees_gouv: v('fm-taxe-gouv'), taxes_payees_tiers: v('fm-taxe-tiers'), pct_taxes_gouv: v('fm-pct-gouv'),
+      pct_taxes_tiers: v('fm-pct-tiers'), pourboire_gouv: v('fm-pourboire-gouv'), pourboire_tiers: v('fm-pourboire-tiers'),
+      paye_en: v('fm-paye-en'), personne_affectee: v('fm-personne'), lieux: v('fm-lieux'), date_fin: v('fm-date-fin'),
+      date_entree_action: v('fm-date-action'), nom_permis: v('fm-permis'), cib: v('fm-cib'),
+      signataires_username: (v('fm-sign-user') || '').split(',').map(s => s.trim()).filter(Boolean),
+      signataires_cas: (v('fm-sign-cas') || '').split(',').map(s => s.trim()).filter(Boolean),
+      recompenses: v('fm-recompenses'), formations: v('fm-formations'), note: v('fm-note'),
+      visible_publiquement: document.getElementById('fm-visible').checked
+    };
+    const { error } = await sb.rpc('ajouter_facture_manuelle', { p_categorie: document.getElementById('fm-categorie').value, p_champs: champs });
+    entMsg('fm-message', error, 'Facture ajoutée pour la prochaine déclaration.');
+    if (!error) chargerFactures();
+  };
+
+  document.getElementById('rmp-chercher').onclick = async () => {
+    const zone = document.getElementById('rmp-resultat');
+    zone.innerHTML = '<p class="pm-mini">Recherche…</p>';
+    const { data, error } = await sb.rpc('releve_citoyen_public', {
+      p_username: document.getElementById('rmp-username').value, p_periode: document.getElementById('rmp-periode').value
+    });
+    zone.innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : `<div class="pc-carte" style="background:var(--blanc-casse); margin-top:12px;"><h4>@${escHtml(data.username)} — ${escHtml(data.periode)}</h4>${releveContenuHTML(data)}</div>`;
+  };
+}
+
+/* =====================================================================
+   CONSEILLER FINANCIER
+   ===================================================================== */
+const CONS_ACTIONS = {
+  demande_retraite: { libelle: 'Demander l\'accès à la retraite', champs: ['texte'] },
+  demande_chomage: { libelle: 'Demander l\'accès au chômage', champs: ['texte'] },
+  envoyer_message: { libelle: 'Écrire un message', champs: ['destinataire', 'titre', 'message'] },
+  envoyer_document: { libelle: 'Envoyer un document', champs: ['destinataire', 'titre', 'message', 'date_debut', 'date_expiration'] },
+  voir_paiements: { libelle: 'Consulter l\'historique de paiement', champs: [] },
+  voir_permis: { libelle: 'Consulter les permis', champs: [] },
+  voir_constats: { libelle: 'Consulter les constats d\'infraction', champs: [] },
+  voir_epargne: { libelle: 'Consulter épargne / contributions', champs: [] },
+  creer_emprunt: { libelle: 'Faire un emprunt d\'argent (prêteur = client)', champs: ['emprunteur_username', 'montant', 'taux', 'date_limite'] },
+  signer_emprunt: { libelle: 'Signer un emprunt existant', champs: ['numero_suivi', 'decision'] },
+  entreprise_creer: { libelle: 'Créer une entreprise', champs: [] },
+  entreprise_voir_cib_joueur: { libelle: 'Voir le CIB du joueur', champs: [] },
+  entreprise_voir_cib: { libelle: 'Voir les CIB d\'une entreprise', champs: ['entreprise_id'] },
+  entreprise_creer_role: { libelle: 'Créer un rôle dans une entreprise', champs: ['entreprise_id', 'nom', 'droits'] },
+  entreprise_payer_employes: { libelle: 'Payer des employés', champs: ['entreprise_id', 'citoyen_id', 'taux', 'heures'] },
+  entreprise_definir_mode_paiement: { libelle: 'Modifier l\'option de paie', champs: ['entreprise_id', 'mode'] },
+  entreprise_definir_option_defaillance: { libelle: 'Modifier l\'option si trésorerie à 0', champs: ['entreprise_id', 'option'] },
+  entreprise_demander_emprunt_gouv: { libelle: 'Emprunter au gouvernement (entreprise)', champs: ['entreprise_id', 'montant', 'type_taux', 'taux_valeur', 'justification'] },
+  virement_entrepreneur: { libelle: 'Transférer de l\'argent (entreprise)', champs: ['entreprise_id', 'destinataire', 'montant'] },
+  entreprise_mettre_capital_en_vente: { libelle: 'Vendre du capital (marché)', champs: ['entreprise_id', 'pourcentage', 'prix_par_centieme'] },
+  entreprise_offrir_capital_gouvernement: { libelle: 'Vendre du capital au gouvernement', champs: ['entreprise_id', 'pourcentage', 'prix_par_centieme'] },
+  entreprise_enregistrer_depense: { libelle: 'Enregistrer une dépense', champs: ['entreprise_id', 'montant', 'note'] },
+  entreprise_generer_rapport_auto: { libelle: 'Faire un relevé d\'entreprise', champs: ['entreprise_id', 'periode'] },
+};
+
+function panneauConseillerHTML() {
+  return `
+    <div id="onglet-conseiller" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mon conseiller financier</h3>
+        <div id="cons-mon-conseiller"><p class="pm-mini">Chargement…</p></div>
+        <div class="pc-champ"><label>Nom d'utilisateur du conseiller</label><input type="text" id="cons-username"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="cons-ajouter">Ajouter / remplacer</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" id="cons-retirer">Retirer mon conseiller</button>
+        <div id="cons-message"></div>
+        <div style="margin-top:12px;">
+          <label style="display:block; font-size:.85rem;"><input type="radio" name="cons-mode" value="restreint"> Restreint (pages choisies uniquement, + logs)</label>
+          <label style="display:block; font-size:.85rem;"><input type="radio" name="cons-mode" value="total"> Accès à tout (+ logs)</label>
+          <div id="cons-pages"></div>
+          <button class="pc-lien" id="cons-securite-appliquer">Enregistrer la sécurité</button>
+        </div>
+      </div>
+      <div class="pc-carte">
+        <h3>Demandes reçues (en tant que client)</h3>
+        <div id="cons-demandes-recues"><p class="pm-mini">Chargement…</p></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Logs de connexion</h3>
+        <div class="pc-champ"><label>Envoyer les logs à (nom d'utilisateur)</label><input type="text" id="cons-logs-dest"></div>
+        <button class="pc-lien" id="cons-logs-envoyer">Envoyer</button>
+        <button class="pc-lien" id="cons-logs-telecharger">Télécharger le .txt</button>
+        <div id="cons-logs-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Mes clients (en tant que conseiller)</h3>
+        <div id="cons-mes-clients"><p class="pm-mini">Chargement…</p></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Demandes envoyées (en tant que conseiller)</h3>
+        <div id="cons-demandes-envoyees"><p class="pm-mini">Chargement…</p></div>
+      </div>
+    </div>`;
+}
+
+async function initialiserPanneauConseiller() {
+  await consChargerTout();
+  document.getElementById('cons-ajouter').onclick = async () => {
+    const { error } = await sb.rpc('ajouter_conseiller_financier', { p_username: document.getElementById('cons-username').value });
+    entMsg('cons-message', error, 'Conseiller ajouté.');
+    if (!error) consChargerTout();
+  };
+  document.getElementById('cons-retirer').onclick = async () => {
+    if (!confirm('Retirer votre conseiller financier ?')) return;
+    await sb.rpc('retirer_conseiller_financier'); consChargerTout();
+  };
+  document.getElementById('cons-securite-appliquer').onclick = async () => {
+    const mode = document.querySelector('input[name="cons-mode"]:checked')?.value || 'restreint';
+    const pages = Array.from(document.querySelectorAll('[data-cons-page]:checked')).map(c => c.value);
+    const { error } = await sb.rpc('definir_securite_conseiller', { p_mode: mode, p_pages: pages });
+    if (error) alert(error.message); else consChargerTout();
+  };
+  document.getElementById('cons-logs-telecharger').onclick = async () => {
+    const { data: lien } = await sb.rpc('mon_conseiller');
+    if (!lien) { alert('Aucun conseiller.'); return; }
+    const { data, error } = await sb.rpc('conseiller_logs_texte', { p_lien_id: lien.id });
+    if (error) { alert(error.message); return; }
+    const blob = new Blob([data], { type: 'text/plain' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'logs-conseiller.txt'; a.click();
+  };
+  document.getElementById('cons-logs-envoyer').onclick = async () => {
+    const { data: lien } = await sb.rpc('mon_conseiller');
+    if (!lien) { alert('Aucun conseiller.'); return; }
+    const { error } = await sb.rpc('conseiller_envoyer_logs', { p_lien_id: lien.id, p_destinataire_username: document.getElementById('cons-logs-dest').value });
+    entMsg('cons-logs-message', error, 'Logs envoyés.');
+  };
+}
+
+async function consChargerTout() {
+  const { data: lien } = await sb.rpc('mon_conseiller');
+  const zC = document.getElementById('cons-mon-conseiller');
+  zC.innerHTML = lien ? `<p>Conseiller actuel : <strong>@${escHtml(lien.conseiller_username)}</strong> — mode : ${escHtml(lien.mode_securite)}</p>` : '<p class="pm-mini">Aucun conseiller financier.</p>';
+  if (lien) {
+    document.querySelector(`input[name="cons-mode"][value="${lien.mode_securite}"]`).checked = true;
+    document.getElementById('cons-pages').innerHTML = Object.entries(CONS_ACTIONS).filter(([k, v]) => v.champs !== undefined && k.startsWith('voir_') || k === 'entreprise_voir_cib_joueur')
+      .map(([k, v]) => `<label style="display:block; font-size:.8rem;"><input type="checkbox" data-cons-page value="${k}" ${(lien.pages_autorisees || []).includes(k) ? 'checked' : ''}> ${v.libelle}</label>`).join('');
+  } else { document.getElementById('cons-pages').innerHTML = ''; }
+
+  const { data: recues } = await sb.rpc('mes_demandes_conseiller_recues');
+  document.getElementById('cons-demandes-recues').innerHTML = (recues || []).length ? recues.map(d => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${escHtml((CONS_ACTIONS[d.type_action] || {}).libelle || d.type_action)}</strong> — ${d.manuelle ? 'accès manuel (code)' : 'action automatique'} — <em>${escHtml(d.statut)}</em></div>
+      <p class="pm-mini">Justification : ${escHtml(d.justification)}</p>
+      ${d.statut === 'en_attente' ? `<div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cr-accepter="${d.id}">Accepter</button>
+        <button class="bouton bouton-contour" style="cursor:pointer;" data-cr-refuser="${d.id}">Refuser</button></div>` : ''}
+      ${d.motif_refus ? `<p class="pm-mini">Motif du refus : ${escHtml(d.motif_refus)}</p>` : ''}
+    </div>`).join('') : '<p class="pm-mini">Aucune demande.</p>';
+  document.querySelectorAll('[data-cr-accepter]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('client_repondre_demande_conseiller', { p_demande_id: b.dataset.crAccepter, p_decision: 'acceptee' });
+    if (error) alert(error.message); else consChargerTout();
+  });
+  document.querySelectorAll('[data-cr-refuser]').forEach(b => b.onclick = async () => {
+    const motif = prompt('Motif du refus (obligatoire) :');
+    if (motif == null) return;
+    const { error } = await sb.rpc('client_repondre_demande_conseiller', { p_demande_id: b.dataset.crRefuser, p_decision: 'refusee', p_motif_refus: motif });
+    if (error) alert(error.message); else consChargerTout();
+  });
+
+  const { data: clients } = await sb.rpc('conseiller_mes_clients');
+  document.getElementById('cons-mes-clients').innerHTML = (clients || []).length ? clients.map(c => `
+    <div class="pm-fleet-item"><div class="entete"><strong>@${escHtml(c.client_username)}</strong> (${escHtml(c.mode_securite)})</div>
+      <select data-cons-action="${c.client_username}">${Object.entries(CONS_ACTIONS).map(([k, v]) => `<option value="${k}">${escHtml(v.libelle)}</option>`).join('')}</select>
+      <div data-cons-champs="${c.client_username}"></div>
+      <input type="text" placeholder="Justification (10 caractères min.)" data-cons-justif="${c.client_username}" style="width:100%;">
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cons-demander="${c.client_username}">Envoyer la demande</button>
+    </div>`).join('') : '<p class="pm-mini">Vous n\'êtes le conseiller de personne.</p>';
+
+  document.querySelectorAll('[data-cons-action]').forEach(sel => {
+    const rendreChamps = () => {
+      const action = CONS_ACTIONS[sel.value];
+      document.querySelector(`[data-cons-champs="${sel.dataset.consAction}"]`).innerHTML =
+        action.champs.map(c => `<input type="text" placeholder="${c}" data-cons-champ="${c}" style="width:100%; margin:2px 0;">`).join('');
+    };
+    sel.onchange = rendreChamps; rendreChamps();
+  });
+  document.querySelectorAll('[data-cons-demander]').forEach(b => b.onclick = async () => {
+    const user = b.dataset.consDemander;
+    const sel = document.querySelector(`[data-cons-action][value]`);
+    const selectEl = [...document.querySelectorAll('select[data-cons-action]')].find(s => s.dataset.consAction === user);
+    const type = selectEl.value;
+    const bloc = document.querySelector(`[data-cons-champs="${user}"]`);
+    const donnees = {};
+    bloc.querySelectorAll('[data-cons-champ]').forEach(inp => { donnees[inp.dataset.consChamp] = inp.value; });
+    const justif = document.querySelector(`[data-cons-justif="${user}"]`).value;
+    const { error } = await sb.rpc('conseiller_demander_action', { p_client_username: user, p_type_action: type, p_justification: justif, p_donnees: donnees });
+    if (error) alert(error.message); else { alert('Demande envoyée.'); consChargerTout(); }
+  });
+
+  const { data: envoyees } = await sb.rpc('mes_demandes_conseiller_envoyees');
+  document.getElementById('cons-demandes-envoyees').innerHTML = (envoyees || []).length ? envoyees.map(d => `
+    <div class="pm-fleet-item"><div class="entete"><strong>@${escHtml(d.client_username)}</strong> — ${escHtml((CONS_ACTIONS[d.type_action] || {}).libelle || d.type_action)} — <em>${escHtml(d.statut)}</em></div>
+      ${d.code_disponible ? `<button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cons-voir-code="${d.id}">Voir le code (une fois)</button>` : ''}
+      ${d.motif_refus ? `<p class="pm-mini">Refusé : ${escHtml(d.motif_refus)}</p>` : ''}
+    </div>`).join('') : '<p class="pm-mini">Aucune demande envoyée.</p>';
+  document.querySelectorAll('[data-cons-voir-code]').forEach(b => b.onclick = async () => {
+    const { data, error } = await sb.rpc('conseiller_voir_code', { p_demande_id: b.dataset.consVoirCode });
+    if (error) { alert(error.message); return; }
+    prompt('Code temporaire (copiez-le, valide 48h, usage unique) :', data);
+  });
+}
+
+/* =====================================================================
+   CONNEXION PAR CONSEILLER FINANCIER (page hors connexion)
+   ===================================================================== */
+let consSessionJeton = null, consSessionClient = null;
+
+function ongletConnexionConseillerHTML() {
+  return `
+    <div id="connexion-conseiller" class="pc-masque">
+      <h3>Connexion par conseiller financier</h3>
+      <div class="pc-champ"><label>Votre nom complet (conseiller)</label><input type="text" id="cc-nom"></div>
+      <div class="pc-champ"><label>Votre code social (conseiller)</label><input type="text" id="cc-cas"></div>
+      <div class="pc-champ"><label>Justification de connexion</label><textarea id="cc-justif"></textarea></div>
+      <div class="pc-champ"><label>Nom d'utilisateur du client</label><input type="text" id="cc-client"></div>
+      <div class="pc-champ"><label>Code temporaire (50 caractères)</label><input type="password" id="cc-code"></div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="cc-connecter">Se connecter</button>
+      <div id="cc-message"></div>
+      <div id="cc-session" class="pc-masque"></div>
+    </div>`;
+}
+
+function consLogClic(element) { if (consSessionJeton) sb.rpc('conseiller_log_clic', { p_jeton: consSessionJeton, p_element: element }).catch(() => {}); }
+
+async function initialiserConnexionConseiller() {
+  document.getElementById('cc-connecter').onclick = async () => {
+    const { data, error } = await sb.rpc('conseiller_connexion', {
+      p_nom_complet: document.getElementById('cc-nom').value, p_cas_conseiller: encrypterCode(document.getElementById('cc-cas').value),
+      p_justification: document.getElementById('cc-justif').value, p_username_client: document.getElementById('cc-client').value,
+      p_code: document.getElementById('cc-code').value
+    });
+    if (error) { entMsg('cc-message', error); return; }
+    consSessionJeton = data; consSessionClient = document.getElementById('cc-client').value;
+    document.getElementById('cc-message').innerHTML = '';
+    consAfficherSession();
+  };
+}
+
+async function consAfficherSession() {
+  const zone = document.getElementById('cc-session');
+  zone.classList.remove('pc-masque');
+  const { data: soldes } = await sb.rpc('conseiller_soldes', { p_jeton: consSessionJeton });
+  zone.innerHTML = `
+    <div class="pc-carte">
+      <h4>Accès temporaire — @${escHtml(consSessionClient)}</h4>
+      <p class="pm-mini">Trésorerie : ${fmtR(soldes.tresorerie)} R$ — Dettes : ${fmtR(soldes.dettes)} R$ — Prêts : ${fmtR(soldes.prets)} R$ — Argent attendu : ${fmtR(soldes.argent_attendu)} R$</p>
+      <div class="pm-ligne-boutons">
+        <button class="pc-lien" data-cc-page="paiements">Paiements</button>
+        <button class="pc-lien" data-cc-page="permis">Permis</button>
+        <button class="pc-lien" data-cc-page="constats">Constats</button>
+        <button class="pc-lien" data-cc-page="epargne">Épargne</button>
+      </div>
+      <div id="cc-page-resultat"></div>
+      <details style="margin-top:12px;"><summary class="pm-mini" style="cursor:pointer;">Signatures (emprunt)</summary>
+        <div class="pc-champ"><label>Numéro de contrat</label><input type="text" id="cc-emp-numero"></div>
+        <button class="pc-lien" data-cc-signer="accepter">Accepter</button>
+        <button class="pc-lien" data-cc-signer="refuser">Refuser</button>
+      </details>
+      <details style="margin-top:12px;"><summary class="pm-mini" style="cursor:pointer;">Action d'entreprise</summary>
+        <select id="cc-ent-fonction">${['entreprise_payer_employe','virement_entrepreneur','entreprise_enregistrer_depense','entreprise_mettre_capital_en_vente','entreprise_offrir_capital_gouvernement','entreprise_demander_emprunt_gouv','entreprise_definir_mode_paiement','entreprise_definir_option_defaillance','entreprise_creer_role','entreprise_deposer_impot','entreprise_generer_rapport_auto','entreprise_mes_cib','entreprise_demander'].map(f => `<option value="${f}">${f}</option>`).join('')}</select>
+        <textarea id="cc-ent-args" placeholder='{"entreprise_id":"...", ...}' style="width:100%; height:60px;"></textarea>
+        <button class="pc-lien" id="cc-ent-executer">Exécuter</button>
+        <div id="cc-ent-resultat"></div>
+      </details>
+    </div>`;
+  zone.querySelectorAll('[data-cc-page]').forEach(b => b.onclick = async () => {
+    consLogClic('page:' + b.dataset.ccPage);
+    const { data, error } = await sb.rpc('conseiller_lire', { p_jeton: consSessionJeton, p_page: b.dataset.ccPage });
+    document.getElementById('cc-page-resultat').innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : `<pre style="white-space:pre-wrap; font-size:.78rem;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+  });
+  zone.querySelectorAll('[data-cc-signer]').forEach(b => b.onclick = async () => {
+    consLogClic('signer:' + b.dataset.ccSigner);
+    const { error } = await sb.rpc('conseiller_signer_emprunt', { p_jeton: consSessionJeton, p_numero_suivi: document.getElementById('cc-emp-numero').value, p_decision: b.dataset.ccSigner });
+    if (error) alert(error.message); else alert('Fait.');
+  });
+  document.getElementById('cc-ent-executer').onclick = async () => {
+    consLogClic('entreprise:' + document.getElementById('cc-ent-fonction').value);
+    let args; try { args = JSON.parse(document.getElementById('cc-ent-args').value || '{}'); } catch (e) { alert('JSON invalide.'); return; }
+    const { data, error } = await sb.rpc('conseiller_executer_entreprise', { p_jeton: consSessionJeton, p_fonction: document.getElementById('cc-ent-fonction').value, p_args: args });
+    document.getElementById('cc-ent-resultat').innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : `<pre style="white-space:pre-wrap; font-size:.78rem;">${escHtml(JSON.stringify(data, null, 2))}</pre>`;
+  };
+}
+
+/* =====================================================================
+   CAPITAL — MARCHÉ INTÉRIEUR / EXTÉRIEUR (Halgeberg)
+   ===================================================================== */
+function panneauMarcheCapitalHTML() {
+  return `
+    <div id="onglet-marche-interieur" class="pc-masque">
+      <div class="pc-carte"><h3>Marché intérieur — mes capitaux</h3><div id="mi-contenu"><p class="pm-mini">Chargement…</p></div></div>
+    </div>
+    <div id="onglet-marche-exterieur" class="pc-masque">
+      <div class="pc-carte"><h3>Marché extérieur — capitaux en vente</h3><div id="me-contenu"><p class="pm-mini">Chargement…</p></div></div>
+    </div>`;
+}
+
+async function initialiserMarcheInterieur() {
+  const { data } = await sb.rpc('mes_capitaux');
+  document.getElementById('mi-contenu').innerHTML = (data || []).length ? data.map(c => `
+    <div class="pm-fleet-item">
+      <div class="entete"><div><strong>${escHtml(c.nom)}</strong> — ${Number(c.pourcentage).toFixed(2)} %
+        <div class="pm-mini">Accumulé (retirable) : ${fmtR(c.solde)} R$ — total all-time : ${fmtR(c.solde_all_time)} R$</div></div>
+        <button class="pc-lien" data-mi-retirer="${c.entreprise_id}">Retirer</button></div>
+      <details><summary class="pm-mini" style="cursor:pointer;">Vendre sur le marché extérieur</summary>
+        <input type="number" step="0.1" min="0.1" placeholder="% à vendre" data-mi-pct="${c.entreprise_id}">
+        <input type="number" step="0.01" placeholder="Prix par 0,1%" data-mi-prix="${c.entreprise_id}">
+        <textarea placeholder="Description (500 max)" maxlength="500" data-mi-desc="${c.entreprise_id}"></textarea>
+        <button class="pc-lien" data-mi-vendre="${c.entreprise_id}">Mettre en vente</button>
+      </details>
+    </div>`).join('') : '<p class="pm-mini">Aucun capital possédé.</p>';
+  document.querySelectorAll('[data-mi-retirer]').forEach(b => b.onclick = async () => {
+    const { data: montant, error } = await sb.rpc('capital_retirer_solde', { p_entreprise_id: b.dataset.miRetirer });
+    if (error) alert(error.message); else { alert(fmtR(montant) + ' R$ ajoutés à votre trésorerie.'); initialiserMarcheInterieur(); }
+  });
+  document.querySelectorAll('[data-mi-vendre]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.miVendre;
+    const { error } = await sb.rpc('capital_mettre_en_vente_tiers', {
+      p_entreprise_id: id, p_pourcentage: Number(document.querySelector(`[data-mi-pct="${id}"]`).value),
+      p_prix_par_dixieme: Number(document.querySelector(`[data-mi-prix="${id}"]`).value) || 0,
+      p_description: document.querySelector(`[data-mi-desc="${id}"]`).value || null
+    });
+    if (error) alert(error.message); else { alert('Mis en vente.'); initialiserMarcheInterieur(); }
+  });
+}
+
+async function initialiserMarcheExterieur() {
+  const { data: marche } = await sb.rpc('capital_marche');
+  const zone = document.getElementById('me-contenu');
+  const ents = (marche && marche.entreprises) || [];
+  const tiers = (marche && marche.tiers) || [];
+  zone.innerHTML = `
+    <h5>Entreprises</h5>
+    ${ents.length ? ents.map(o => `
+      <div class="pm-fleet-item" data-me-entreprise="${o.entreprise_id}">
+        <div class="entete"><strong>${escHtml(o.nom)}</strong> — ${Number(o.en_vente_pct).toFixed(2)} % à ${fmtR(o.prix_par_centieme)} R$/0,01%</div>
+        <button class="pc-lien" data-me-analyser="${o.entreprise_id}">Analyser (fiche + graphique)</button>
+        <button class="pc-lien" data-me-dernier-releve="${o.nom}">Voir le dernier relevé</button>
+        <div class="pc-champ"><label>% à investir</label><input type="number" step="0.01" min="${o.min_achat_pct}" data-me-calc-pct="${o.entreprise_id}"></div>
+        <button class="pc-lien" data-me-calculer="${o.entreprise_id}">Estimer le gain</button>
+        <div data-me-estimation="${o.entreprise_id}"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-me-acheter="${o.entreprise_id}">Acheter</button>
+        <div data-me-fiche="${o.entreprise_id}"></div>
+      </div>`).join('') : '<p class="pm-mini">Aucune.</p>'}
+    <h5 style="margin-top:16px;">Particuliers</h5>
+    ${tiers.length ? tiers.map(o => `
+      <div class="pm-fleet-item">
+        <div class="entete"><strong>${escHtml(o.nom)}</strong> — @${escHtml(o.vendeur)} vend ${Number(o.pourcentage).toFixed(1)} % à ${fmtR(o.prix_par_dixieme)} R$/0,1%</div>
+        ${o.description ? `<p style="font-size:.85rem;">${escHtml(o.description)}</p>` : ''}
+        <input type="number" step="0.1" placeholder="% à acheter" data-me-tiers-pct="${o.id}">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-me-tiers-acheter="${o.id}">Acheter</button>
+      </div>`).join('') : '<p class="pm-mini">Aucune.</p>'}`;
+
+  zone.querySelectorAll('[data-me-analyser]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.meAnalyser;
+    const { data, error } = await sb.rpc('entreprise_fiche_capital', { p_entreprise_id: id });
+    const cible = zone.querySelector(`[data-me-fiche="${id}"]`);
+    if (error) { cible.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+    const pts = [...(data.graphique.historique || []), data.graphique.actuel];
+    cible.innerHTML = `
+      <p class="pm-mini">PDG : @${escHtml(data.pdg || '—')} — Co-PDG : ${(data.co_pdg || []).map(u => '@' + escHtml(u)).join(', ') || '—'} — Employés : ${(data.employes || []).map(u => '@' + escHtml(u)).join(', ') || '—'}</p>
+      <p class="pm-mini">Siège : ${escHtml(data.sieges)} — Vente : ${escHtml(data.type_vente || '—')} — Trésorerie : ${fmtR(data.tresorerie)} R$</p>
+      ${data.description ? `<p style="font-size:.85rem; white-space:pre-wrap;">${escHtml(data.description)}</p>` : ''}
+      <table class="table-donnees"><thead><tr><th>Période</th><th>Dépenses (rouge)</th><th>Profits (vert)</th><th>Trésorerie (bleu)</th><th>Capital tiers all-time (jaune)</th><th>Capital tiers actuel (orange)</th></tr></thead>
+      <tbody>${pts.map(p => `<tr><td>${escHtml(p.periode)}</td><td>${p.depenses != null ? fmtR(p.depenses) : '—'}</td><td>${p.profits != null ? fmtR(p.profits) : 'non disponible'}</td><td>${p.tresorerie != null ? fmtR(p.tresorerie) : 'non disponible'}</td><td>${p.capital_tiers_all_time != null ? fmtR(p.capital_tiers_all_time) : 'non disponible'}</td><td>${p.capital_tiers_actuel != null ? fmtR(p.capital_tiers_actuel) : 'non disponible'}</td></tr>`).join('')}</tbody></table>`;
+  });
+  zone.querySelectorAll('[data-me-dernier-releve]').forEach(b => b.onclick = () => {
+    document.getElementById('rel-nom').value = b.dataset.meDernierReleve;
+    document.querySelector('[data-onglet="releves"]').click();
+    document.getElementById('rel-chercher').click();
+  });
+  zone.querySelectorAll('[data-me-calculer]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.meCalculer;
+    const pct = Number(zone.querySelector(`[data-me-calc-pct="${id}"]`).value) || 0;
+    const { data, error } = await sb.rpc('entreprise_estimation_achat', { p_entreprise_id: id, p_pourcentage: pct });
+    zone.querySelector(`[data-me-estimation="${id}"]`).innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : `<p class="pm-mini">${escHtml(data.detail)}</p>`;
+  });
+  zone.querySelectorAll('[data-me-acheter]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.meAcheter;
+    const pct = Number(zone.querySelector(`[data-me-calc-pct="${id}"]`).value);
+    if (!pct) { alert('Entrez un pourcentage.'); return; }
+    const { error } = await sb.rpc('entreprise_acheter_capital', { p_entreprise_id: id, p_pourcentage: pct });
+    if (error) alert(error.message); else { alert('Achat effectué.'); initialiserMarcheExterieur(); }
+  });
+  zone.querySelectorAll('[data-me-tiers-acheter]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.meTiersAcheter;
+    const pct = Number(zone.querySelector(`[data-me-tiers-pct="${id}"]`).value);
+    const { error } = await sb.rpc('capital_acheter_tiers', { p_offre_id: id, p_pourcentage: pct });
+    if (error) alert(error.message); else { alert('Achat effectué.'); initialiserMarcheExterieur(); }
+  });
 }
 
 demarrer();
