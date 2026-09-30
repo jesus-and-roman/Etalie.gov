@@ -2297,6 +2297,14 @@ function panneauAdminHTML() {
       </div>
 
       <div class="pc-carte">
+        <h3>Mode de création d'entreprise</h3>
+        <label style="display:block; font-size:.85rem;"><input type="radio" name="a-mode-creation" value="verification"> Vérification avant création (par défaut)</label>
+        <label style="display:block; font-size:.85rem;"><input type="radio" name="a-mode-creation" value="liberte"> Liberté de création (aucune vérification)</label>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer; margin-top:10px;" id="a-mode-creation-appliquer">Appliquer</button>
+        <div id="a-mode-creation-message"></div>
+      </div>
+
+      <div class="pc-carte">
         <h3>Demandes d'entreprise en attente</h3>
         <div id="a-liste-demandes-entreprises"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
       </div>
@@ -2771,6 +2779,7 @@ function initialiserPanneauAdmin() {
   chargerDemandesAftAdmin();
   chargerContribuablesAdmin();
   chargerDemandesEntreprisesAdmin();
+  chargerModeCreationEntreprise();
   chargerEmpruntsEntreprisesAdmin();
   chargerOffresCapitalAdmin();
   chargerDemandesCibAdmin();
@@ -5018,6 +5027,17 @@ function adminBlocNego(id, hist, fmtHist, champsHTML, attr) {
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="rectifier">Rectifier et renvoyer</button>
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="refusee">Refuser</button>
     </div></div>`;
+}
+
+async function chargerModeCreationEntreprise() {
+  const { data } = await sb.rpc('mode_creation_entreprise_actuel');
+  const radio = document.querySelector(`input[name="a-mode-creation"][value="${data || 'verification'}"]`);
+  if (radio) radio.checked = true;
+  document.getElementById('a-mode-creation-appliquer').onclick = async () => {
+    const mode = document.querySelector('input[name="a-mode-creation"]:checked')?.value || 'verification';
+    const { error } = await sb.rpc('gouv_definir_mode_creation_entreprise', { p_mode: mode });
+    entMsg('a-mode-creation-message', error, 'Mode appliqué.');
+  };
 }
 
 async function chargerEmpruntsEntreprisesAdmin() {
