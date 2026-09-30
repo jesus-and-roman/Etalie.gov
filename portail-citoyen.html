@@ -1261,7 +1261,7 @@ async function chargerTableauDeBord(utilisateur) {
           <select id="ct-cible">${CIBLES_CONTACT.map(c => `<option>${c}</option>`).join('')}</select>
         </div>
         <div class="pc-champ"><label for="ct-titre">Titre</label><input type="text" id="ct-titre"></div>
-        <div class="pc-champ"><label for="ct-corps">Message (500 caractères maximum)</label><textarea id="ct-corps" maxlength="500"></textarea></div>
+        <div class="pc-champ"><label for="ct-corps">Message (20000 caractères maximum)</label><textarea id="ct-corps" maxlength="20000"></textarea></div>
         <div id="ct-message"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ct-envoyer">Envoyer</button>
       </div>
