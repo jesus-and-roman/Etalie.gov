@@ -992,6 +992,8 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="conseiller">Conseiller financier</button>
       <button data-onglet="marche-interieur">Marché intérieur</button>
       <button data-onglet="marche-exterieur">Marché extérieur</button>
+      <button data-onglet="documents-gouv">Documents au gouvernement</button>
+      <button data-onglet="brevets">Brevets et droits d'auteur</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1261,7 +1263,7 @@ async function chargerTableauDeBord(utilisateur) {
           <select id="ct-cible">${CIBLES_CONTACT.map(c => `<option>${c}</option>`).join('')}</select>
         </div>
         <div class="pc-champ"><label for="ct-titre">Titre</label><input type="text" id="ct-titre"></div>
-        <div class="pc-champ"><label for="ct-corps">Message (20000 caractères maximum)</label><textarea id="ct-corps" maxlength="20000"></textarea></div>
+        <div class="pc-champ"><label for="ct-corps">Message (500 caractères maximum)</label><textarea id="ct-corps" maxlength="500"></textarea></div>
         <div id="ct-message"></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="ct-envoyer">Envoyer</button>
       </div>
@@ -1277,6 +1279,8 @@ async function chargerTableauDeBord(utilisateur) {
     ${panneauReleveMensuelHTML()}
     ${panneauConseillerHTML()}
     ${panneauMarcheCapitalHTML()}
+    ${panneauDocumentsGouvHTML()}
+    ${panneauBrevetsHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1295,7 +1299,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'confiance', 'releve-mensuel', 'conseiller', 'marche-interieur', 'marche-exterieur', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'confiance', 'releve-mensuel', 'conseiller', 'marche-interieur', 'marche-exterieur', 'documents-gouv', 'brevets', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1332,6 +1336,8 @@ async function chargerTableauDeBord(utilisateur) {
   initialiserPanneauConseiller();
   initialiserMarcheInterieur();
   initialiserMarcheExterieur();
+  initialiserPanneauDocumentsGouv();
+  initialiserPanneauBrevets();
   synchroniserCIBEtRapports();
 
   demarrerTicker(utilisateur.id, citoyen);
@@ -2325,6 +2331,16 @@ function panneauAdminHTML() {
       </div>
 
       <div class="pc-carte">
+        <h3>Documents envoyés par les citoyens</h3>
+        <div id="a-liste-documents-gouv"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Demandes de brevets / droits d'auteur</h3>
+        <div id="a-liste-brevets"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
         <h3>Créer une taxe secondaire (argent attendu)</h3>
         <div class="pc-champ"><label for="a-taxe-username">Nom d'utilisateur</label><input type="text" id="a-taxe-username"></div>
         <div class="pc-champ"><label for="a-taxe-titre">Titre</label><input type="text" id="a-taxe-titre"></div>
@@ -2783,6 +2799,8 @@ function initialiserPanneauAdmin() {
   chargerEmpruntsEntreprisesAdmin();
   chargerOffresCapitalAdmin();
   chargerDemandesCibAdmin();
+  chargerDocumentsGouvAdmin();
+  chargerBrevetsAdmin();
 
   document.getElementById('a-taxe-creer').onclick = async () => {
     const { error } = await sb.rpc('gouv_creer_taxe_secondaire', {
@@ -5846,6 +5864,228 @@ async function initialiserMarcheExterieur() {
     const pct = Number(zone.querySelector(`[data-me-tiers-pct="${id}"]`).value);
     const { error } = await sb.rpc('capital_acheter_tiers', { p_offre_id: id, p_pourcentage: pct });
     if (error) alert(error.message); else { alert('Achat effectué.'); initialiserMarcheExterieur(); }
+  });
+}
+
+/* =====================================================================
+   DOCUMENTS AU GOUVERNEMENT (upload PDF)
+   ===================================================================== */
+function panneauDocumentsGouvHTML() {
+  return `
+    <div id="onglet-documents-gouv" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Envoyer un document au gouvernement</h3>
+        <div class="pc-champ"><label>Titre</label><input type="text" id="dg-titre"></div>
+        <div class="pc-champ"><label>Note (optionnelle)</label><textarea id="dg-note"></textarea></div>
+        <div class="pc-champ"><label>Fichier PDF</label><input type="file" id="dg-fichier" accept="application/pdf"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="dg-envoyer">Envoyer</button>
+        <div id="dg-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Mes documents</h3>
+        <div id="dg-mes-documents"><p class="pm-mini">Chargement…</p></div>
+      </div>
+    </div>`;
+}
+
+async function initialiserPanneauDocumentsGouv() {
+  document.getElementById('dg-envoyer').onclick = async () => {
+    const fichier = document.getElementById('dg-fichier').files[0];
+    if (!fichier) { entMsg('dg-message', { message: 'Choisissez un fichier PDF.' }); return; }
+    const { data: { user } } = await sb.auth.getUser();
+    const chemin = `${user.id}/${Date.now()}-${fichier.name}`;
+    const { error: errUpload } = await sb.storage.from('documents-citoyens').upload(chemin, fichier);
+    if (errUpload) { entMsg('dg-message', errUpload); return; }
+    const { error } = await sb.rpc('soumettre_document_gouv', { p_titre: document.getElementById('dg-titre').value, p_chemin_fichier: chemin, p_note: document.getElementById('dg-note').value || null });
+    entMsg('dg-message', error, 'Document envoyé au gouvernement.');
+    if (!error) dgChargerMesDocuments();
+  };
+  dgChargerMesDocuments();
+}
+
+async function dgChargerMesDocuments() {
+  const { data, error } = await sb.rpc('mes_documents_gouv');
+  const zone = document.getElementById('dg-mes-documents');
+  if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  zone.innerHTML = (data || []).length ? data.map(d => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${escHtml(d.titre)}</strong> — <em>${d.statut === 'traite' ? 'traité' : 'en attente'}</em></div>
+      ${d.note ? `<p class="pm-mini">${escHtml(d.note)}</p>` : ''}
+      ${d.note_gouv ? `<p class="pm-mini">Réponse du gouvernement : ${escHtml(d.note_gouv)}</p>` : ''}
+      <p class="pm-mini">${new Date(d.cree_le).toLocaleDateString('fr-FR')}</p>
+    </div>`).join('') : '<p class="pm-mini">Aucun document envoyé.</p>';
+}
+
+async function chargerDocumentsGouvAdmin() {
+  const conteneur = document.getElementById('a-liste-documents-gouv');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_documents', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun document en attente.</p>'; return; }
+  conteneur.innerHTML = await Promise.all(data.map(async d => {
+    const { data: url } = await sb.storage.from('documents-citoyens').createSignedUrl(d.chemin_fichier, 3600);
+    return `<div class="pm-fleet-item">
+      <div class="entete"><strong>@${escHtml(d.username)}</strong> — ${escHtml(d.titre)}</div>
+      ${d.note ? `<p class="pm-mini">${escHtml(d.note)}</p>` : ''}
+      ${url ? `<a href="${url.signedUrl}" target="_blank" class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px; display:inline-block; text-decoration:none;">Ouvrir le PDF</a>` : ''}
+      <input type="text" placeholder="Note de réponse (optionnelle)" data-dg-note="${d.id}">
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-dg-traiter="${d.id}">Marquer traité</button>
+    </div>`;
+  })).then(arr => arr.join(''));
+  conteneur.querySelectorAll('[data-dg-traiter]').forEach(b => b.onclick = async () => {
+    const { error: err } = await sb.rpc('gouv_traiter_document', { p_id: b.dataset.dgTraiter, p_note_gouv: conteneur.querySelector(`[data-dg-note="${b.dataset.dgTraiter}"]`).value || null });
+    if (err) alert(err.message); else chargerDocumentsGouvAdmin();
+  });
+}
+
+/* =====================================================================
+   BREVETS ET DROITS D'AUTEUR
+   ===================================================================== */
+function panneauBrevetsHTML() {
+  return `
+    <div id="onglet-brevets" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Rechercher un brevet ou droit d'auteur</h3>
+        <div class="pc-champ"><label>Numéro de suivi, mot-clé du titre</label><input type="text" id="brv-recherche"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="brv-chercher">Rechercher</button>
+        <div id="brv-resultats"></div>
+        <div id="brv-fiche" style="margin-top:14px;"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Déposer une demande</h3>
+        <div class="pc-champ"><label>Type</label><select id="brv-type"><option value="brevet">Brevet</option><option value="copyright">Droit d'auteur</option></select></div>
+        <div class="pc-champ"><label>Titre</label><input type="text" id="brv-titre"></div>
+        <div class="pc-champ"><label>Description (20 caractères minimum)</label><textarea id="brv-description"></textarea></div>
+        <div class="pc-champ"><label>Catégorie</label><input type="text" id="brv-categorie"></div>
+        <div class="pc-champ"><label>Domaine d'application</label><input type="text" id="brv-domaine"></div>
+        <div class="pc-champ"><label>Revendications</label><textarea id="brv-revendications"></textarea></div>
+        <div class="pc-champ"><label>Date de création</label><input type="date" id="brv-date-creation"></div>
+        <div class="pc-champ"><label>PDF explicatif (obligatoire)</label><input type="file" id="brv-pdf" accept="application/pdf"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="brv-deposer">Déposer la demande</button>
+        <div id="brv-depot-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Mes demandes</h3>
+        <div id="brv-mes-demandes"><p class="pm-mini">Chargement…</p></div>
+      </div>
+    </div>`;
+}
+
+function brevetFicheHTML(b) {
+  return `
+    <div class="pc-carte" style="background:var(--blanc-casse);">
+      <h4>${escHtml(b.titre)} (${escHtml(b.numero_suivi)})</h4>
+      <p class="pm-mini">${escHtml(b.type === 'brevet' ? 'Brevet' : "Droit d'auteur")} — ${escHtml(b.categorie || '—')} — déposé le ${new Date(b.cree_le).toLocaleDateString('fr-FR')}</p>
+      <p style="font-size:.9rem; white-space:pre-wrap;">${escHtml(b.description)}</p>
+      ${b.domaine_application ? `<p class="pm-mini">Domaine : ${escHtml(b.domaine_application)}</p>` : ''}
+      ${b.revendications ? `<p class="pm-mini">Revendications : ${escHtml(b.revendications)}</p>` : ''}
+      ${b.date_creation ? `<p class="pm-mini">Date de création : ${escHtml(b.date_creation)}</p>` : ''}
+      <p><a href="${sb.storage.from('brevets-pdf').getPublicUrl(b.chemin_pdf).data.publicUrl}" target="_blank" class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; text-decoration:none; display:inline-block;">Voir le PDF</a></p>
+      <h5 style="margin-top:12px;">Détenteurs</h5>
+      <p class="pm-mini">${(b.detenteurs || []).map(d => d.username ? '@' + escHtml(d.username) : escHtml(d.entreprise) + ' (' + escHtml(d.entreprise_code) + ')').join(', ') || '—'}</p>
+      <h5 style="margin-top:12px;">Autorisés à utiliser</h5>
+      <p class="pm-mini">${(b.autorisations || []).map(a => a.username ? '@' + escHtml(a.username) : escHtml(a.entreprise) + ' (' + escHtml(a.entreprise_code) + ')').join(', ') || 'aucun'}</p>
+      ${b.mes_droits ? `
+      <div style="margin-top:12px;">
+        <h5>Gestion (détenteur)</h5>
+        <div class="pc-champ"><label>Ajouter un détenteur (nom d'utilisateur ou code E-XXXXXXXX)</label><input type="text" id="brv-ajouter-detenteur"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="brv-ajouter-detenteur-btn">Ajouter</button>
+        <div class="pc-champ" style="margin-top:10px;"><label>Autoriser un usage (nom d'utilisateur ou code E-XXXXXXXX)</label><input type="text" id="brv-autoriser"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="brv-autoriser-btn">Autoriser</button>
+        <div id="brv-gestion-message"></div>
+      </div>` : ''}
+    </div>`;
+}
+
+async function initialiserPanneauBrevets() {
+  document.getElementById('brv-chercher').onclick = async () => {
+    const { data, error } = await sb.rpc('rechercher_brevets', { p_recherche: document.getElementById('brv-recherche').value });
+    const zone = document.getElementById('brv-resultats');
+    if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+    zone.innerHTML = (data || []).length ? data.map(b => `
+      <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(b.titre)}</strong> (${escHtml(b.numero_suivi)})
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-brv-ouvrir="${b.numero_suivi}">Ouvrir</button></div></div>`).join('') : '<p class="pm-mini">Aucun résultat.</p>';
+    zone.querySelectorAll('[data-brv-ouvrir]').forEach(btn => btn.onclick = () => brvOuvrirFiche(btn.dataset.brvOuvrir));
+  };
+
+  document.getElementById('brv-pdf').addEventListener('change', () => {}, { passive: true });
+  document.getElementById('brv-deposer').onclick = async () => {
+    const fichier = document.getElementById('brv-pdf').files[0];
+    if (!fichier) { entMsg('brv-depot-message', { message: 'Un PDF est obligatoire.' }); return; }
+    const { data: { user } } = await sb.auth.getUser();
+    const chemin = `${user.id}/${Date.now()}-${fichier.name}`;
+    const { error: errUpload } = await sb.storage.from('brevets-pdf').upload(chemin, fichier);
+    if (errUpload) { entMsg('brv-depot-message', errUpload); return; }
+    const { error } = await sb.rpc('demander_brevet', {
+      p_type: document.getElementById('brv-type').value, p_titre: document.getElementById('brv-titre').value,
+      p_description: document.getElementById('brv-description').value, p_chemin_pdf: chemin,
+      p_categorie: document.getElementById('brv-categorie').value || null, p_domaine_application: document.getElementById('brv-domaine').value || null,
+      p_revendications: document.getElementById('brv-revendications').value || null, p_date_creation: document.getElementById('brv-date-creation').value || null
+    });
+    entMsg('brv-depot-message', error, 'Demande envoyée au gouvernement.');
+    if (!error) brvChargerMesDemandes();
+  };
+  brvChargerMesDemandes();
+}
+
+async function brvOuvrirFiche(numero) {
+  const { data, error } = await sb.rpc('brevet_detail', { p_numero_suivi: numero });
+  const zone = document.getElementById('brv-fiche');
+  if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  zone.innerHTML = brevetFicheHTML(data);
+  if (data.mes_droits) {
+    document.getElementById('brv-ajouter-detenteur-btn').onclick = async () => {
+      const { error: err } = await sb.rpc('brevet_ajouter_detenteur', { p_numero_suivi: numero, p_identifiant: document.getElementById('brv-ajouter-detenteur').value });
+      entMsg('brv-gestion-message', err, 'Détenteur ajouté.');
+      if (!err) brvOuvrirFiche(numero);
+    };
+    document.getElementById('brv-autoriser-btn').onclick = async () => {
+      const { error: err } = await sb.rpc('brevet_accorder_autorisation', { p_numero_suivi: numero, p_identifiant: document.getElementById('brv-autoriser').value });
+      entMsg('brv-gestion-message', err, 'Autorisation accordée.');
+      if (!err) brvOuvrirFiche(numero);
+    };
+  }
+}
+
+async function brvChargerMesDemandes() {
+  const { data, error } = await sb.rpc('mes_demandes_brevets');
+  const zone = document.getElementById('brv-mes-demandes');
+  if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  zone.innerHTML = (data || []).length ? data.map(b => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${escHtml(b.titre)}</strong> — <em>${escHtml(b.statut)}</em></div>
+      <p class="pm-mini">${escHtml(b.numero_suivi)} — ${escHtml(b.type)}</p>
+      ${b.motif_refus ? `<p class="pm-mini">Motif du refus : ${escHtml(b.motif_refus)}</p>` : ''}
+    </div>`).join('') : '<p class="pm-mini">Aucune demande.</p>';
+}
+
+async function chargerBrevetsAdmin() {
+  const conteneur = document.getElementById('a-liste-brevets');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_brevets', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucune demande en attente.</p>'; return; }
+  conteneur.innerHTML = data.map(b => `
+    <div class="pm-fleet-item">
+      <div class="entete"><strong>${escHtml(b.titre)}</strong> — @${escHtml(b.demandeur_username)} — ${escHtml(b.type)}</div>
+      <p class="pm-mini">${escHtml(b.description)}</p>
+      <p class="pm-mini">Catégorie : ${escHtml(b.categorie || '—')} — Domaine : ${escHtml(b.domaine_application || '—')}</p>
+      ${b.revendications ? `<p class="pm-mini">Revendications : ${escHtml(b.revendications)}</p>` : ''}
+      <a href="${sb.storage.from('brevets-pdf').getPublicUrl(b.chemin_pdf).data.publicUrl}" target="_blank" class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; text-decoration:none; display:inline-block;">Voir le PDF</a>
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-brv-accepter="${b.id}">Accepter</button>
+        <input type="text" placeholder="Motif de refus" data-brv-motif="${b.id}">
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-brv-refuser="${b.id}">Refuser</button>
+      </div>
+    </div>`).join('');
+  conteneur.querySelectorAll('[data-brv-accepter]').forEach(b => b.onclick = async () => {
+    const { error: err } = await sb.rpc('gouv_traiter_brevet', { p_id: b.dataset.brvAccepter, p_decision: 'accepte' });
+    if (err) alert(err.message); else chargerBrevetsAdmin();
+  });
+  conteneur.querySelectorAll('[data-brv-refuser]').forEach(b => b.onclick = async () => {
+    const motif = conteneur.querySelector(`[data-brv-motif="${b.dataset.brvRefuser}"]`).value;
+    const { error: err } = await sb.rpc('gouv_traiter_brevet', { p_id: b.dataset.brvRefuser, p_decision: 'refuse', p_motif_refus: motif || null });
+    if (err) alert(err.message); else chargerBrevetsAdmin();
   });
 }
 
