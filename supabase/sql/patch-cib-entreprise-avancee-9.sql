@@ -83,7 +83,7 @@ grant execute on function soumettre_document_gouv(text, text, text) to authentic
 
 create or replace function mes_documents_gouv()
 returns jsonb language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(row_to_json(d) order by cree_le desc), '[]'::jsonb) from documents_gouv where citoyen_id = auth.uid();
+  select coalesce(jsonb_agg(row_to_json(d) order by cree_le desc), '[]'::jsonb) from documents_gouv d where citoyen_id = auth.uid();
 $$;
 grant execute on function mes_documents_gouv() to authenticated;
 
@@ -211,7 +211,7 @@ grant execute on function gouv_traiter_brevet(uuid, text, text) to authenticated
 
 create or replace function mes_demandes_brevets()
 returns jsonb language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(row_to_json(b) order by cree_le desc), '[]'::jsonb) from brevets where demandeur_id = auth.uid();
+  select coalesce(jsonb_agg(row_to_json(b) order by cree_le desc), '[]'::jsonb) from brevets b where demandeur_id = auth.uid();
 $$;
 grant execute on function mes_demandes_brevets() to authenticated;
 
@@ -248,7 +248,7 @@ begin
   end if;
   delete from brevets_detenteurs where id = p_detenteur_id and brevet_id = v_brevet;
 end; $$;
-grant execute on function brevet_retirer_detenteur(uuid, uuid) to authenticated;
+grant execute on function brevet_retirer_detenteur(text, uuid) to authenticated;
 
 -- Modifier les infos (titre/description/catégorie/domaine/revendications) : détenteurs seulement.
 create or replace function brevet_modifier_infos(p_numero_suivi text, p_titre text, p_description text, p_categorie text, p_domaine_application text, p_revendications text)
