@@ -1,23 +1,26 @@
-[1] Nouveau monde
-(1)Nouveau monde Toutou 2026-09-06-19-28.map: Mort du Deuxième Règne et Étalie devient Renommiste et attribuer le territoire méridional
-[2] Deuxième Règne
-(2)Nouveau monde Toutou 2026-08-31-13-50.map: Union de Yhorule, Montcurie et Étalie. Échange de terres maudites et terres saintes et échange Dovintski.
-[3] Cartes récentes
-(3)Nouveau monde Toutou 2026-08-07-18-15.map:
-(3)Nouveau monde Toutou 2026-07-20-23-45.map:
-(3)Nouveau monde Toutou 2026-06-11-10-12.map:
-(3)Nouveau monde Toutou 2026-08-19-04-19.map: Fix des marketplaces ayant certaines colonies, fixe du style, fixe du nom de Valcourt = Valcos, ajout de certains ports maritimes en Étalie, modification du drapeau, ajout de certains PINS.
-(3)Nouveau monde Toutou 2026-08-21-21-00.map: Ajout automatique.
-(3)Nouveau monde Toutou 2026-08-24-16-24.map: Mise en place des territoires sur la glace méridionale, régler les problèmes des cultures et ajout de certaines organisations et de leurs Q.G. (nécessite le preset 0.02C pour fonctionnement plus érgonomique.)
-[4] Premier règne
-(4)Nouveau monde Toutou 2026-05-30-22-45.map:
-[5] Ancienne carte
-(5)Nouveau Monde Toutou 2025-10-24-06-25.map:
-(5)Nouveau monde Toutou 2025-10-08-07-49.map:
-(5)Nouveau monde Toutou 2025-10-08-15-18.map:
-(5)Nouveau monde Toutou 2025-10-09-07-28.map:
-(5)Nouveau monde Toutou 2025-10-11-13-56.map:
-(5)Nouveau monde Toutou 2025-10-15-08-42.map:
-(5)Nouveau monde Toutou 2025-10-15-17-45.map:
-(5)Nouveau monde Toutou 2025-10-16-09-06.map:
-(5)Nouveau monde Toutou 2025-10-21-11-55.map:
+
+[1] Époque Moderne
+(1)Nouveau monde Toutou 2026-10-05-20-19.map: Étalie à Romance, fin époque Renommiste
+[2] Nouveau monde
+(2)Nouveau monde Toutou 2026-09-06-19-28.map: Mort du Deuxième Règne et Étalie devient Renommiste et attribuer le territoire méridional
+[3] Deuxième Règne
+(3)Nouveau monde Toutou 2026-08-31-13-50.map: Union de Yhorule, Montcurie et Étalie. Échange de terres maudites et terres saintes et échange Dovintski.
+[4] Cartes récentes
+(4)Nouveau monde Toutou 2026-08-07-18-15.map:
+(4)Nouveau monde Toutou 2026-07-20-23-45.map:
+(4)Nouveau monde Toutou 2026-06-11-10-12.map:
+(4)Nouveau monde Toutou 2026-08-19-04-19.map: Fix des marketplaces ayant certaines colonies, fixe du style, fixe du nom de Valcourt = Valcos, ajout de certains ports maritimes en Étalie, modification du drapeau, ajout de certains PINS.
+(4)Nouveau monde Toutou 2026-08-21-21-00.map: Ajout automatique.
+(4)Nouveau monde Toutou 2026-08-24-16-24.map: Mise en place des territoires sur la glace méridionale, régler les problèmes des cultures et ajout de certaines organisations et de leurs Q.G. (nécessite le preset 0.02C pour fonctionnement plus érgonomique.)
+[5] Premier règne
+(5)Nouveau monde Toutou 2026-05-30-22-45.map:
+[6] Ancienne carte
+(6)Nouveau Monde Toutou 2025-10-24-06-25.map:
+(6)Nouveau monde Toutou 2025-10-08-07-49.map:
+(6)Nouveau monde Toutou 2025-10-08-15-18.map:
+(6)Nouveau monde Toutou 2025-10-09-07-28.map:
+(6)Nouveau monde Toutou 2025-10-11-13-56.map:
+(6)Nouveau monde Toutou 2025-10-15-08-42.map:
+(6)Nouveau monde Toutou 2025-10-15-17-45.map:
+(6)Nouveau monde Toutou 2025-10-16-09-06.map:
+(6)Nouveau monde Toutou 2025-10-21-11-55.map:
