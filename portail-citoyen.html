@@ -435,10 +435,34 @@ let canalRealtime = null;
 /* =====================================================================
    ROUTAGE PRINCIPAL
    ===================================================================== */
+async function verifierEtAppliquerAcces() {
+  const { data, error } = await sb.rpc('verifier_acces_connexion');
+  if (error) return true; // en cas d'échec du contrôle lui-même, on n'empêche pas l'accès
+  if (data && data.ok === false) {
+    await sb.auth.signOut();
+    afficherBlocageAcces(data);
+    return false;
+  }
+  return true;
+}
+
+function afficherBlocageAcces(data) {
+  let titre = 'Accès refusé', texte = '';
+  if (data.raison === 'banni') { titre = 'Compte banni'; texte = data.motif || 'Votre compte a été banni définitivement.'; }
+  else if (data.raison === 'suspendu') { titre = 'Compte suspendu temporairement'; texte = (data.motif || 'Votre compte est temporairement suspendu.') + (data.jusqu_a ? ' Jusqu\'au ' + new Date(data.jusqu_a).toLocaleString('fr-FR') + '.' : ''); }
+  else { titre = 'Portail temporairement indisponible'; texte = data.message || 'Le portail est temporairement désactivé par le gouvernement.'; }
+  app.innerHTML = `<div class="pc-carte" style="max-width:520px; margin:60px auto;"><h3>${escHtml(titre)}</h3><p>${escHtml(texte)}</p></div>`;
+}
+
 async function demarrer() {
+  let etat = null;
+  try { const r = await sb.rpc('etat_portail'); etat = r.data; } catch (e) { /* ignoré */ }
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
+    if (!(await verifierEtAppliquerAcces())) return;
     await chargerTableauDeBord(session.user);
+  } else if (etat && etat.desactive) {
+    afficherBlocageAcces({ raison: 'maintenance', message: etat.message });
   } else {
     afficherConnexion();
   }
@@ -757,6 +781,7 @@ async function tenterConnexion() {
     }
     const { data: connexion, error } = await sb.auth.signInWithPassword({ email, password: mdp });
     if (error) throw error;
+    if (!(await verifierEtAppliquerAcces())) return;
     await chargerTableauDeBord(connexion.user);
   } catch (e) {
     msg.innerHTML = `<p class="pc-erreur">Identifiants incorrects ou compte introuvable.</p>`;
@@ -1936,12 +1961,19 @@ function initialiserOngletContacter() {
    ===================================================================== */
 async function chargerConstats(citoyen) {
   const conteneur = document.getElementById('liste-constats');
-  const { data, error } = await sb.from('constats_infraction').select('*').order('cree_le', { ascending: false });
+  const [{ data, error }, { data: contestations }] = await Promise.all([
+    sb.from('constats_infraction').select('*').order('cree_le', { ascending: false }),
+    sb.rpc('mes_contestations_constats')
+  ]);
   if (error) { conteneur.innerHTML = `<p class="pc-erreur">${error.message}</p>`; return; }
   if (!data || data.length === 0) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucun constat.</p>'; return; }
+  const contestationParConstat = {};
+  (contestations || []).forEach(k => { if (!contestationParConstat[k.constat_id] || k.statut === 'en_attente') contestationParConstat[k.constat_id] = k; });
 
-  conteneur.innerHTML = data.map(c => `
-    <div class="pc-message" style="border-color: ${c.paye ? 'var(--gris-ligne)' : 'var(--rouge-etalie)'};">
+  conteneur.innerHTML = data.map(c => {
+    const k = contestationParConstat[c.id];
+    return `
+    <div class="pc-message" style="border-color: ${c.paye ? 'var(--gris-ligne)' : (c.annule ? 'var(--gris-ligne)' : 'var(--rouge-etalie)')};">
       <div class="titre-msg">Constat d'infraction commis le ${new Date(c.date_infraction).toLocaleDateString('fr-FR')}</div>
       <table class="table-donnees" style="margin:10px 0;">
         <tbody>
@@ -1957,15 +1989,19 @@ async function chargerConstats(citoyen) {
           <tr><td>Montant de l'infraction</td><td class="num">${Number(c.prix_infraction).toFixed(2)} R$</td></tr>
           <tr><td>Taxes</td><td class="num">${Number(c.prix_taxes).toFixed(2)} R$</td></tr>
           <tr><td><strong>Total</strong></td><td class="num"><strong>${Number(c.prix_total).toFixed(2)} R$</strong></td></tr>
-          <tr><td>Statut</td><td>${c.paye ? 'Payé le ' + new Date(c.paye_le).toLocaleDateString('fr-FR') : 'Impayé'}</td></tr>
+          <tr><td>Statut</td><td>${c.annule ? 'Annulé (contestation acceptée)' : c.paye ? 'Payé le ' + new Date(c.paye_le).toLocaleDateString('fr-FR') : 'Impayé'}</td></tr>
         </tbody>
       </table>
+      ${k ? `<p style="font-size:.78rem; color:var(--gris-ardoise);">Contestation : ${escapeHtml(k.statut)}${k.motif_decision ? ' — ' + escapeHtml(k.motif_decision) : ''}</p>` : ''}
       <div class="pc-actions-msg">
-        ${!c.paye && citoyen.id ? `<button id="payer-constat-${c.id}">Payer (${Number(c.prix_total).toFixed(2)} R$)</button>` : ''}
+        ${!c.paye && !c.annule && !(k && k.statut === 'en_attente') ? `<button id="payer-constat-${c.id}">Payer (${Number(c.prix_total).toFixed(2)} R$)</button>` : ''}
+        ${!c.paye && !c.annule && !(k && k.statut === 'en_attente') ? `<button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="contester-constat-${c.id}">Contester</button>` : ''}
         ${c.paye ? `<button class="danger" id="retirer-constat-${c.id}">Retirer de ma liste</button>` : ''}
       </div>
+      <div id="contester-zone-${c.id}"></div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   data.forEach(c => {
     const btnPayer = document.getElementById('payer-constat-' + c.id);
@@ -1978,6 +2014,28 @@ async function chargerConstats(citoyen) {
       if (!confirm('Retirer ce constat payé de votre liste ?')) return;
       const { error } = await sb.rpc('citoyen_retirer_constat_paye', { p_id: c.id });
       if (error) alert(error.message); else chargerConstats(citoyen);
+    };
+    const btnContester = document.getElementById('contester-constat-' + c.id);
+    if (btnContester) btnContester.onclick = () => {
+      const zone = document.getElementById('contester-zone-' + c.id);
+      zone.innerHTML = `
+        <div class="pc-champ"><label>Motif (10 caractères minimum)</label><textarea id="contester-motif-${c.id}"></textarea></div>
+        <div class="pc-champ"><label>Preuve (PDF ou image, optionnelle)</label><input type="file" id="contester-fichier-${c.id}" accept="application/pdf,image/*"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="contester-envoyer-${c.id}">Envoyer la contestation</button>
+        <div id="contester-message-${c.id}"></div>`;
+      document.getElementById('contester-envoyer-' + c.id).onclick = async () => {
+        let chemin = null;
+        const fichier = document.getElementById('contester-fichier-' + c.id).files[0];
+        if (fichier) {
+          const { data: { user } } = await sb.auth.getUser();
+          chemin = `${user.id}/${Date.now()}-${fichier.name}`;
+          const { error: errUpload } = await sb.storage.from('documents-citoyens').upload(chemin, fichier);
+          if (errUpload) { entMsg('contester-message-' + c.id, errUpload); return; }
+        }
+        const { error } = await sb.rpc('contester_constat', { p_constat_id: c.id, p_motif: document.getElementById('contester-motif-' + c.id).value, p_preuve_chemin: chemin });
+        if (error) { entMsg('contester-message-' + c.id, error); return; }
+        chargerConstats(citoyen);
+      };
     };
   });
 }
@@ -2300,6 +2358,33 @@ function panneauAdminHTML() {
 
         <h4 style="margin-top:16px;">Contestations en attente</h4>
         <div id="a-liste-contestations"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Gestion des comptes</h3>
+        <div class="pc-champ"><label>Nom d'utilisateur</label><input type="text" id="a-sanction-username"></div>
+        <div class="pc-champ"><label>Motif</label><input type="text" id="a-sanction-motif"></div>
+        <div class="pc-champ"><label>Durée de suspension (heures, pour kick seulement)</label><input type="number" id="a-sanction-heures" min="1"></div>
+        <div class="pm-ligne-boutons">
+          <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-bannir">Bannir définitivement</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-debannir">Débannir</button>
+          <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-suspendre">Suspendre temporairement (kick)</button>
+          <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-lever-suspension">Lever la suspension</button>
+        </div>
+        <div id="a-sanction-message"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Mode maintenance du portail</h3>
+        <label style="display:block; font-size:.85rem;"><input type="checkbox" id="a-maintenance-active"> Portail désactivé</label>
+        <div class="pc-champ"><label>Message affiché aux citoyens</label><textarea id="a-maintenance-message"></textarea></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-maintenance-appliquer">Appliquer</button>
+        <div id="a-maintenance-message-statut"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Contestations de constats en attente</h3>
+        <div id="a-liste-contestations-constats"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
       </div>
 
       <div class="pc-carte">
@@ -2796,6 +2881,9 @@ function initialiserPanneauAdmin() {
   chargerContribuablesAdmin();
   chargerDemandesEntreprisesAdmin();
   chargerModeCreationEntreprise();
+  initialiserGestionComptesAdmin();
+  initialiserMaintenanceAdmin();
+  chargerContestationsConstatsAdmin();
   chargerEmpruntsEntreprisesAdmin();
   chargerOffresCapitalAdmin();
   chargerDemandesCibAdmin();
@@ -5045,6 +5133,77 @@ function adminBlocNego(id, hist, fmtHist, champsHTML, attr) {
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="rectifier">Rectifier et renvoyer</button>
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-adm-action="refusee">Refuser</button>
     </div></div>`;
+}
+
+function initialiserGestionComptesAdmin() {
+  const u = () => document.getElementById('a-sanction-username').value;
+  const m = () => document.getElementById('a-sanction-motif').value;
+  document.getElementById('a-bannir').onclick = async () => {
+    if (!confirm(`Bannir définitivement @${u()} ?`)) return;
+    const { error } = await sb.rpc('gouv_bannir_compte', { p_username: u(), p_motif: m() });
+    entMsg('a-sanction-message', error, 'Compte banni.');
+  };
+  document.getElementById('a-debannir').onclick = async () => {
+    const { error } = await sb.rpc('gouv_debannir_compte', { p_username: u() });
+    entMsg('a-sanction-message', error, 'Compte débanni.');
+  };
+  document.getElementById('a-suspendre').onclick = async () => {
+    const { error } = await sb.rpc('gouv_suspendre_compte', { p_username: u(), p_heures: Number(document.getElementById('a-sanction-heures').value), p_motif: m() });
+    entMsg('a-sanction-message', error, 'Compte suspendu temporairement.');
+  };
+  document.getElementById('a-lever-suspension').onclick = async () => {
+    const { error } = await sb.rpc('gouv_lever_suspension', { p_username: u() });
+    entMsg('a-sanction-message', error, 'Suspension levée.');
+  };
+}
+
+async function initialiserMaintenanceAdmin() {
+  const { data } = await sb.rpc('etat_portail');
+  if (data) {
+    document.getElementById('a-maintenance-active').checked = !!data.desactive;
+    document.getElementById('a-maintenance-message').value = data.message || '';
+  }
+  document.getElementById('a-maintenance-appliquer').onclick = async () => {
+    const { error } = await sb.rpc('gouv_definir_etat_portail', {
+      p_desactive: document.getElementById('a-maintenance-active').checked, p_message: document.getElementById('a-maintenance-message').value
+    });
+    entMsg('a-maintenance-message-statut', error, 'État du portail mis à jour.');
+  };
+}
+
+async function chargerContestationsConstatsAdmin() {
+  const conteneur = document.getElementById('a-liste-contestations-constats');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('gouv_liste_contestations_constats', { p_statut: 'en_attente' });
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  if (!data || !data.length) { conteneur.innerHTML = '<p style="color:var(--gris-ardoise); font-size:.85rem;">Aucune contestation en attente.</p>'; return; }
+  conteneur.innerHTML = await Promise.all(data.map(async k => {
+    let lienPreuve = '';
+    if (k.preuve_chemin) {
+      const { data: url } = await sb.storage.from('documents-citoyens').createSignedUrl(k.preuve_chemin, 3600);
+      if (url) lienPreuve = `<a href="${url.signedUrl}" target="_blank" class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; text-decoration:none; display:inline-block; font-size:.78rem; padding:6px 14px;">Voir la preuve</a>`;
+    }
+    return `<div class="pm-fleet-item">
+      <div class="entete"><strong>@${escHtml(k.username)}</strong> — ${escHtml(k.constat_infraction)} (${fmtR(k.constat_prix_total)} R$)</div>
+      <p class="pm-mini">${escHtml(k.motif)}</p>
+      ${lienPreuve}
+      <input type="text" placeholder="Motif de la décision" data-cc-motif="${k.id}">
+      <div class="pm-ligne-boutons">
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-cc-accepter="${k.id}">Accepter (annule le constat)</button>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-cc-refuser="${k.id}">Refuser</button>
+      </div>
+    </div>`;
+  })).then(arr => arr.join(''));
+  conteneur.querySelectorAll('[data-cc-accepter]').forEach(b => b.onclick = async () => {
+    const motif = conteneur.querySelector(`[data-cc-motif="${b.dataset.ccAccepter}"]`).value || null;
+    const { error: err } = await sb.rpc('gouv_traiter_contestation_constat', { p_id: b.dataset.ccAccepter, p_decision: 'acceptee', p_motif_decision: motif });
+    if (err) alert(err.message); else chargerContestationsConstatsAdmin();
+  });
+  conteneur.querySelectorAll('[data-cc-refuser]').forEach(b => b.onclick = async () => {
+    const motif = conteneur.querySelector(`[data-cc-motif="${b.dataset.ccRefuser}"]`).value || null;
+    const { error: err } = await sb.rpc('gouv_traiter_contestation_constat', { p_id: b.dataset.ccRefuser, p_decision: 'refusee', p_motif_decision: motif });
+    if (err) alert(err.message); else chargerContestationsConstatsAdmin();
+  });
 }
 
 async function chargerModeCreationEntreprise() {
