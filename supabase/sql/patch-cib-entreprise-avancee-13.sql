@@ -93,6 +93,17 @@ begin
 end; $$;
 grant execute on function creer_banque(text, text, text) to authenticated;
 
+create or replace function _valeur_compte_banque(p_compte_id uuid)
+returns numeric language plpgsql stable security definer set search_path = public as $$
+declare bc banques_comptes; v_inflation_actuelle numeric;
+begin
+  select * into bc from banques_comptes where id = p_compte_id;
+  if bc.id is null then return 0; end if;
+  v_inflation_actuelle := inflation_pourcentage();
+  return round(bc.solde * (1 + v_inflation_actuelle / 100.0) / (1 + bc.inflation_base / 100.0), 4);
+end; $$;
+grant execute on function _valeur_compte_banque(uuid) to authenticated, anon;
+
 create or replace function liste_banques()
 returns jsonb language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -106,16 +117,6 @@ $$;
 grant execute on function liste_banques() to authenticated, anon;
 
 -- ---- Fructification (indexée sur l'inflation) ----
-create or replace function _valeur_compte_banque(p_compte_id uuid)
-returns numeric language plpgsql stable security definer set search_path = public as $$
-declare bc banques_comptes; v_inflation_actuelle numeric;
-begin
-  select * into bc from banques_comptes where id = p_compte_id;
-  if bc.id is null then return 0; end if;
-  v_inflation_actuelle := inflation_pourcentage();
-  return round(bc.solde * (1 + v_inflation_actuelle / 100.0) / (1 + bc.inflation_base / 100.0), 4);
-end; $$;
-grant execute on function _valeur_compte_banque(uuid) to authenticated, anon;
 
 create or replace function banque_deposer(p_banque_id uuid, p_montant numeric)
 returns void language plpgsql security definer set search_path = public as $$
