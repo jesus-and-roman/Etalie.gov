@@ -401,11 +401,11 @@ async function trouverDansRegistreCAS(codeEncrypte, forcerRechargement) {
 // Provinces de résidence — déterminent quelle Banque Nationale paie le
 // salaire du citoyen (voir supabase/sql/patch-presse-monetaire.sql).
 const PROVINCES_RESIDENCE = [
-  "Isulae","Balques","Vénésie","Bushard Bay","Tonawa","Pruxe-Slamique",
-  "Talon-Andrien","Talon-Étalien","Ombrie","Itênnes",
-  "Brien","Romagna","Grande-Capitale","Marcio","Baxe",
-  "Côte-Anglaise","Jance","Alanbie","Aloies","Côte d'Avoigne","Vénéz","Hors-Grande-Vénésie","Alonse","Chagne",
-  "Fleury","Milela-Cale","Prisonia","Quoueta-Et-Milenniar-Étalois","Île Saint-Étienne","Gibaltage","Grâdes","North Milela","Tivainne"
+  "Gibaltage","Talon Étalien","Talon Andrien","Fleury","Baxe","Vénésie","Marcio","Romagna",
+  "Grâdes-Tivainne","Aloies","Balques","Alanbie-Brien-Jance","Île Saint-Étienne","Ombrie","Vénéz","Milela",
+  "Pruxe","Quoueta-Et-Milenniar-Étalois","Tonawa","Côte-Anglaise","Grande-Capitale","Zone Haute-Romanie",
+  "Île-de-L'île","Bushard Bay","Braume","Nouvelle-Braume-Chiranie","Haute-Étalie-du-Glaive","Zone Dovintski",
+  "Grand-Nord","Hors-Orremaux","Nouvelle-Étalie","Alten","Basse-Alten","Waterland"
 ];
 
 const CIBLES_CONTACT = [
@@ -439,6 +439,7 @@ async function verifierEtAppliquerAcces() {
   const { data, error } = await sb.rpc('verifier_acces_connexion');
   if (error) return true; // en cas d'échec du contrôle lui-même, on n'empêche pas l'accès
   if (data && data.ok === false) {
+    if (data.raison === 'maintenance' && sessionStorage.getItem('nip_urgence_valide') === '1') return true;
     await sb.auth.signOut();
     afficherBlocageAcces(data);
     return false;
@@ -447,11 +448,26 @@ async function verifierEtAppliquerAcces() {
 }
 
 function afficherBlocageAcces(data) {
-  let titre = 'Accès refusé', texte = '';
+  let titre = 'Accès refusé', texte = '', avecNip = false;
   if (data.raison === 'banni') { titre = 'Compte banni'; texte = data.motif || 'Votre compte a été banni définitivement.'; }
   else if (data.raison === 'suspendu') { titre = 'Compte suspendu temporairement'; texte = (data.motif || 'Votre compte est temporairement suspendu.') + (data.jusqu_a ? ' Jusqu\'au ' + new Date(data.jusqu_a).toLocaleString('fr-FR') + '.' : ''); }
-  else { titre = 'Portail temporairement indisponible'; texte = data.message || 'Le portail est temporairement désactivé par le gouvernement.'; }
-  app.innerHTML = `<div class="pc-carte" style="max-width:520px; margin:60px auto;"><h3>${escHtml(titre)}</h3><p>${escHtml(texte)}</p></div>`;
+  else { titre = 'Portail temporairement indisponible'; texte = data.message || 'Le portail est temporairement désactivé par le gouvernement.'; avecNip = true; }
+  app.innerHTML = `<div class="pc-carte" style="max-width:520px; margin:60px auto;">
+    <h3>${escHtml(titre)}</h3><p>${escHtml(texte)}</p>
+    ${avecNip ? `
+    <div class="pc-champ" style="margin-top:20px;"><label for="nip-urgence">NIP administrateur (8 chiffres)</label><input type="password" id="nip-urgence" maxlength="8" inputmode="numeric"></div>
+    <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="nip-urgence-valider">Entrer</button>
+    <div id="nip-urgence-message"></div>` : ''}
+  </div>`;
+  if (avecNip) {
+    document.getElementById('nip-urgence-valider').onclick = async () => {
+      const nip = document.getElementById('nip-urgence').value.trim();
+      const { data: ok } = await sb.rpc('verifier_nip_maintenance', { p_nip: nip });
+      if (!ok) { entMsg('nip-urgence-message', { message: 'NIP incorrect.' }); return; }
+      sessionStorage.setItem('nip_urgence_valide', '1');
+      afficherConnexion();
+    };
+  }
 }
 
 async function demarrer() {
@@ -461,7 +477,7 @@ async function demarrer() {
   if (session) {
     if (!(await verifierEtAppliquerAcces())) return;
     await chargerTableauDeBord(session.user);
-  } else if (etat && etat.desactive) {
+  } else if (etat && etat.desactive && sessionStorage.getItem('nip_urgence_valide') !== '1') {
     afficherBlocageAcces({ raison: 'maintenance', message: etat.message });
   } else {
     afficherConnexion();
@@ -1974,7 +1990,7 @@ async function chargerConstats(citoyen) {
     const k = contestationParConstat[c.id];
     return `
     <div class="pc-message" style="border-color: ${c.paye ? 'var(--gris-ligne)' : (c.annule ? 'var(--gris-ligne)' : 'var(--rouge-etalie)')};">
-      <div class="titre-msg">Constat d'infraction commis le ${new Date(c.date_infraction).toLocaleDateString('fr-FR')}</div>
+      <div class="titre-msg">Constat d'infraction commis le ${new Date(c.date_infraction).toLocaleDateString('fr-FR')} — <code>${escapeHtml(c.code_suivi || '')}</code></div>
       <table class="table-donnees" style="margin:10px 0;">
         <tbody>
           <tr><td>Infraction</td><td>${escapeHtml(c.infraction)} (n° ${escapeHtml(c.numero_infraction)})</td></tr>
@@ -2380,6 +2396,14 @@ function panneauAdminHTML() {
         <div class="pc-champ"><label>Message affiché aux citoyens</label><textarea id="a-maintenance-message"></textarea></div>
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="a-maintenance-appliquer">Appliquer</button>
         <div id="a-maintenance-message-statut"></div>
+        <div class="pc-champ" style="margin-top:14px;"><label>NIP d'urgence (8 chiffres, permet de contourner la maintenance)</label><input type="text" id="a-nip-maintenance" maxlength="8" inputmode="numeric"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="a-nip-maintenance-appliquer">Définir le NIP</button>
+        <div id="a-nip-maintenance-statut"></div>
+      </div>
+
+      <div class="pc-carte">
+        <h3>Taxation des provinces (TAP)</h3>
+        <div id="a-provinces-taxation"><p style="color:var(--gris-ardoise); font-size:.85rem;">Chargement…</p></div>
       </div>
 
       <div class="pc-carte">
@@ -2884,6 +2908,7 @@ function initialiserPanneauAdmin() {
   initialiserGestionComptesAdmin();
   initialiserMaintenanceAdmin();
   chargerContestationsConstatsAdmin();
+  chargerProvincesTaxationAdmin();
   chargerEmpruntsEntreprisesAdmin();
   chargerOffresCapitalAdmin();
   chargerDemandesCibAdmin();
@@ -4418,6 +4443,13 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
       <p style="font-family:var(--police-titre); font-size:1.4rem; color:var(--vert-nuit);">${fmtR(e.tresorerie)} R$</p>
       <p class="pm-mini">Dette salariale envers le gouvernement : ${fmtR(e.dette_salariale_gouv)} R$ — Dette envers les employés : ${fmtR(e.dette_salariale_employes)} R$</p>
 
+      ${e.mon_role === 'pdg' ? `
+      <details style="margin-top:14px;"><summary class="pm-mini" style="cursor:pointer;">Supprimer définitivement cette entreprise</summary>
+        <div class="pc-champ"><label>Nom exact de l'entreprise</label><input type="text" id="ent-suppr-nom"></div>
+        <div class="pc-champ"><label>Votre mot de passe</label><input type="password" id="ent-suppr-mdp"></div>
+        <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="ent-suppr-confirmer">Supprimer définitivement</button>
+        <div id="ent-suppr-message"></div>
+      </details>` : ''}
       <h5 style="margin-top:14px;">Mes CIB d'entreprise</h5>
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" id="ent-voir-cib">Afficher les CIB auxquels j'ai droit</button>
       <div id="ent-cib-zone"></div>
@@ -4579,6 +4611,16 @@ async function entOuvrirDetail(entrepriseId, silencieux) {
   // --- Événements ---
   const q = (s) => conteneur.querySelector(s);
   const qa = (s) => conteneur.querySelectorAll(s);
+  if (q('#ent-suppr-confirmer')) q('#ent-suppr-confirmer').onclick = async () => {
+    if (!confirm('Cette action est définitive. Confirmer la suppression ?')) return;
+    const { error: err } = await sb.rpc('entreprise_supprimer', {
+      p_entreprise_id: entrepriseId, p_nom: q('#ent-suppr-nom').value, p_mdp: q('#ent-suppr-mdp').value
+    });
+    if (err) { entMsg('ent-suppr-message', err); return; }
+    entDetailOuvert = null;
+    document.getElementById('ent-detail').innerHTML = '';
+    entRafraichirMesEntreprises();
+  };
   q('#ent-voir-cib').onclick = async () => {
     const { data, error: err } = await sb.rpc('entreprise_mes_cib', { p_entreprise_id: entrepriseId });
     const z = q('#ent-cib-zone');
@@ -5169,6 +5211,27 @@ async function initialiserMaintenanceAdmin() {
     });
     entMsg('a-maintenance-message-statut', error, 'État du portail mis à jour.');
   };
+  document.getElementById('a-nip-maintenance-appliquer').onclick = async () => {
+    const { error } = await sb.rpc('gouv_definir_nip_maintenance', { p_nip: document.getElementById('a-nip-maintenance').value.trim() });
+    entMsg('a-nip-maintenance-statut', error, 'NIP défini.');
+  };
+}
+
+async function chargerProvincesTaxationAdmin() {
+  const conteneur = document.getElementById('a-provinces-taxation');
+  if (!conteneur) return;
+  const { data, error } = await sb.rpc('liste_provinces_taxation');
+  if (error) { conteneur.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  conteneur.innerHTML = `<div style="max-height:360px; overflow-y:auto;"><table class="table-donnees"><thead><tr><th>Province</th><th>Territoire</th><th>TAP (%)</th><th></th></tr></thead><tbody>
+    ${(data || []).map(p => `<tr><td>${escHtml(p.province)}</td><td>${escHtml(p.type_territoire)}</td>
+      <td><input type="number" min="2" max="10" step="0.1" value="${p.taux_tap}" data-prov-taux="${escHtml(p.province)}" style="width:80px;"></td>
+      <td><button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:4px 10px;" data-prov-appliquer="${escHtml(p.province)}">OK</button></td></tr>`).join('')}
+  </tbody></table></div>`;
+  conteneur.querySelectorAll('[data-prov-appliquer]').forEach(b => b.onclick = async () => {
+    const prov = b.dataset.provAppliquer;
+    const { error: err } = await sb.rpc('gouv_definir_taux_tap', { p_province: prov, p_taux: Number(conteneur.querySelector(`[data-prov-taux="${prov}"]`).value) });
+    if (err) alert(err.message);
+  });
 }
 
 async function chargerContestationsConstatsAdmin() {
