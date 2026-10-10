@@ -458,7 +458,7 @@ grant execute on function bureau_poste_proposer_pourcentage(uuid, text, numeric)
 
 create or replace function bureau_poste_voter(p_vote_id uuid, p_choix boolean)
 returns void language plpgsql security definer set search_path = public as $$
-declare v vote_v bureau_poste_votes; v_poste text;
+declare vote_v bureau_poste_votes; v_poste text;
 begin
   select * into vote_v from bureau_poste_votes where id = p_vote_id and statut = 'en_cours';
   if vote_v.id is null then raise exception 'Vote introuvable ou terminé.'; end if;
