@@ -4324,6 +4324,12 @@ function entMsg(id, error, texteOk) {
   if (el) el.innerHTML = error ? `<p class="pc-erreur">${escHtml(error.message)}</p>` : `<p class="pc-succes">${escHtml(texteOk)}</p>`;
 }
 function fmtR(n) { return Number(n || 0).toFixed(2); }
+// Appel RPC qui ne lève jamais (évite "x.catch is not a function" avec ce build du client
+// Supabase, où .rpc() ne retourne pas toujours une vraie Promise chaînable).
+async function rpcSafe(nom, params, defaut) {
+  try { const r = await sb.rpc(nom, params); return r && !r.error ? r : { data: defaut ?? [], error: r ? r.error : null }; }
+  catch (err) { return { data: defaut ?? [], error: err }; }
+}
 function periodeCourante() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 
 const ENT_DROITS = {
@@ -4366,6 +4372,9 @@ function panneauEntrepriseHTML() {
         <h3>Créer une entreprise</h3>
         <p style="font-size:.82rem; color:var(--gris-ardoise); margin-bottom:14px;">Les trois CIB de l'entreprise (impôts, réception, envoi) et son numéro de papier d'impôt sont générés automatiquement à la création.</p>
         <div class="pc-champ"><label for="ent-nom">Nom de l'entreprise</label><input type="text" id="ent-nom"></div>
+        <div class="pc-champ"><label for="ent-secteur">Secteur</label>
+          <select id="ent-secteur"><option value="normale">Entreprise normale</option><option value="bureau_poste">Bureau de poste</option></select>
+        </div>
         <div class="pc-champ"><label for="ent-cas">Votre code d'assurance social (fondateur)</label><input type="text" id="ent-cas"></div>
         <div class="pc-champ"><label for="ent-depenses">Dépenses de la dernière année</label><input type="number" id="ent-depenses" min="0"></div>
         <div class="pc-champ"><label for="ent-achats">Nombre d'achats de la dernière année</label><input type="number" id="ent-achats" min="0"></div>
@@ -4831,7 +4840,8 @@ async function entCreerEntreprise() {
     p_boutiques_secondaires: document.getElementById('ent-boutique-s').value,
     p_sieges: document.getElementById('ent-sieges').value,
     p_fondateur_cas: encrypterCode(document.getElementById('ent-cas').value),
-    p_employes: employes
+    p_employes: employes,
+    p_secteur: document.getElementById('ent-secteur').value
   });
   entMsg('ent-creer-message', error, 'Demande envoyée au gouvernement.');
 }
@@ -5892,7 +5902,7 @@ function ongletConnexionConseillerHTML() {
     </div>`;
 }
 
-function consLogClic(element) { if (consSessionJeton) sb.rpc('conseiller_log_clic', { p_jeton: consSessionJeton, p_element: element }).catch(() => {}); }
+function consLogClic(element) { if (consSessionJeton) rpcSafe('conseiller_log_clic', { p_jeton: consSessionJeton, p_element: element }); }
 
 async function initialiserConnexionConseiller() {
   document.getElementById('cc-connecter').onclick = async () => {
@@ -6419,7 +6429,7 @@ async function bqChargerTout() {
 async function bqOuvrirDetail(banqueId) {
   const zone = document.getElementById('bq-detail');
   const [{ data: capitaux }, { data: adhesions }] = await Promise.all([
-    sb.rpc('banque_mes_capitaux', { p_banque_id: banqueId }), sb.rpc('banque_demandes_adhesion', { p_banque_id: banqueId }).catch(() => ({ data: [] }))
+    sb.rpc('banque_mes_capitaux', { p_banque_id: banqueId }), rpcSafe('banque_demandes_adhesion', { p_banque_id: banqueId })
   ]);
   zone.innerHTML = `
     <div class="pc-carte" style="background:var(--blanc-casse);">
@@ -6540,8 +6550,11 @@ function panneauMarchePublicHTML() {
     </div>`;
 }
 
+let mpCategoriesMap = {};
+
 async function initialiserPanneauMarchePublic() {
-  const [{ data: cats }, { data: vendeuses }] = await Promise.all([sb.rpc('liste_categories_marche'), sb.rpc('mes_entreprises_vendeuses').catch(() => ({ data: [] }))]);
+  const [{ data: cats }, { data: vendeuses }] = await Promise.all([sb.rpc('liste_categories_marche'), rpcSafe('mes_entreprises_vendeuses')]);
+  mpCategoriesMap = {}; (cats || []).forEach(c => { mpCategoriesMap[c.code] = c; });
   const optsCat = (cats || []).map(c => `<option value="${c.code}">${escHtml(c.nom)} (${c.taux}%)</option>`).join('');
   document.getElementById('mp-categorie').innerHTML = optsCat;
   document.getElementById('mp-filtre-categorie').innerHTML += optsCat;
@@ -6600,10 +6613,19 @@ async function initialiserPanneauMarchePublic() {
     const { data, error } = await sb.rpc('marche_liste_annonces', { p_recherche: document.getElementById('mp-recherche').value || null, p_categorie: document.getElementById('mp-filtre-categorie').value || null });
     const zone = document.getElementById('mp-resultats');
     if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
-    zone.innerHTML = (data || []).length ? data.map(a => `
-      <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(a.titre)}</strong> — ${fmtR(a.prix_unitaire)} R$ (${a.quantite_disponible} disponibles)
+    const resultats = data || [];
+    // Vignettes : la banque de stockage est privée, on génère une URL signée par annonce.
+    const vignettes = await Promise.all(resultats.map(async a => {
+      if (!a.screenshot_objet_chemin) return null;
+      const { data: s } = await sb.storage.from('documents-citoyens').createSignedUrl(a.screenshot_objet_chemin, 3600);
+      return s ? s.signedUrl : null;
+    }));
+    zone.innerHTML = resultats.length ? resultats.map((a, i) => `
+      <div class="pm-fleet-item">
+        ${vignettes[i] ? `<img src="${vignettes[i]}" alt="" style="width:100%; max-width:220px; border-radius:8px; display:block; margin-bottom:8px;">` : ''}
+        <div class="entete"><strong>${escHtml(a.titre)}</strong> — ${fmtR(a.prix_unitaire)} R$ (${a.quantite_disponible} disponibles)
         <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-mp-ouvrir="${a.id}">Ouvrir</button></div>
-        <p class="pm-mini">@${escHtml(a.vendeur)} — confiance : ${a.confiance_vendeur}% ${a.albatros ? '— Albatros disponible' : ''}</p></div>`).join('') : '<p class="pm-mini">Aucun résultat.</p>';
+        <p class="pm-mini">@${escHtml(a.vendeur)} — confiance : ${a.confiance_vendeur}% — ${escHtml((mpCategoriesMap[a.categorie_tp] || {}).nom || a.categorie_tp)}${a.importe ? ' — importé' : ''} — ${escHtml(a.province_vente || '')} ${a.albatros ? '— Albatros disponible' : ''}</p></div>`).join('') : '<p class="pm-mini">Aucun résultat.</p>';
     zone.querySelectorAll('[data-mp-ouvrir]').forEach(b => b.onclick = () => mpOuvrirFiche(b.dataset.mpOuvrir));
   };
 
@@ -6615,14 +6637,26 @@ async function mpOuvrirFiche(annonceId) {
   const zone = document.getElementById('mp-fiche');
   if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
   const noteTxt = a.vendeur_info.note.note != null ? `${a.vendeur_info.note.note} / 5 (${a.vendeur_info.note.nb_avis} avis)` : 'aucun avis';
+  // Images : banque de stockage privée, on génère des URL signées.
+  const [urlVendeur, urlObjet] = await Promise.all([
+    a.screenshot_vendeur_chemin ? sb.storage.from('documents-citoyens').createSignedUrl(a.screenshot_vendeur_chemin, 3600).then(r => r.data ? r.data.signedUrl : null) : null,
+    a.screenshot_objet_chemin ? sb.storage.from('documents-citoyens').createSignedUrl(a.screenshot_objet_chemin, 3600).then(r => r.data ? r.data.signedUrl : null) : null
+  ]);
+  const categorieNom = (mpCategoriesMap[a.categorie_tp] || {}).nom || a.categorie_tp;
   zone.innerHTML = `
     <div class="pc-carte" style="background:var(--blanc-casse);">
       <h4>${escHtml(a.titre)}</h4>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        ${urlVendeur ? `<img src="${urlVendeur}" alt="Capture du vendeur avec l'objet" style="max-width:260px; border-radius:8px;">` : ''}
+        ${urlObjet ? `<img src="${urlObjet}" alt="Capture de l'objet en zoomé" style="max-width:260px; border-radius:8px;">` : ''}
+      </div>
       <p class="pm-mini">Vendeur : @${escHtml(a.vendeur_info.username)} — confiance : ${a.vendeur_info.confiance.score}% — note : ${noteTxt}</p>
       <p>${escHtml(a.description || '')}</p>
+      <p class="pm-mini">Catégorie : ${escHtml(categorieNom)}${a.importe ? ' — importé' : ''} — Province de vente : ${escHtml(a.province_vente || '—')} — publiée le ${new Date(a.cree_le).toLocaleDateString('fr-FR')}</p>
       <p class="pm-mini">Contact : ${escHtml(a.contact_info || '—')}</p>
       <p class="pm-mini">Livraison : ${a.mode_livraison === 'a_chercher' ? 'à venir chercher — ' + escHtml(a.adresse_recuperation || '') : escHtml(a.portee_livraison) + ', ' + escHtml(a.livraison_duree_estimee || '') + ' par ' + escHtml(a.livraison_par) + (a.livraison_payee_vendeur ? ' (livraison payée par le vendeur)' : ' (livraison à la charge de l’acheteur)')}</p>
-      <p style="font-family:var(--police-titre); font-size:1.3rem; color:var(--vert-nuit);">${fmtR(a.prix_unitaire)} R$ / unité</p>
+      ${a.livraison_par === 'bureau_poste' && a.bureau_poste_code_temp ? `<p class="pm-mini">Code d'affiliation bureau de poste : ${escHtml(a.bureau_poste_code_temp)}</p>` : ''}
+      <p style="font-family:var(--police-titre); font-size:1.3rem; color:var(--vert-nuit);">${fmtR(a.prix_unitaire)} R$ / unité — ${a.quantite_disponible} disponible(s)</p>
       <div class="pc-champ"><label>Quantité</label><input type="number" min="1" max="${a.quantite_disponible}" value="1" id="mp-achat-qte"></div>
       <div class="pc-champ"><label>Mode de paiement</label><select id="mp-achat-mode"><option value="comptant">Comptant</option>${a.albatros ? `<option value="albatros">Programme Albatros (étalé sur ${a.albatros_mois} mois)</option>` : ''}</select></div>
       <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="mp-achat-confirmer">Acheter</button>
@@ -6843,9 +6877,9 @@ function bpRenduMesBureaux(bureaux) {
 async function bpOuvrirGestion(entrepriseId) {
   const zone = document.getElementById('bp-gestion');
   const [{ data: membres }, { data: demandesAff }, { data: livraisons }, { data: votes }] = await Promise.all([
-    sb.rpc('bureau_poste_membres', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
-    sb.rpc('bureau_poste_demandes_affiliation', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
-    sb.rpc('bureau_poste_livraisons', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
+    rpcSafe('bureau_poste_membres', { p_entreprise_id: entrepriseId }),
+    rpcSafe('bureau_poste_demandes_affiliation', { p_entreprise_id: entrepriseId }),
+    rpcSafe('bureau_poste_livraisons', { p_entreprise_id: entrepriseId }),
     sb.rpc('bureau_poste_votes_actifs', { p_entreprise_id: entrepriseId })
   ]);
 
