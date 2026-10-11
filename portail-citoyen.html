@@ -1037,6 +1037,8 @@ async function chargerTableauDeBord(utilisateur) {
       <button data-onglet="brevets">Brevets et droits d'auteur</button>
       <button data-onglet="banques">Banques privées</button>
       <button data-onglet="marche-public">Marché public</button>
+      <button data-onglet="autochtone">Famille autochtone</button>
+      <button data-onglet="bureau-poste">Bureau de poste</button>
       ${banquesAccessibles.length ? '<button data-onglet="presse">Presse monétaire</button>' : ''}
       ${citoyen.est_agent_paix ? '<button data-onglet="agent">Agent de la paix</button>' : ''}
       ${citoyen.est_admin ? '<button data-onglet="admin">Administration</button>' : ''}
@@ -1326,6 +1328,8 @@ async function chargerTableauDeBord(utilisateur) {
     ${panneauBrevetsHTML()}
     ${panneauBanquesHTML()}
     ${panneauMarchePublicHTML()}
+    ${panneauAutochtoneHTML()}
+    ${panneauBureauPosteHTML()}
     ${banquesAccessibles.length ? panneauPresseHTML() : ''}
     ${citoyen.est_agent_paix ? panneauAgentHTML() : ''}
     ${citoyen.est_admin ? panneauAdminHTML() : ''}
@@ -1344,7 +1348,7 @@ async function chargerTableauDeBord(utilisateur) {
     btn.onclick = () => {
       document.querySelectorAll('.pc-onglets button[data-onglet]').forEach(b => b.classList.remove('actif'));
       btn.classList.add('actif');
-      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'confiance', 'releve-mensuel', 'conseiller', 'marche-interieur', 'marche-exterieur', 'documents-gouv', 'brevets', 'banques', 'marche-public', 'presse', 'agent', 'admin'].forEach(o => {
+      ['profil', 'paiements', 'permis', 'constats', 'epargne', 'messages', 'signatures', 'documents', 'contacter', 'tableaubord', 'argentattendu', 'recompenses', 'entreprise', 'releves', 'infos', 'confiance', 'releve-mensuel', 'conseiller', 'marche-interieur', 'marche-exterieur', 'documents-gouv', 'brevets', 'banques', 'marche-public', 'autochtone', 'bureau-poste', 'presse', 'agent', 'admin'].forEach(o => {
         const el = document.getElementById('onglet-' + o);
         if (el) el.classList.toggle('pc-masque', o !== btn.dataset.onglet);
       });
@@ -1385,6 +1389,8 @@ async function chargerTableauDeBord(utilisateur) {
   initialiserPanneauBrevets();
   initialiserPanneauBanques();
   initialiserPanneauMarchePublic();
+  initialiserPanneauAutochtone();
+  initialiserPanneauBureauPoste();
   synchroniserCIBEtRapports();
 
   demarrerTicker(utilisateur.id, citoyen);
@@ -6368,12 +6374,13 @@ async function initialiserPanneauBanques() {
 async function bqChargerTout() {
   const [{ data: mesComptes }, { data: banques }] = await Promise.all([sb.rpc('mes_comptes_bancaires'), sb.rpc('liste_banques')]);
   document.getElementById('bq-mes-comptes').innerHTML = (mesComptes || []).length ? mesComptes.map(c => `
-    <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(c.nom)}</strong> (${escHtml(c.type)})
+    <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(c.nom)}</strong> (${escHtml(c.type)})${c.publique ? ' — publique' : ''}
       <span>${fmtR(c.solde)} R$</span></div>
       <div class="pc-champ"><label>Montant</label><input type="number" step="0.01" min="0" data-bq-montant="${c.banque_id}"></div>
       <div class="pm-ligne-boutons">
         <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-bq-deposer="${c.banque_id}">Déposer</button>
         <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-bq-retirer="${c.banque_id}">Retirer</button>
+        ${c.publique ? `<button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-bq-quitter="${c.banque_id}">Quitter</button>` : ''}
       </div></div>`).join('') : '<p class="pm-mini">Aucun compte.</p>';
 
   document.querySelectorAll('[data-bq-deposer]').forEach(b => b.onclick = async () => {
@@ -6386,14 +6393,27 @@ async function bqChargerTout() {
     const { error } = await sb.rpc('banque_retirer', { p_banque_id: id, p_montant: Number(document.querySelector(`[data-bq-montant="${id}"]`).value) });
     if (error) alert(error.message); else bqChargerTout();
   });
+  document.querySelectorAll('[data-bq-quitter]').forEach(b => b.onclick = async () => {
+    if (!confirm('Quitter cette banque publique ? Le solde vous sera reversé.')) return;
+    const { error } = await sb.rpc('banque_quitter_publique', { p_banque_id: b.dataset.bqQuitter });
+    if (error) alert(error.message); else bqChargerTout();
+  });
 
+  const idsMesComptes = new Set((mesComptes || []).map(c => c.banque_id));
   document.getElementById('bq-toutes-banques').innerHTML = (banques || []).length ? banques.map(b => `
     <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(b.nom)}</strong> (${escHtml(b.type)})${b.publique ? ' — publique' : ''}
       <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-bq-ouvrir="${b.id}">Gérer</button></div>
       <p class="pm-mini">Propriétaire : @${escHtml(b.proprietaire)}${b.conseiller && b.conseiller !== b.proprietaire ? ' — conseiller : @' + escHtml(b.conseiller) : ''}</p>
       ${b.description ? `<p class="pm-mini">${escHtml(b.description)}</p>` : ''}
+      ${b.publique && !idsMesComptes.has(b.id) ? `<button class="pc-lien" data-bq-demander-adhesion="${b.id}">Demander l'adhésion</button>` : ''}
     </div>`).join('') : '<p class="pm-mini">Aucune banque.</p>';
   document.querySelectorAll('[data-bq-ouvrir]').forEach(b => b.onclick = () => bqOuvrirDetail(b.dataset.bqOuvrir));
+  document.querySelectorAll('[data-bq-demander-adhesion]').forEach(b => b.onclick = async () => {
+    const motif = prompt('Justification (10 caractères minimum) :');
+    if (!motif) return;
+    const { error } = await sb.rpc('demander_adhesion_banque', { p_banque_id: b.dataset.bqDemanderAdhesion, p_motif: motif });
+    if (error) alert(error.message); else alert('Demande envoyée.');
+  });
 }
 
 async function bqOuvrirDetail(banqueId) {
@@ -6491,6 +6511,7 @@ function panneauMarchePublicHTML() {
       </div>
       <div class="pc-carte">
         <h3>Publier une annonce</h3>
+        <div class="pc-champ"><label>Vendre au nom de</label><select id="mp-vendeuse"><option value="">Moi-même</option></select></div>
         <div class="pc-champ"><label>Nom précis de l'objet (avec quantité par unité si pertinent)</label><input type="text" id="mp-titre"></div>
         <div class="pc-champ"><label>Quantité disponible à la vente</label><input type="number" min="1" id="mp-quantite"></div>
         <div class="pc-champ"><label>Prix par objet</label><input type="number" step="0.01" min="0" id="mp-prix"></div>
@@ -6520,11 +6541,12 @@ function panneauMarchePublicHTML() {
 }
 
 async function initialiserPanneauMarchePublic() {
-  const [{ data: cats }] = await Promise.all([sb.rpc('liste_categories_marche')]);
+  const [{ data: cats }, { data: vendeuses }] = await Promise.all([sb.rpc('liste_categories_marche'), sb.rpc('mes_entreprises_vendeuses').catch(() => ({ data: [] }))]);
   const optsCat = (cats || []).map(c => `<option value="${c.code}">${escHtml(c.nom)} (${c.taux}%)</option>`).join('');
   document.getElementById('mp-categorie').innerHTML = optsCat;
   document.getElementById('mp-filtre-categorie').innerHTML += optsCat;
   document.getElementById('mp-province').innerHTML = PROVINCES_RESIDENCE.map(p => `<option value="${p}">${p}</option>`).join('');
+  document.getElementById('mp-vendeuse').innerHTML += (vendeuses || []).map(v => `<option value="${v.id}">${escHtml(v.nom)}</option>`).join('');
 
   const majChampsLivraison = () => {
     const mode = document.getElementById('mp-mode-livraison').value;
@@ -6553,6 +6575,7 @@ async function initialiserPanneauMarchePublic() {
       const chScreenObjet = await up(document.getElementById('mp-screen-objet').files[0]);
       const mode = document.getElementById('mp-mode-livraison').value;
       const champs = {
+        entreprise_vendeuse_id: document.getElementById('mp-vendeuse').value || null,
         titre: document.getElementById('mp-titre').value, quantite_totale: Number(document.getElementById('mp-quantite').value),
         prix_unitaire: Number(document.getElementById('mp-prix').value), description: document.getElementById('mp-description').value,
         contact_info: document.getElementById('mp-contact').value, screenshot_vendeur_chemin: chScreenVendeur, screenshot_objet_chemin: chScreenObjet,
@@ -6627,7 +6650,44 @@ async function mpChargerMesAchats() {
           <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" data-mp-contester="${a.id}">Non reçu / abîmé</button>
         </div>
         <div id="mp-recu-zone-${a.id}"></div>` : ''}
+      ${a.statut_livraison === 'recu' ? `<button class="pc-lien" data-mp-modifier-note="${a.id}">Modifier mon évaluation du vendeur</button>
+        <div id="mp-modifier-zone-${a.id}"></div>` : ''}
+      ${a.statut_livraison === 'recu' && a.livreur ? `<button class="pc-lien" data-mp-noter-livreur="${a.id}">${a.note_livreur_etat != null ? 'Modifier' : 'Évaluer'} le livreur</button>
+        <div id="mp-livreur-zone-${a.id}"></div>` : ''}
     </div>`).join('') : '<p class="pm-mini">Aucun achat.</p>';
+
+  zone.querySelectorAll('[data-mp-modifier-note]').forEach(b => b.onclick = () => {
+    const id = b.dataset.mpModifierNote;
+    const z = document.getElementById('mp-modifier-zone-' + id);
+    const etoiles = (eid) => `<select id="${eid}">${[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5].map(v => `<option value="${v}">${v}</option>`).join('')}</select>`;
+    z.innerHTML = `
+      <div class="pc-champ"><label>Rapidité</label>${etoiles('mp-mod-rapidite-' + id)}</div>
+      <div class="pc-champ"><label>Aide / discussion</label>${etoiles('mp-mod-aide-' + id)}</div>
+      <div class="pc-champ"><label>Gentillesse</label>${etoiles('mp-mod-gentillesse-' + id)}</div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-mp-confirmer-modif="${id}">Enregistrer</button>`;
+    z.querySelector('[data-mp-confirmer-modif]').onclick = async () => {
+      const { error: err } = await sb.rpc('marche_modifier_evaluation', {
+        p_achat_id: id, p_rapidite: Number(document.getElementById('mp-mod-rapidite-' + id).value),
+        p_aide: Number(document.getElementById('mp-mod-aide-' + id).value), p_gentillesse: Number(document.getElementById('mp-mod-gentillesse-' + id).value)
+      });
+      if (err) alert(err.message); else { alert('Évaluation mise à jour.'); z.innerHTML = ''; }
+    };
+  });
+  zone.querySelectorAll('[data-mp-noter-livreur]').forEach(b => b.onclick = () => {
+    const id = b.dataset.mpNoterLivreur;
+    const z = document.getElementById('mp-livreur-zone-' + id);
+    const etoiles = (eid) => `<select id="${eid}">${[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5].map(v => `<option value="${v}">${v}</option>`).join('')}</select>`;
+    z.innerHTML = `
+      <div class="pc-champ"><label>Rapidité</label>${etoiles('mp-liv-rapidite-' + id)}</div>
+      <div class="pc-champ"><label>État de l'objet</label>${etoiles('mp-liv-etat-' + id)}</div>
+      <button class="bouton bouton-or" style="border:none; cursor:pointer;" data-mp-confirmer-livreur="${id}">Enregistrer</button>`;
+    z.querySelector('[data-mp-confirmer-livreur]').onclick = async () => {
+      const { error: err } = await sb.rpc('marche_noter_livreur', {
+        p_achat_id: id, p_rapidite: Number(document.getElementById('mp-liv-rapidite-' + id).value), p_etat: Number(document.getElementById('mp-liv-etat-' + id).value)
+      });
+      if (err) alert(err.message); else { alert('Évaluation du livreur enregistrée.'); z.innerHTML = ''; }
+    };
+  });
 
   zone.querySelectorAll('[data-mp-verser]').forEach(b => b.onclick = async () => {
     const { error: err } = await sb.rpc('payer_versement_albatros', { p_facture_id: b.dataset.mpVerser });
@@ -6670,6 +6730,252 @@ async function mpChargerMesVentes() {
   zone.querySelectorAll('[data-mp-expedier]').forEach(b => b.onclick = async () => {
     const { error: err } = await sb.rpc('marche_marquer_expedie', { p_achat_id: b.dataset.mpExpedier });
     if (err) alert(err.message); else mpChargerMesVentes();
+  });
+}
+
+/* =====================================================================
+   FAMILLE AUTOCHTONE + TAXE DES RÉCOLTES
+   ===================================================================== */
+function panneauAutochtoneHTML() {
+  return `
+    <div id="onglet-autochtone" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Enregistrement d'une famille autochtone</h3>
+        <p class="pm-mini">Réservé aux citoyens résidant à Tonawa, Bushard Bay, Pruxe, Milela ou Gibaltage. L'enregistrement applique la Taxe des Récoltes (TR, 4,95 %) sur tous les achats du marché public, versée à la trésorerie privée du gouvernement.</p>
+        <div id="auto-statut"><p class="pm-mini">Chargement…</p></div>
+        <div id="auto-formulaire"></div>
+        <div id="auto-message"></div>
+      </div>
+    </div>`;
+}
+
+async function initialiserPanneauAutochtone() {
+  const { data } = await sb.rpc('mon_statut_autochtone');
+  const statutZone = document.getElementById('auto-statut');
+  const formZone = document.getElementById('auto-formulaire');
+  if (data && data.autochtone) {
+    statutZone.innerHTML = `<p class="pc-succes">Famille enregistrée : <strong>${escHtml(data.famille)}</strong>. La Taxe des Récoltes s'applique à vos achats.</p>`;
+    formZone.innerHTML = '';
+    return;
+  }
+  statutZone.innerHTML = '<p class="pm-mini">Aucun enregistrement actuel.</p>';
+  formZone.innerHTML = `
+    <div class="pc-champ"><label>Nom de famille</label><input type="text" id="auto-nom-famille"></div>
+    <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="auto-enregistrer">S'enregistrer</button>`;
+  document.getElementById('auto-enregistrer').onclick = async () => {
+    const { error } = await sb.rpc('s_enregistrer_autochtone', { p_nom_famille: document.getElementById('auto-nom-famille').value });
+    entMsg('auto-message', error, 'Famille enregistrée.');
+    if (!error) initialiserPanneauAutochtone();
+  };
+}
+
+/* =====================================================================
+   BUREAU DE POSTE
+   ===================================================================== */
+function panneauBureauPosteHTML() {
+  return `
+    <div id="onglet-bureau-poste" class="pc-masque">
+      <div class="pc-carte">
+        <h3>Mes bureaux de poste</h3>
+        <div id="bp-mes-bureaux"><p class="pm-mini">Chargement…</p></div>
+        <div id="bp-gestion"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Demander une affiliation (vendeur)</h3>
+        <p class="pm-mini">Associe une de vos annonces ou entreprises à un bureau de poste pour la livraison. Donne un code temporaire une fois acceptée.</p>
+        <div class="pc-champ"><label>Bureau de poste</label><select id="bp-aff-bureau"></select></div>
+        <div class="pc-champ"><label>Cible</label><select id="bp-aff-type"><option value="entreprise">Une de mes entreprises (PDG/Co-PDG)</option><option value="annonce">Une de mes annonces</option></select></div>
+        <div class="pc-champ"><label>ID de la cible</label><input type="text" id="bp-aff-cible-id"></div>
+        <div class="pc-champ"><label>Justification (10 caractères min.)</label><textarea id="bp-aff-justif"></textarea></div>
+        <div class="pc-champ"><label>Durée (jours)</label><input type="number" min="1" id="bp-aff-duree" value="30"></div>
+        <div class="pc-champ"><label>Unité</label><select id="bp-aff-unite"><option value="km">Kilomètre</option><option value="m">Mètre</option></select></div>
+        <div class="pc-champ"><label>Prix par unité</label><input type="number" step="0.0001" min="0" id="bp-aff-prix"></div>
+        <button class="bouton bouton-or" style="border:none; cursor:pointer;" id="bp-aff-demander">Demander</button>
+        <div id="bp-aff-message"></div>
+      </div>
+      <div class="pc-carte">
+        <h3>Mes affiliations</h3>
+        <div id="bp-mes-affiliations"><p class="pm-mini">Chargement…</p></div>
+      </div>
+    </div>`;
+}
+
+async function initialiserPanneauBureauPoste() {
+  const [{ data: mesBureaux }, { data: toutes }] = await Promise.all([sb.rpc('mon_bureau_poste'), sb.rpc('bureau_poste_liste_publique')]);
+  document.getElementById('bp-aff-bureau').innerHTML = (toutes || []).map(b => `<option value="${b.id}">${escHtml(b.nom)}${b.note && b.note.note != null ? ' — ' + b.note.note + '/5' : ''}</option>`).join('');
+
+  bpRenduMesBureaux(mesBureaux || []);
+  bpChargerMesAffiliations();
+
+  document.getElementById('bp-aff-demander').onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_demander_affiliation', {
+      p_bureau_poste_id: document.getElementById('bp-aff-bureau').value,
+      p_cible_type: document.getElementById('bp-aff-type').value,
+      p_cible_id: document.getElementById('bp-aff-cible-id').value,
+      p_justification: document.getElementById('bp-aff-justif').value,
+      p_duree_jours: Number(document.getElementById('bp-aff-duree').value),
+      p_unite: document.getElementById('bp-aff-unite').value,
+      p_prix_par_unite: Number(document.getElementById('bp-aff-prix').value)
+    });
+    entMsg('bp-aff-message', error, 'Demande envoyée.');
+    if (!error) bpChargerMesAffiliations();
+  };
+}
+
+function bpRenduMesBureaux(bureaux) {
+  const zone = document.getElementById('bp-mes-bureaux');
+  zone.innerHTML = bureaux.length ? bureaux.map(b => `
+    <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(b.nom)}</strong> — ${b.role === 'pdg' ? 'PDG' : (b.poste_bureau || 'membre')}
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer; font-size:.78rem; padding:6px 14px;" data-bp-gerer="${b.entreprise_id}">Gérer</button></div>
+      <p class="pm-mini">% livreurs : ${b.pourcentage_livreurs}% — % analystes : ${b.pourcentage_analystes}%${b.localisation_actuelle ? ' — localisation : ' + escHtml(b.localisation_actuelle) : ''}</p>
+      ${b.poste_bureau === 'livreur' ? `<div class="pc-champ"><label>Ma localisation</label><input type="text" value="${escHtml(b.localisation_actuelle || '')}" data-bp-loc="${b.entreprise_id}"></div>
+        <button class="pc-lien" data-bp-maj-loc="${b.entreprise_id}">Mettre à jour</button>` : ''}
+    </div>`).join('') : '<p class="pm-mini">Vous n\'êtes membre d\'aucun bureau de poste.</p>';
+
+  zone.querySelectorAll('[data-bp-gerer]').forEach(b => b.onclick = () => bpOuvrirGestion(b.dataset.bpGerer));
+  zone.querySelectorAll('[data-bp-maj-loc]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.bpMajLoc;
+    const { error } = await sb.rpc('bureau_poste_maj_localisation', { p_entreprise_id: id, p_localisation: document.querySelector(`[data-bp-loc="${id}"]`).value });
+    if (error) alert(error.message); else initialiserPanneauBureauPoste();
+  });
+}
+
+async function bpOuvrirGestion(entrepriseId) {
+  const zone = document.getElementById('bp-gestion');
+  const [{ data: membres }, { data: demandesAff }, { data: livraisons }, { data: votes }] = await Promise.all([
+    sb.rpc('bureau_poste_membres', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
+    sb.rpc('bureau_poste_demandes_affiliation', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
+    sb.rpc('bureau_poste_livraisons', { p_entreprise_id: entrepriseId }).catch(() => ({ data: [] })),
+    sb.rpc('bureau_poste_votes_actifs', { p_entreprise_id: entrepriseId })
+  ]);
+
+  const livreurs = (membres || []).filter(m => m.poste_bureau === 'livreur');
+
+  zone.innerHTML = `
+    <div class="pc-carte" style="background:var(--blanc-casse);">
+      <h4>Gestion du bureau de poste</h4>
+
+      <h5>Membres (assignation des postes — PDG seulement)</h5>
+      ${(membres || []).length ? membres.map(m => `
+        <p class="pm-mini">@${escHtml(m.username)} — ${m.role}
+          <select data-bp-poste="${m.citoyen_id}">
+            <option value="" ${!m.poste_bureau ? 'selected' : ''}>Aucun</option>
+            <option value="livreur" ${m.poste_bureau === 'livreur' ? 'selected' : ''}>Livreur</option>
+            <option value="manager" ${m.poste_bureau === 'manager' ? 'selected' : ''}>Manager</option>
+            <option value="analyste" ${m.poste_bureau === 'analyste' ? 'selected' : ''}>Analyste</option>
+          </select>
+          <button class="pc-lien" data-bp-assigner="${m.citoyen_id}">Appliquer</button></p>`).join('') : '<p class="pm-mini">Aucun.</p>'}
+
+      <h5 style="margin-top:12px;">Demandes d'affiliation en attente</h5>
+      ${(demandesAff || []).length ? demandesAff.map(d => `
+        <p class="pm-mini">@${escHtml(d.demandeur)} — ${d.cible_type === 'entreprise' ? escHtml(d.entreprise_cible || '') : escHtml(d.annonce_titre || '')} — ${d.prix_par_unite} R$/${d.unite} — ${d.duree_jours}j
+          <br><em>${escHtml(d.justification)}</em>
+          <button class="pc-lien" data-bp-aff-accepter="${d.id}">Accepter</button>
+          <button class="pc-lien" data-bp-aff-refuser="${d.id}">Refuser</button></p>`).join('') : '<p class="pm-mini">Aucune.</p>'}
+
+      <h5 style="margin-top:12px;">Livraisons</h5>
+      ${(livraisons || []).length ? livraisons.map(l => `
+        <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(l.titre)}</strong> — <em>${escHtml(l.etape_bureau_poste || 'non assignée')}</em></div>
+          <p class="pm-mini">Livreur : ${l.livreur ? '@' + escHtml(l.livreur) : '—'} — Analyste : ${l.analyste ? '@' + escHtml(l.analyste) : '—'}
+            ${l.livraison_facturee ? ` — facturé : ${fmtR(l.prix_livraison_facture)} R$ (${l.distance_parcourue})` : ''}</p>
+          <div class="pm-ligne-boutons">
+            ${!l.livreur_id ? `<select data-bp-livreur-choix="${l.id}">${livreurs.map(lv => `<option value="${lv.citoyen_id}">@${escHtml(lv.username)}</option>`).join('')}</select>
+              <button class="pc-lien" data-bp-assigner-livreur="${l.id}">Assigner livreur</button>` : ''}
+            <select data-bp-etape="${l.id}">
+              <option value="recu_bureau" ${l.etape_bureau_poste === 'recu_bureau' ? 'selected' : ''}>Reçu au bureau</option>
+              <option value="parti_bureau" ${l.etape_bureau_poste === 'parti_bureau' ? 'selected' : ''}>Parti du bureau</option>
+              <option value="en_main_livreur" ${l.etape_bureau_poste === 'en_main_livreur' ? 'selected' : ''}>En main du livreur</option>
+              <option value="livre" ${l.etape_bureau_poste === 'livre' ? 'selected' : ''}>Livré</option>
+            </select>
+            <button class="pc-lien" data-bp-maj-etape="${l.id}">Mettre à jour l'étape</button>
+            ${!l.livraison_facturee ? `<input type="number" step="0.01" min="0" placeholder="distance" data-bp-distance="${l.id}" style="width:90px;">
+              <button class="pc-lien" data-bp-analyser="${l.id}">Analyser (facturer)</button>` : ''}
+          </div></div>`).join('') : '<p class="pm-mini">Aucune.</p>'}
+
+      <h5 style="margin-top:12px;">Votes en cours (livreurs/analystes)</h5>
+      ${(votes || []).length ? votes.map(v => `
+        <p class="pm-mini">${v.poste} → ${v.nouveau_pourcentage}% (${v.nb_oui} pour / ${v.nb_non} contre, expire le ${new Date(v.expire_le).toLocaleDateString('fr-FR')})
+          ${v.mon_choix === null ? `<button class="pc-lien" data-bp-voter-oui="${v.id}">Pour</button><button class="pc-lien" data-bp-voter-non="${v.id}">Contre</button>` : `— vous avez voté ${v.mon_choix ? 'pour' : 'contre'}`}</p>`).join('') : '<p class="pm-mini">Aucun.</p>'}
+
+      <h5 style="margin-top:12px;">Proposer un nouveau pourcentage (PDG)</h5>
+      <div class="pc-champ"><label>Poste</label><select id="bp-vote-poste"><option value="livreur">Livreur</option><option value="analyste">Analyste</option></select></div>
+      <div class="pc-champ"><label>Nouveau pourcentage</label><input type="number" step="0.01" min="0" id="bp-vote-pct"></div>
+      <button class="bouton bouton-contour" style="color:var(--vert-nuit); border-color:var(--vert-nuit); cursor:pointer;" id="bp-vote-proposer">Lancer le vote</button>
+      <div id="bp-gestion-message"></div>
+    </div>`;
+
+  zone.querySelectorAll('[data-bp-assigner]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.bpAssigner;
+    const poste = document.querySelector(`[data-bp-poste="${id}"]`).value || null;
+    const { error } = await sb.rpc('bureau_poste_assigner_poste', { p_entreprise_id: entrepriseId, p_citoyen_id: id, p_poste: poste });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-aff-accepter]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_traiter_affiliation', { p_id: b.dataset.bpAffAccepter, p_decision: 'acceptee' });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-aff-refuser]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_traiter_affiliation', { p_id: b.dataset.bpAffRefuser, p_decision: 'refusee' });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-assigner-livreur]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.bpAssignerLivreur;
+    const livreurId = document.querySelector(`[data-bp-livreur-choix="${id}"]`).value;
+    const { error } = await sb.rpc('bureau_poste_assigner_livraison', { p_achat_id: id, p_livreur_id: livreurId });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-maj-etape]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.bpMajEtape;
+    const { error } = await sb.rpc('bureau_poste_maj_etape', { p_achat_id: id, p_etape: document.querySelector(`[data-bp-etape="${id}"]`).value });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-analyser]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.bpAnalyser;
+    const distance = Number(document.querySelector(`[data-bp-distance="${id}"]`).value);
+    if (!distance || distance <= 0) { alert('Distance invalide.'); return; }
+    const { error } = await sb.rpc('bureau_poste_analyser_livraison', { p_achat_id: id, p_distance: distance });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-voter-oui]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_voter', { p_vote_id: b.dataset.bpVoterOui, p_choix: true });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  zone.querySelectorAll('[data-bp-voter-non]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_voter', { p_vote_id: b.dataset.bpVoterNon, p_choix: false });
+    if (error) alert(error.message); else bpOuvrirGestion(entrepriseId);
+  });
+  document.getElementById('bp-vote-proposer').onclick = async () => {
+    const { error } = await sb.rpc('bureau_poste_proposer_pourcentage', {
+      p_entreprise_id: entrepriseId, p_poste: document.getElementById('bp-vote-poste').value, p_nouveau_pourcentage: Number(document.getElementById('bp-vote-pct').value)
+    });
+    entMsg('bp-gestion-message', error, 'Vote lancé.');
+    if (!error) bpOuvrirGestion(entrepriseId);
+  };
+}
+
+async function bpChargerMesAffiliations() {
+  const { data, error } = await sb.rpc('bureau_poste_mes_affiliations');
+  const zone = document.getElementById('bp-mes-affiliations');
+  if (error) { zone.innerHTML = `<p class="pc-erreur">${escHtml(error.message)}</p>`; return; }
+  zone.innerHTML = (data || []).length ? data.map(a => `
+    <div class="pm-fleet-item"><div class="entete"><strong>${escHtml(a.bureau_poste)}</strong> — <em>${escHtml(a.statut)}</em></div>
+      <p class="pm-mini">${a.unite === 'km' ? 'Kilomètre' : 'Mètre'} — ${a.prix_par_unite} R$/unité — ${a.duree_jours} jours</p>
+      ${a.code ? `<p class="pm-mini">Code temporaire : <strong>${escHtml(a.code)}</strong> (expire le ${new Date(a.code_expire_le).toLocaleString('fr-FR')})</p>` : ''}
+      ${a.statut === 'acceptee' ? `<div class="pm-ligne-boutons">
+        <button class="pc-lien" data-bp-renouveler="${a.id}">Renouveler</button>
+        <button class="pc-lien" data-bp-dissocier="${a.id}">Dissocier</button></div>` : ''}
+    </div>`).join('') : '<p class="pm-mini">Aucune affiliation.</p>';
+
+  zone.querySelectorAll('[data-bp-renouveler]').forEach(b => b.onclick = async () => {
+    const jours = prompt('Nouvelle durée en jours :', '30');
+    if (!jours) return;
+    const { error: err } = await sb.rpc('bureau_poste_renouveler_affiliation', { p_id: b.dataset.bpRenouveler, p_justification: null, p_duree_jours: Number(jours) });
+    if (err) alert(err.message); else bpChargerMesAffiliations();
+  });
+  zone.querySelectorAll('[data-bp-dissocier]').forEach(b => b.onclick = async () => {
+    if (!confirm('Dissocier cette affiliation ?')) return;
+    const { error: err } = await sb.rpc('bureau_poste_dissocier', { p_id: b.dataset.bpDissocier });
+    if (err) alert(err.message); else bpChargerMesAffiliations();
   });
 }
 
